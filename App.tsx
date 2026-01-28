@@ -1,22 +1,232 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import SummaryCard from '@/components/SummaryCard';
 import StockList from '@/components/StockList';
 import StockDetail from '@/components/StockDetail';
 import IssuesFeed from '@/components/IssuesFeed';
 import ResourcesView from '@/components/ResourcesView';
-import { CHINA_STOCKS } from '@/constants';
+import AccessGate from '@/components/AccessGate';
+import { supabase } from '@/lib/supabase';
 import { Stock, ViewMode, MainTab, SortKey, SortDirection } from '@/types';
 
+const SESSION_DURATION_MS = 60 * 60 * 1000; // 1시간
+
+function clearSession() {
+  localStorage.removeItem('cms_authenticated');
+  localStorage.removeItem('cms_expires_at');
+  localStorage.removeItem('cms_code_version');
+}
+
+function isSessionValid(): boolean {
+  const auth = localStorage.getItem('cms_authenticated');
+  const expiresAt = localStorage.getItem('cms_expires_at');
+  if (auth !== 'true' || !expiresAt) return false;
+  return Date.now() < Number(expiresAt);
+}
+
+function formatRemaining(ms: number): string {
+  if (ms <= 0) return '00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(isSessionValid);
   const [viewMode, setViewMode] = useState<ViewMode>('DASHBOARD');
   const [activeTab, setActiveTab] = useState<MainTab>('PORTFOLIO');
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('ASC');
-  
+
   const [isPortfolioExpanded, setIsPortfolioExpanded] = useState<boolean>(false);
+  const [visitorCount, setVisitorCount] = useState<number>(0);
+  const [remainingTime, setRemainingTime] = useState<string>('60:00');
+
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [glossary, setGlossary] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // 로그아웃 처리
+  const logout = useCallback(() => {
+    clearSession();
+    setIsAuthenticated(false);
+  }, []);
+
+  // 1초마다 남은 시간 갱신
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const tick = () => {
+      const expiresAt = Number(localStorage.getItem('cms_expires_at') || '0');
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) {
+        logout();
+      } else {
+        setRemainingTime(formatRemaining(diff));
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [isAuthenticated, logout]);
+
+  // 세션 연장 — 버전 체크 후 연장 또는 로그아웃
+  const handleExtendSession = useCallback(async () => {
+    try {
+      const { data } = await supabase.rpc('get_active_code_version');
+      const storedVersion = localStorage.getItem('cms_code_version');
+      if (data !== null && storedVersion !== null && String(data) !== storedVersion) {
+        logout();
+        return;
+      }
+    } catch {
+      // 네트워크 오류 시 그냥 연장 허용
+    }
+    const newExpiry = Date.now() + SESSION_DURATION_MS;
+    localStorage.setItem('cms_expires_at', String(newExpiry));
+    setRemainingTime(formatRemaining(SESSION_DURATION_MS));
+  }, [logout]);
+
+  // 방문자 수 조회
+  const fetchVisitorCount = useCallback(async () => {
+    try {
+      const { data } = await supabase.rpc('get_visitor_count');
+      if (data !== null) setVisitorCount(Number(data));
+    } catch {
+      // 실패 시 무시
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchVisitorCount();
+    }
+  }, [isAuthenticated, fetchVisitorCount]);
+
+  // Supabase 데이터 페칭
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [stocksRes, pointsRes, segmentsRes, issuesRes, imagesRes, glossaryRes] = await Promise.all([
+          supabase.from('stocks').select('*'),
+          supabase.from('investment_points').select('*').order('sort_order'),
+          supabase.from('business_segments').select('*').order('sort_order'),
+          supabase.from('issues').select('*').order('date', { ascending: false }),
+          supabase.from('issue_images').select('*'),
+          supabase.from('glossary').select('*'),
+        ]);
+
+        // 용어사전
+        if (glossaryRes.data) {
+          const g: Record<string, string> = {};
+          glossaryRes.data.forEach((row: { term: string; definition: string }) => {
+            g[row.term] = row.definition;
+          });
+          setGlossary(g);
+        }
+
+        // 이미지를 issue_id로 그룹
+        const imagesByIssue: Record<string, any[]> = {};
+        if (imagesRes.data) {
+          imagesRes.data.forEach((img: any) => {
+            if (!imagesByIssue[img.issue_id]) imagesByIssue[img.issue_id] = [];
+            imagesByIssue[img.issue_id].push(img);
+          });
+        }
+
+        // 이슈를 stock_id로 그룹 (이미지 포함)
+        const issuesByStock: Record<string, any[]> = {};
+        if (issuesRes.data) {
+          issuesRes.data.forEach((issue: any) => {
+            const mapped = {
+              title: issue.title,
+              content: issue.content,
+              keywords: issue.keywords || [],
+              date: issue.date,
+              isCMS: issue.is_cms,
+              images: (imagesByIssue[issue.id] || []).map((img: any) => ({
+                url: img.url,
+                caption: img.caption,
+                source: img.source,
+                date: img.date,
+              })),
+            };
+            if (!issuesByStock[issue.stock_id]) issuesByStock[issue.stock_id] = [];
+            issuesByStock[issue.stock_id].push(mapped);
+          });
+        }
+
+        // 투자포인트를 stock_id로 그룹
+        const pointsByStock: Record<string, any[]> = {};
+        if (pointsRes.data) {
+          pointsRes.data.forEach((p: any) => {
+            if (!pointsByStock[p.stock_id]) pointsByStock[p.stock_id] = [];
+            pointsByStock[p.stock_id].push({ title: p.title, description: p.description });
+          });
+        }
+
+        // 사업부문을 stock_id로 그룹
+        const segmentsByStock: Record<string, any[]> = {};
+        if (segmentsRes.data) {
+          segmentsRes.data.forEach((s: any) => {
+            if (!segmentsByStock[s.stock_id]) segmentsByStock[s.stock_id] = [];
+            segmentsByStock[s.stock_id].push({ name: s.name, nameKr: s.name_kr, value: s.value, color: s.color });
+          });
+        }
+
+        // Stock 객체 조립
+        if (stocksRes.data) {
+          const assembled: Stock[] = stocksRes.data.map((row: any) => ({
+            id: row.id,
+            ticker: row.ticker,
+            name: row.name,
+            nameKr: row.name_kr,
+            sector: row.sector,
+            keywords: row.keywords || [],
+            investmentPoints: pointsByStock[row.id] || [],
+            marketCap: row.market_cap,
+            marketCapValue: row.market_cap_value,
+            price: row.price,
+            change: row.change,
+            returnRate: row.return_rate,
+            per: row.per,
+            pbr: row.pbr,
+            psr: row.psr,
+            description: row.description,
+            rating: row.rating,
+            views: row.views,
+            issues: issuesByStock[row.id] || [],
+            businessSegments: segmentsByStock[row.id] || [],
+          }));
+          setStocks(assembled);
+        }
+      } catch (err) {
+        console.error('데이터 로딩 실패:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [isAuthenticated]);
+
+  // 인증 성공 핸들러
+  const handleAuthenticated = async () => {
+    setIsAuthenticated(true);
+    try {
+      await supabase.rpc('record_visit');
+    } catch {
+      // 실패 시 무시
+    }
+    fetchVisitorCount();
+  };
 
   const getSimplifiedSector = (sector: string) => {
     if (sector.includes('반도체')) return '반도체';
@@ -29,7 +239,7 @@ const App: React.FC = () => {
   };
 
   const sortedStocks = useMemo(() => {
-    return [...CHINA_STOCKS].sort((a, b) => {
+    return [...stocks].sort((a, b) => {
       if (sortKey === 'sector') {
         const sectorA = getSimplifiedSector(a.sector);
         const sectorB = getSimplifiedSector(b.sector);
@@ -48,12 +258,13 @@ const App: React.FC = () => {
       if (valA > valB) return sortDirection === 'ASC' ? 1 : -1;
       return 0;
     });
-  }, [sortKey, sortDirection]);
+  }, [stocks, sortKey, sortDirection]);
 
   const averageReturn = useMemo(() => {
-    const sum = CHINA_STOCKS.reduce((acc, stock) => acc + (stock.returnRate || 0), 0);
-    return sum / CHINA_STOCKS.length;
-  }, []);
+    if (stocks.length === 0) return 0;
+    const sum = stocks.reduce((acc, stock) => acc + (stock.returnRate || 0), 0);
+    return sum / stocks.length;
+  }, [stocks]);
 
   const handleStockSelect = (stock: Stock) => {
     setSelectedStock(stock);
@@ -77,27 +288,46 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
+  // 미인증 → 인증코드 입력 화면
+  if (!isAuthenticated) {
+    return <AccessGate onAuthenticated={handleAuthenticated} />;
+  }
+
   return (
     <div className={`min-h-screen transition-colors duration-300 flex flex-col ${isDarkMode ? 'bg-[#0a192f] text-slate-100' : 'bg-white text-gray-900'}`}>
-      <Header onHomeClick={handleBackToDashboard} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      <Header
+        onHomeClick={handleBackToDashboard}
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        visitorCount={visitorCount}
+        remainingTime={remainingTime}
+        onExtendSession={handleExtendSession}
+      />
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
-        {viewMode === 'DASHBOARD' ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className={`text-sm font-bold ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>데이터를 불러오는 중...</span>
+            </div>
+          </div>
+        ) : viewMode === 'DASHBOARD' ? (
           <div className="animate-in fade-in duration-700">
             <nav className={`flex gap-10 mb-8 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-100'}`}>
-              <button 
-                onClick={() => { setActiveTab('PORTFOLIO'); setIsPortfolioExpanded(false); }} 
+              <button
+                onClick={() => { setActiveTab('PORTFOLIO'); setIsPortfolioExpanded(false); }}
                 className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'PORTFOLIO' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
                 PORTFOLIO {activeTab === 'PORTFOLIO' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
               </button>
-              <button 
-                onClick={() => setActiveTab('ISSUES')} 
+              <button
+                onClick={() => setActiveTab('ISSUES')}
                 className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'ISSUES' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
                 MARKET INSIGHTS {activeTab === 'ISSUES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
               </button>
-              <button 
-                onClick={() => setActiveTab('RESOURCES')} 
+              <button
+                onClick={() => setActiveTab('RESOURCES')}
                 className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'RESOURCES' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
                 RESOURCES {activeTab === 'RESOURCES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
@@ -105,29 +335,29 @@ const App: React.FC = () => {
             </nav>
             {activeTab === 'PORTFOLIO' ? (
               <div className="flex flex-col">
-                <SummaryCard 
-                  averageReturn={averageReturn} 
-                  isDarkMode={isDarkMode} 
+                <SummaryCard
+                  averageReturn={averageReturn}
+                  isDarkMode={isDarkMode}
                   isExpanded={isPortfolioExpanded}
                   onToggle={() => setIsPortfolioExpanded(!isPortfolioExpanded)}
                 />
                 <div className={`transition-all duration-700 ease-in-out origin-top ${
-                  isPortfolioExpanded 
-                    ? 'opacity-100 scale-100 translate-y-0 visible' 
+                  isPortfolioExpanded
+                    ? 'opacity-100 scale-100 translate-y-0 visible'
                     : 'opacity-0 scale-95 -translate-y-10 invisible h-0 overflow-hidden'
                 }`}>
-                  <StockList 
-                    stocks={sortedStocks} 
-                    onStockSelect={handleStockSelect} 
-                    isDarkMode={isDarkMode} 
-                    sortKey={sortKey} 
-                    sortDirection={sortDirection} 
-                    onSort={handleSort} 
+                  <StockList
+                    stocks={sortedStocks}
+                    onStockSelect={handleStockSelect}
+                    isDarkMode={isDarkMode}
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
                   />
                 </div>
               </div>
             ) : activeTab === 'ISSUES' ? (
-              <IssuesFeed stocks={CHINA_STOCKS} onStockClick={handleStockSelect} isDarkMode={isDarkMode} />
+              <IssuesFeed stocks={stocks} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
             ) : (
               <ResourcesView isDarkMode={isDarkMode} />
             )}

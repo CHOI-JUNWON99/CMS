@@ -1,6 +1,5 @@
-
 import React from 'react';
-
+// 포트폴리오 요약 카드 컴포넌트 화면 첫 화면에 보이는 카드
 interface SummaryCardProps {
   averageReturn: number;
   isDarkMode: boolean;
@@ -61,7 +60,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
         {/* Center Spacer */}
         <div className={`hidden md:block transition-all duration-[800ms] ease-in-out ${isExpanded ? 'flex-grow' : 'w-0'}`} />
 
-        {/* Right Side: Returns - Navy point */}
+        {/* Right Side: Returns - Red for Positive, Blue for Negative */}
         <div className={`flex flex-col transition-all duration-[800ms] transform ease-in-out ${
           isExpanded ? 'md:items-end scale-90' : 'items-center text-center scale-100'
         }`}>
@@ -73,7 +72,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
           <div className={`font-black flex items-center leading-none transition-all duration-[800ms] ${
             isExpanded ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'
           } ${
-            isPositive ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-cyan-400' : 'text-cyan-600')
+            isPositive
+              ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
+              : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
           }`}>
             <span className={`mr-0.5 font-bold ${isExpanded ? 'text-sm' : 'text-xl'}`}>{isPositive ? '+' : ''}</span>
             {averageReturn.toFixed(2)}

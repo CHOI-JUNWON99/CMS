@@ -24,3 +24,8 @@ npm-debug.log*
 
 # Cache
 .cache/
+
+# Docs
+ERD.docs
+seed.sql
+table.sql

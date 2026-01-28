@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Stock, SortKey, SortDirection } from '../types';
-
+// 주식 목록 컴포넌트
 interface StockListProps {
   stocks: Stock[];
   onStockSelect: (stock: Stock) => void;
@@ -11,15 +10,15 @@ interface StockListProps {
   onSort: (key: SortKey) => void;
 }
 
-const StockList: React.FC<StockListProps> = ({ 
-  stocks, 
-  onStockSelect, 
-  isDarkMode, 
-  sortKey, 
-  sortDirection, 
-  onSort 
+const StockList: React.FC<StockListProps> = ({
+  stocks,
+  onStockSelect,
+  isDarkMode,
+  sortKey,
+  sortDirection,
+  onSort
 }) => {
-  
+
   const getSimplifiedSector = (sector: string) => {
     if (sector.includes('반도체')) return '반도체';
     if (sector.includes('자동차') || sector.includes('트럭')) return '자동차';
@@ -30,34 +29,27 @@ const StockList: React.FC<StockListProps> = ({
     return sector;
   };
 
-  const formatMarketCap = (capStr: string) => {
+  const formatMarketCapShort = (capStr: string) => {
     const parts = capStr.split(' ');
-    if (parts.length < 2) return <span className={isDarkMode ? 'text-slate-100' : 'text-gray-900'}>{capStr}</span>;
+    if (parts.length < 2) return capStr;
     const joPart = parts[0].replace('조', '');
-    const okPart = parts[1].replace('억원', '');
-    const textColor = isDarkMode ? 'text-slate-100 font-black' : 'text-gray-900 font-black';
-    return (
-      <span className={`inline-flex items-baseline gap-1 ${textColor} text-[12px] md:text-[13px]`}>
-        <span className="tracking-tighter">{joPart}</span>
-        <span className="text-[10px] md:text-[11px] font-bold ml-0.5">조</span>
-        <span className="tracking-tighter ml-2">{okPart}</span>
-        <span className="text-[10px] md:text-[11px] font-bold ml-0.5">억</span>
-      </span>
-    );
+    const okPart = parts[1].replace('억원', '').replace(',', '');
+    const okFirstDigit = okPart.charAt(0) || '0';
+    return `${joPart}.${okFirstDigit}조`;
   };
 
   const SortIndicator = ({ active }: { active: boolean }) => (
     <div className="ml-1.5 flex flex-col items-center justify-center opacity-100 shrink-0">
-      <svg className={`w-2.5 h-2.5 mb-[-1.5px] transition-colors ${active && sortDirection === 'ASC' ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-600' : 'text-gray-400')}`} fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" /></svg>
-      <svg className={`w-2.5 h-2.5 mt-[-1.5px] transition-colors ${active && sortDirection === 'DESC' ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-600' : 'text-gray-400')}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 01-1.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+      <svg className={`w-2 h-2 mb-[-1px] transition-colors ${active && sortDirection === 'ASC' ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`} fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" /></svg>
+      <svg className={`w-2 h-2 mt-[-1px] transition-colors ${active && sortDirection === 'DESC' ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 01-1.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
     </div>
   );
 
   const HeaderButton = ({ label, targetKey, className }: { label: string, targetKey: SortKey, className: string }) => {
     const active = sortKey === targetKey;
     return (
-      <button onClick={() => onSort(targetKey)} className={`${className} flex items-center hover:opacity-70 transition-opacity group py-2 outline-none`}>
-        <span className={`transition-colors font-black whitespace-nowrap text-[12px] tracking-widest ${active ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-400' : 'text-gray-500')}`}>{label}</span>
+      <button onClick={() => onSort(targetKey)} className={`${className} flex items-center hover:opacity-70 transition-opacity group py-1 outline-none`}>
+        <span className={`transition-colors font-bold whitespace-nowrap text-[11px] tracking-widest ${active ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-500' : 'text-gray-500')}`}>{label}</span>
         <SortIndicator active={active} />
       </button>
     );
@@ -66,17 +58,18 @@ const StockList: React.FC<StockListProps> = ({
   let lastSector = "";
 
   return (
-    <div className="space-y-4 md:space-y-3">
-      <div className={`hidden md:flex px-10 py-4 items-center text-[12px] uppercase tracking-widest border-b-2 ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-        <div className="w-[22%]"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
-        <div className="w-[18%]"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
-        <div className="flex-1 px-4"><span className={`font-black transition-colors ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
-        <div className="w-[20%] flex justify-end pr-2"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-end" /></div>
-        <div className="w-[12%] flex justify-end"><HeaderButton label="DAILY" targetKey="change" className="justify-end" /></div>
-        <div className="w-[5%]"></div>
+    <div className="space-y-4">
+      {/* Header - 너비: 16% / 8% / flex-1 / 10% / 10% / 4% */}
+      <div className={`hidden lg:flex px-14 py-2 items-center text-[11px] uppercase tracking-widest`}>
+        <div className="w-[18%] shrink-0"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
+        <div className="w-[8%] shrink-0"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
+        <div className="flex-1 px-4"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
+        <div className="w-[10%] shrink-0 flex justify-end"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-end" /></div>
+        <div className="w-[10%] shrink-0 flex justify-end"><HeaderButton label="RETURN" targetKey="change" className="justify-end" /></div>
+        <div className="w-[4%] shrink-0"></div>
       </div>
 
-      <div className="flex flex-col gap-4 mt-4">
+      <div className="flex flex-col gap-4 mt-1">
         {stocks.map((stock) => {
           const simplifiedSector = getSimplifiedSector(stock.sector);
           const showDivider = sortKey === 'sector' && simplifiedSector !== lastSector;
@@ -85,57 +78,79 @@ const StockList: React.FC<StockListProps> = ({
           return (
             <React.Fragment key={stock.id}>
               {showDivider && (
-                <div className="mt-12 mb-6">
-                  <div className="flex items-center gap-6 px-4">
-                    <span className={`text-[13px] font-black uppercase tracking-[0.3em] whitespace-nowrap px-4 py-1.5 rounded-full border-2 ${isDarkMode ? 'bg-slate-800 text-slate-100 border-slate-600' : 'bg-gray-100 text-gray-700 border-gray-300 shadow-sm'}`}>
+                <div className="mt-8 mb-2">
+                  <div className="flex items-center gap-4 px-6">
+                    <span className={`text-[11px] font-bold uppercase tracking-[0.2em] whitespace-nowrap px-3 py-1 rounded-full ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-500'}`}>
                       {simplifiedSector}
                     </span>
-                    <div className={`flex-1 h-[2px] ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`flex-1 h-[1px] ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`} />
                   </div>
                 </div>
               )}
-              <div 
+              <div
                 onClick={() => onStockSelect(stock)}
-                className={`group relative flex flex-col md:flex-row md:items-center px-6 py-6 md:px-10 md:py-6 rounded-3xl border-2 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 ${
-                  isDarkMode ? 'bg-[#112240] border-slate-600 hover:border-primary-accent hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]' : 'bg-white border-gray-300 hover:border-primary hover:shadow-2xl'
+                className={`group relative flex flex-col lg:flex-row lg:items-center px-10 py-8 lg:px-14 lg:py-8 rounded-[2.5rem] transition-all duration-500 cursor-pointer transform hover:-translate-y-1 ${
+                  isDarkMode
+                    ? 'bg-[#112240] border border-slate-600 hover:border-primary-light shadow-xl'
+                    : 'bg-white border border-gray-300 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)] hover:border-primary/40'
                 }`}
               >
-                {/* Side Indicator - Navy */}
-                <div className="absolute left-0 top-1/4 bottom-1/4 w-1.5 bg-primary rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-300" />
-                
-                <div className="flex justify-between items-start md:w-[22%] md:block">
+                {/* NAME 영역 - 16% */}
+                <div className="flex justify-between items-start lg:w-[18%] lg:shrink-0 lg:block">
                   <div className="flex flex-col">
-                    <span className={`text-[10px] md:text-[11px] font-mono font-black tracking-widest uppercase mb-1 ${isDarkMode ? 'text-primary-accent' : 'text-primary'}`}>{stock.ticker}</span>
-                    <span className={`font-black text-xl md:text-[18px] leading-tight transition-colors ${isDarkMode ? 'text-white group-hover:text-primary-accent' : 'text-gray-900 group-hover:text-primary'}`}>{stock.name}</span>
-                    <span className={`text-sm md:text-xs font-bold mt-1 ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>{stock.nameKr}</span>
+                    <span className={`font-black text-2xl lg:text-[22px] leading-tight mb-1 transition-colors ${isDarkMode ? 'text-white' : 'text-gray-900 group-hover:text-primary'}`}>{stock.nameKr}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[12px] lg:text-[13px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</span>
+                      <span className={`text-[9px] lg:text-[10px] font-mono font-bold tracking-tight px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-slate-800 text-primary-accent' : 'bg-gray-100 text-primary/60'}`}>{stock.ticker}</span>
+                    </div>
                   </div>
-                  <div className="md:hidden flex flex-col items-end">
-                    <div className={`text-2xl font-black ${stock.change >= 0 ? 'text-primary' : 'text-cyan-600'}`}>{stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%</div>
-                    <div className="mt-1">{formatMarketCap(stock.marketCap)}</div>
+                  {/* 모바일 수익률 */}
+                  <div className="lg:hidden flex flex-col items-end">
+                    <div className={`text-2xl font-black ${stock.change >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>{stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%</div>
+                    <div className={`text-[15px] font-bold mt-1 ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
+                      {formatMarketCapShort(stock.marketCap)}
+                    </div>
                   </div>
                 </div>
 
-                <div className="hidden md:flex md:w-[18%] shrink-0">
-                  <span className={`inline-block text-[11px] font-black px-3 py-1 rounded-lg border-2 ${isDarkMode ? 'bg-slate-800 text-blue-200 border-slate-600' : 'bg-blue-50 text-primary border-blue-200 shadow-sm'}`}>
+                {/* SECTOR 영역 - 8% */}
+                <div className="hidden lg:flex lg:w-[8%] lg:shrink-0 justify-start">
+                  <span className={`inline-block text-[11px] font-black px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${isDarkMode ? 'bg-slate-800 text-blue-200 border-slate-600' : 'bg-white text-gray-700 border-gray-200 shadow-sm group-hover:border-primary/30 group-hover:text-primary'}`}>
                     {stock.sector}
                   </span>
                 </div>
 
-                <div className="mt-4 md:mt-0 flex flex-col md:flex-row md:flex-1 md:items-center">
-                  <div className="flex-1 md:px-6 flex flex-wrap gap-x-3 gap-y-2">
-                    {stock.investmentPoints?.map((kw, idx) => (
-                      <span key={idx} className={`text-[12px] md:text-[13px] font-black transition-all group-hover:translate-x-0.5 ${isDarkMode ? 'text-blue-300' : 'text-primary'}`}>#{kw}</span>
+                {/* INVESTMENT POINTS 영역 - flex-1 */}
+                <div className="mt-6 lg:mt-0 flex-1 lg:px-4">
+                  <div className="flex flex-col gap-1.5">
+                    {stock.investmentPoints?.slice(0, 3).map((point, idx) => (
+                      <div key={idx} className="flex items-start">
+                        <span className={`text-[13px] font-bold tracking-tight transition-all ${isDarkMode ? 'text-slate-300' : 'text-gray-800'}`}>
+                          # {point.title}
+                        </span>
+                      </div>
                     ))}
-                  </div>
-                  <div className="hidden md:flex w-[20%] justify-end pr-2">{formatMarketCap(stock.marketCap)}</div>
-                  <div className={`hidden md:block w-[12%] text-right font-black text-[18px] md:text-[20px] ${stock.change >= 0 ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-cyan-400' : 'text-cyan-600')}`}>
-                    {stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%
                   </div>
                 </div>
 
-                <div className="hidden md:block w-[5%] text-right">
-                  <span className={`transition-all duration-300 inline-block transform group-hover:translate-x-2 ${isDarkMode ? 'text-slate-500 group-hover:text-primary-accent' : 'text-gray-300 group-hover:text-primary'}`}>
-                    <svg className="w-7 h-7 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                {/* MARKET CAP 영역 - 10% */}
+                <div className={`hidden lg:flex lg:w-[10%] lg:shrink-0 justify-end text-[17px] font-black whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {formatMarketCapShort(stock.marketCap)}
+                </div>
+
+                {/* RETURN 영역 - 10% */}
+                <div className={`hidden lg:flex lg:w-[10%] lg:shrink-0 justify-end font-black text-[17px] ${
+                  stock.change >= 0
+                    ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
+                    : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
+                }`}>
+                  {stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%
+                </div>
+
+                {/* 화살표 - 4% */}
+                <div className="hidden lg:block lg:w-[4%] lg:shrink-0 text-right">
+                  <span className={`transition-all duration-300 inline-block transform group-hover:translate-x-1 ${isDarkMode ? 'text-slate-500 group-hover:text-primary-accent' : 'text-gray-300 group-hover:text-primary'}`}>
+                    <svg className="w-6 h-6 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
                   </span>
                 </div>
               </div>
