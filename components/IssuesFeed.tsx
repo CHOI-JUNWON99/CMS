@@ -194,14 +194,8 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
                 {item.images && item.images.length > 0 && (
                   <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {item.images.map((img, i) => (
-                      <div key={i} className="flex flex-col gap-2">
-                        <div className={`aspect-video rounded-2xl overflow-hidden border ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-                          <img src={img.url} alt={img.caption} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex justify-between items-center px-2">
-                          <span className="text-[11px] font-black text-primary truncate max-w-[60%]">{img.caption}</span>
-                          <span className={`text-[10px] font-bold ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>[출처: {img.source}] {img.date}</span>
-                        </div>
+                      <div key={i} className={`aspect-video rounded-2xl overflow-hidden border ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                        <img src={img.url} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>

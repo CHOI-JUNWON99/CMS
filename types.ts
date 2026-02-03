@@ -38,7 +38,7 @@ export interface Stock {
   marketCapValue: number;
   price: number;
   change: number;
-  returnRate: number;
+  returnRate?: number;
   description: string;
   cmsCommentTitle?: string;
   cmsCommentKeywords?: string[];

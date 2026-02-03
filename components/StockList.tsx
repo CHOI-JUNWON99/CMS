@@ -64,8 +64,8 @@ const StockList: React.FC<StockListProps> = ({
         <div className="w-[18%] shrink-0"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
         <div className="w-[8%] shrink-0"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
         <div className="flex-1 px-4"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
-        <div className="w-[10%] shrink-0 flex justify-end"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-end" /></div>
-        <div className="w-[10%] shrink-0 flex justify-end"><HeaderButton label="RETURN" targetKey="change" className="justify-end" /></div>
+        <div className="w-[13%] shrink-0 flex justify-start"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-start" /></div>
+        <div className="w-[10%] shrink-0 flex justify-start"><HeaderButton label="RETURN" targetKey="change" className="justify-start" /></div>
         <div className="w-[4%] shrink-0"></div>
       </div>
 
@@ -134,12 +134,12 @@ const StockList: React.FC<StockListProps> = ({
                 </div>
 
                 {/* MARKET CAP 영역 - 10% */}
-                <div className={`hidden lg:flex lg:w-[10%] lg:shrink-0 justify-end text-[17px] font-black whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className={`hidden lg:flex lg:w-[13%] lg:shrink-0 justify-start text-[17px] font-black whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {formatMarketCapShort(stock.marketCap)}
                 </div>
 
                 {/* RETURN 영역 - 10% */}
-                <div className={`hidden lg:flex lg:w-[10%] lg:shrink-0 justify-end font-black text-[17px] ${
+                <div className={`hidden lg:flex lg:w-[10%] lg:shrink-0 justify-start font-black text-[17px] ${
                   stock.change >= 0
                     ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
                     : (isDarkMode ? 'text-blue-400' : 'text-blue-600')

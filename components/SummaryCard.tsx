@@ -5,9 +5,10 @@ interface SummaryCardProps {
   isDarkMode: boolean;
   isExpanded: boolean;
   onToggle: () => void;
+  portfolioName: string;
 }
 
-const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, isExpanded, onToggle }) => {
+const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, isExpanded, onToggle, portfolioName }) => {
   const isPositive = averageReturn >= 0;
 
   return (
@@ -48,7 +49,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
           <p className={`font-black tracking-tighter transition-all duration-[800ms] ${
             isExpanded ? 'text-lg md:text-xl' : 'text-xl md:text-3xl'
           } ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            CMS X 쿼터백 차이나 미래성장랩
+            {portfolioName || '포트폴리오 미설정'}
           </p>
           <p className={`font-bold transition-all duration-[800ms] opacity-60 ${
             isExpanded ? 'text-[9px]' : 'text-[11px] mt-0.5'

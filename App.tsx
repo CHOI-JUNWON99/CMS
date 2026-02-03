@@ -9,6 +9,12 @@ import AccessGate from '@/components/AccessGate';
 import { supabase } from '@/lib/supabase';
 import { Stock, ViewMode, MainTab, SortKey, SortDirection } from '@/types';
 
+interface PortfolioGroup {
+  id: string;
+  name: string;
+  stocks: Stock[];
+}
+
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1시간
 
 function clearSession() {
@@ -41,11 +47,12 @@ const App: React.FC = () => {
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('ASC');
 
-  const [isPortfolioExpanded, setIsPortfolioExpanded] = useState<boolean>(false);
+  const [expandedPortfolios, setExpandedPortfolios] = useState<Set<string>>(new Set());
   const [visitorCount, setVisitorCount] = useState<number>(0);
   const [remainingTime, setRemainingTime] = useState<string>('60:00');
 
-  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [portfolioGroups, setPortfolioGroups] = useState<PortfolioGroup[]>([]);
+  const [allStocks, setAllStocks] = useState<Stock[]>([]);
   const [glossary, setGlossary] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -114,12 +121,36 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [stocksRes, pointsRes, segmentsRes, issuesRes, imagesRes, glossaryRes] = await Promise.all([
+        // 활성화된 포트폴리오 전체 조회
+        const { data: activePortfolios } = await supabase
+          .from('portfolios')
+          .select('id, name')
+          .eq('is_active', true);
+
+        // 포트폴리오별 종목 ID 매핑
+        const portfolioStockMap: Record<string, string[]> = {};
+        let allPortfolioStockIds: string[] = [];
+        if (activePortfolios && activePortfolios.length > 0) {
+          const portfolioIds = activePortfolios.map(p => p.id);
+          const { data: portfolioStocks } = await supabase
+            .from('portfolio_stocks')
+            .select('portfolio_id, stock_id')
+            .in('portfolio_id', portfolioIds);
+
+          if (portfolioStocks) {
+            portfolioStocks.forEach((ps: any) => {
+              if (!portfolioStockMap[ps.portfolio_id]) portfolioStockMap[ps.portfolio_id] = [];
+              portfolioStockMap[ps.portfolio_id].push(ps.stock_id);
+            });
+            allPortfolioStockIds = [...new Set(portfolioStocks.map((ps: any) => ps.stock_id))];
+          }
+        }
+
+        const [stocksRes, pointsRes, segmentsRes, issuesRes, glossaryRes] = await Promise.all([
           supabase.from('stocks').select('*'),
           supabase.from('investment_points').select('*').order('sort_order'),
           supabase.from('business_segments').select('*').order('sort_order'),
           supabase.from('issues').select('*').order('date', { ascending: false }),
-          supabase.from('issue_images').select('*'),
           supabase.from('glossary').select('*'),
         ]);
 
@@ -132,31 +163,20 @@ const App: React.FC = () => {
           setGlossary(g);
         }
 
-        // 이미지를 issue_id로 그룹
-        const imagesByIssue: Record<string, any[]> = {};
-        if (imagesRes.data) {
-          imagesRes.data.forEach((img: any) => {
-            if (!imagesByIssue[img.issue_id]) imagesByIssue[img.issue_id] = [];
-            imagesByIssue[img.issue_id].push(img);
-          });
-        }
-
-        // 이슈를 stock_id로 그룹 (이미지 포함)
+        // 이슈를 stock_id로 그룹 (이미지 URL은 DB에서 직접 가져옴)
         const issuesByStock: Record<string, any[]> = {};
         if (issuesRes.data) {
           issuesRes.data.forEach((issue: any) => {
+            // images 컬럼: string[] 형태의 URL 배열
+            const imageUrls = issue.images || [];
             const mapped = {
+              id: issue.id,
               title: issue.title,
               content: issue.content,
               keywords: issue.keywords || [],
               date: issue.date,
               isCMS: issue.is_cms,
-              images: (imagesByIssue[issue.id] || []).map((img: any) => ({
-                url: img.url,
-                caption: img.caption,
-                source: img.source,
-                date: img.date,
-              })),
+              images: imageUrls.map((url: string) => ({ url })),
             };
             if (!issuesByStock[issue.stock_id]) issuesByStock[issue.stock_id] = [];
             issuesByStock[issue.stock_id].push(mapped);
@@ -183,7 +203,7 @@ const App: React.FC = () => {
 
         // Stock 객체 조립
         if (stocksRes.data) {
-          const assembled: Stock[] = stocksRes.data.map((row: any) => ({
+          const mapRow = (row: any): Stock => ({
             id: row.id,
             ticker: row.ticker,
             name: row.name,
@@ -195,7 +215,6 @@ const App: React.FC = () => {
             marketCapValue: row.market_cap_value,
             price: row.price,
             change: row.change,
-            returnRate: row.return_rate,
             per: row.per,
             pbr: row.pbr,
             psr: row.psr,
@@ -204,8 +223,22 @@ const App: React.FC = () => {
             views: row.views,
             issues: issuesByStock[row.id] || [],
             businessSegments: segmentsByStock[row.id] || [],
-          }));
-          setStocks(assembled);
+          });
+
+          const all = stocksRes.data.map(mapRow);
+          setAllStocks(all);
+
+          // 포트폴리오별 그룹 생성
+          if (activePortfolios && activePortfolios.length > 0) {
+            const groups: PortfolioGroup[] = activePortfolios.map(p => ({
+              id: p.id,
+              name: p.name,
+              stocks: all.filter(s => (portfolioStockMap[p.id] || []).includes(s.id)),
+            }));
+            setPortfolioGroups(groups);
+          } else {
+            setPortfolioGroups([]);
+          }
         }
       } catch (err) {
         console.error('데이터 로딩 실패:', err);
@@ -238,8 +271,8 @@ const App: React.FC = () => {
     return sector;
   };
 
-  const sortedStocks = useMemo(() => {
-    return [...stocks].sort((a, b) => {
+  const sortStocks = useCallback((list: Stock[]) => {
+    return [...list].sort((a, b) => {
       if (sortKey === 'sector') {
         const sectorA = getSimplifiedSector(a.sector);
         const sectorB = getSimplifiedSector(b.sector);
@@ -258,13 +291,13 @@ const App: React.FC = () => {
       if (valA > valB) return sortDirection === 'ASC' ? 1 : -1;
       return 0;
     });
-  }, [stocks, sortKey, sortDirection]);
+  }, [sortKey, sortDirection]);
 
-  const averageReturn = useMemo(() => {
-    if (stocks.length === 0) return 0;
-    const sum = stocks.reduce((acc, stock) => acc + (stock.returnRate || 0), 0);
-    return sum / stocks.length;
-  }, [stocks]);
+  const getAverageReturn = (list: Stock[]) => {
+    if (list.length === 0) return 0;
+    const sum = list.reduce((acc, stock) => acc + (stock.change || 0), 0);
+    return sum / list.length;
+  };
 
   const handleStockSelect = (stock: Stock) => {
     setSelectedStock(stock);
@@ -315,7 +348,7 @@ const App: React.FC = () => {
           <div className="animate-in fade-in duration-700">
             <nav className={`flex gap-10 mb-8 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-100'}`}>
               <button
-                onClick={() => { setActiveTab('PORTFOLIO'); setIsPortfolioExpanded(false); }}
+                onClick={() => { setActiveTab('PORTFOLIO'); setExpandedPortfolios(new Set()); }}
                 className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'PORTFOLIO' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
                 PORTFOLIO {activeTab === 'PORTFOLIO' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
@@ -335,29 +368,42 @@ const App: React.FC = () => {
             </nav>
             {activeTab === 'PORTFOLIO' ? (
               <div className="flex flex-col">
-                <SummaryCard
-                  averageReturn={averageReturn}
-                  isDarkMode={isDarkMode}
-                  isExpanded={isPortfolioExpanded}
-                  onToggle={() => setIsPortfolioExpanded(!isPortfolioExpanded)}
-                />
-                <div className={`transition-all duration-700 ease-in-out origin-top ${
-                  isPortfolioExpanded
-                    ? 'opacity-100 scale-100 translate-y-0 visible'
-                    : 'opacity-0 scale-95 -translate-y-10 invisible h-0 overflow-hidden'
-                }`}>
-                  <StockList
-                    stocks={sortedStocks}
-                    onStockSelect={handleStockSelect}
-                    isDarkMode={isDarkMode}
-                    sortKey={sortKey}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-                </div>
+                {portfolioGroups.map(group => {
+                  const isExpanded = expandedPortfolios.has(group.id);
+                  return (
+                    <div key={group.id} className="mb-10">
+                      <SummaryCard
+                        averageReturn={getAverageReturn(group.stocks)}
+                        isDarkMode={isDarkMode}
+                        isExpanded={isExpanded}
+                        onToggle={() => setExpandedPortfolios(prev => {
+                          const next = new Set(prev);
+                          if (next.has(group.id)) next.delete(group.id);
+                          else next.add(group.id);
+                          return next;
+                        })}
+                        portfolioName={group.name}
+                      />
+                      <div className={`transition-all duration-700 ease-in-out origin-top ${
+                        isExpanded
+                          ? 'opacity-100 scale-100 translate-y-0 visible'
+                          : 'opacity-0 scale-95 -translate-y-10 invisible h-0 overflow-hidden'
+                      }`}>
+                        <StockList
+                          stocks={sortStocks(group.stocks)}
+                          onStockSelect={handleStockSelect}
+                          isDarkMode={isDarkMode}
+                          sortKey={sortKey}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : activeTab === 'ISSUES' ? (
-              <IssuesFeed stocks={stocks} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
+              <IssuesFeed stocks={allStocks} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
             ) : (
               <ResourcesView isDarkMode={isDarkMode} />
             )}
