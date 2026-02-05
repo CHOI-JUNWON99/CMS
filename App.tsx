@@ -197,7 +197,7 @@ const App: React.FC = () => {
         if (segmentsRes.data) {
           segmentsRes.data.forEach((s: any) => {
             if (!segmentsByStock[s.stock_id]) segmentsByStock[s.stock_id] = [];
-            segmentsByStock[s.stock_id].push({ name: s.name, nameKr: s.name_kr, value: s.value, color: s.color });
+            segmentsByStock[s.stock_id].push({ name: s.name, nameKr: s.name_kr, value: s.value });
           });
         }
 
@@ -212,17 +212,18 @@ const App: React.FC = () => {
             keywords: row.keywords || [],
             investmentPoints: pointsByStock[row.id] || [],
             marketCap: row.market_cap,
-            marketCapValue: row.market_cap_value,
-            price: row.price,
-            change: row.change,
+            marketCapValue: row.market_cap_value || 0,
+            price: 0,
+            change: 0,
+            returnRate: row.return_rate || 0,
             per: row.per,
             pbr: row.pbr,
             psr: row.psr,
             description: row.description,
-            rating: row.rating,
-            views: row.views,
             issues: issuesByStock[row.id] || [],
             businessSegments: segmentsByStock[row.id] || [],
+            aiSummary: row.ai_summary || '',
+            aiSummaryKeywords: row.ai_summary_keywords || [],
           });
 
           const all = stocksRes.data.map(mapRow);
@@ -295,7 +296,7 @@ const App: React.FC = () => {
 
   const getAverageReturn = (list: Stock[]) => {
     if (list.length === 0) return 0;
-    const sum = list.reduce((acc, stock) => acc + (stock.change || 0), 0);
+    const sum = list.reduce((acc, stock) => acc + (stock.returnRate || 0), 0);
     return sum / list.length;
   };
 
@@ -315,7 +316,7 @@ const App: React.FC = () => {
       setSortDirection(prev => prev === 'ASC' ? 'DESC' : 'ASC');
     } else {
       setSortKey(key);
-      setSortDirection(key === 'marketCapValue' || key === 'change' ? 'DESC' : 'ASC');
+      setSortDirection(key === 'marketCapValue' || key === 'returnRate' ? 'DESC' : 'ASC');
     }
   };
 

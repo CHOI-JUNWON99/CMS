@@ -31,9 +31,6 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
     sector: '',
     description: '',
     marketCap: '',
-    marketCapValue: 0,
-    price: 0,
-    change: 0,
     returnRate: 0,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,11 +43,6 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
     if (sector.includes('온라인') || sector.includes('서비스')) return '서비스';
     if (sector.includes('전기') || sector.includes('통신') || sector.includes('인터넷')) return 'IT';
     return sector;
-  };
-
-  const formatMarketCap = (value: number) => {
-    if (value >= 10000) return `${Math.floor(value / 10000).toLocaleString()}조`;
-    return `${value.toLocaleString()}억`;
   };
 
   const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirection }) => (
@@ -124,18 +116,14 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
         sector: newStock.sector,
         description: newStock.description,
         market_cap: newStock.marketCap,
-        market_cap_value: newStock.marketCapValue,
-        price: newStock.price,
-        change: newStock.change,
         return_rate: newStock.returnRate,
         keywords: [],
-        views: 0,
       });
 
       if (error) throw error;
 
       setShowAddModal(false);
-      setNewStock({ id: '', ticker: '', name: '', nameKr: '', sector: '', description: '', marketCap: '', marketCapValue: 0, price: 0, change: 0, returnRate: 0 });
+      setNewStock({ id: '', ticker: '', name: '', nameKr: '', sector: '', description: '', marketCap: '', returnRate: 0 });
       onRefresh();
     } catch (err) {
       console.error('종목 추가 실패:', err);
@@ -211,8 +199,8 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                 </button>
               </th>
               <th className="text-right px-4 py-3">
-                <button onClick={() => onSort('change')} className="flex items-center gap-1 text-[11px] font-black tracking-wider text-slate-400 hover:text-white ml-auto">
-                  수익률 <SortIcon active={sortKey === 'change'} direction={sortDirection} />
+                <button onClick={() => onSort('returnRate')} className="flex items-center gap-1 text-[11px] font-black tracking-wider text-slate-400 hover:text-white ml-auto">
+                  수익률 <SortIcon active={sortKey === 'returnRate'} direction={sortDirection} />
                 </button>
               </th>
               <th className="text-center px-4 py-3">
@@ -238,7 +226,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                   </span>
                 </td>
                 <td className="px-4 py-4 text-right">
-                  <span className="font-black text-slate-300">{formatMarketCap(stock.marketCapValue)}</span>
+                  <span className="font-black text-slate-300">{stock.marketCap || '-'}</span>
                 </td>
                 <td className="px-4 py-4 text-right">
                   <span className={`font-black ${stock.returnRate >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
@@ -336,46 +324,13 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">시가총액 (표시용)</label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">시가총액</label>
                   <input
                     type="text"
                     value={newStock.marketCap}
                     onChange={(e) => setNewStock({ ...newStock, marketCap: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
                     placeholder="43조 5,892억원"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">시가총액 (억원)</label>
-                  <input
-                    type="number"
-                    value={newStock.marketCapValue || ''}
-                    onChange={(e) => setNewStock({ ...newStock, marketCapValue: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
-                    placeholder="435892"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">현재가</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newStock.price || ''}
-                    onChange={(e) => setNewStock({ ...newStock, price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">등락률 (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newStock.change || ''}
-                    onChange={(e) => setNewStock({ ...newStock, change: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
                   />
                 </div>
                 <div>

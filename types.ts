@@ -18,7 +18,6 @@ export interface BusinessSegment {
   name: string;
   nameKr: string;
   value: number;
-  color?: string;
 }
 
 export interface InvestmentPoint {
@@ -40,16 +39,14 @@ export interface Stock {
   change: number;
   returnRate?: number;
   description: string;
-  cmsCommentTitle?: string;
-  cmsCommentKeywords?: string[];
   issues: StockIssue[];
   lastUpdate?: string;
-  rating?: 'BUY' | 'SELL' | 'HOLD' | 'NEUTRAL';
   businessSegments?: BusinessSegment[];
-  views?: number;
   per?: number;
   pbr?: number;
   psr?: number;
+  aiSummary?: string;
+  aiSummaryKeywords?: string[];
 }
 
 export interface Resource {
@@ -66,7 +63,7 @@ export interface Resource {
 export type ViewMode = 'DASHBOARD' | 'DETAIL';
 export type MainTab = 'PORTFOLIO' | 'ISSUES' | 'RESOURCES';
 
-export type SortKey = 'name' | 'sector' | 'keywords' | 'marketCapValue' | 'change' | 'views';
+export type SortKey = 'name' | 'sector' | 'keywords' | 'marketCapValue' | 'returnRate';
 export type SortDirection = 'ASC' | 'DESC';
 
 export interface FeedItem {

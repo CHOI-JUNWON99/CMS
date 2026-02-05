@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Stock } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, getAdminSupabase } from '../lib/supabase';
 
 interface AdminIssuesFeedProps {
   stocks: Stock[];
@@ -151,7 +151,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
     try {
       // 1. 이슈 먼저 생성 (RPC)
-      const { data: issueId, error: issueError } = await supabase.rpc('add_issue', {
+      const { data: issueId, error: issueError } = await getAdminSupabase().rpc('add_issue', {
         admin_code: adminCode,
         p_stock_id: newIssue.stockId,
         p_title: newIssue.title,
@@ -188,7 +188,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
         // issues 테이블의 images 컬럼 업데이트 (RPC)
         if (uploadedUrls.length > 0) {
-          const { error: updateError } = await supabase.rpc('update_issue_images', {
+          const { error: updateError } = await getAdminSupabase().rpc('update_issue_images', {
             admin_code: adminCode,
             p_issue_id: issueId,
             p_images: uploadedUrls,
@@ -220,7 +220,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
     const adminCode = localStorage.getItem('cms_admin_code') || '';
 
     try {
-      const { error } = await supabase.rpc('delete_issue', {
+      const { error } = await getAdminSupabase().rpc('delete_issue', {
         admin_code: adminCode,
         p_issue_id: issueId,
       });
@@ -357,7 +357,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
       }
 
       // 2. 이슈 업데이트 (RPC)
-      const { error: updateError } = await supabase.rpc('update_issue', {
+      const { error: updateError } = await getAdminSupabase().rpc('update_issue', {
         admin_code: adminCode,
         p_issue_id: editIssue.id,
         p_title: editIssue.title,

@@ -16,7 +16,7 @@ interface StockItem {
   nameKr: string;
   sector: string;
   marketCap: string;
-  change: number;
+  returnRate: number;
 }
 
 interface PortfolioStock {
@@ -83,7 +83,7 @@ const AdminPortfolioPage: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('stocks')
-          .select('id, ticker, name, name_kr, sector, market_cap, change')
+          .select('id, ticker, name, name_kr, sector, market_cap, return_rate')
           .order('name_kr');
 
         if (error) throw error;
@@ -96,7 +96,7 @@ const AdminPortfolioPage: React.FC = () => {
             nameKr: row.name_kr,
             sector: row.sector,
             marketCap: row.market_cap || '',
-            change: row.change || 0,
+            returnRate: row.return_rate || 0,
           })));
         }
       } catch (err) {
@@ -167,7 +167,7 @@ const AdminPortfolioPage: React.FC = () => {
   // 평균 수익률
   const averageReturn = useMemo(() => {
     if (includedStocks.length === 0) return 0;
-    const sum = includedStocks.reduce((acc, s) => acc + (s.change || 0), 0);
+    const sum = includedStocks.reduce((acc, s) => acc + (s.returnRate || 0), 0);
     return sum / includedStocks.length;
   }, [includedStocks]);
 
@@ -506,8 +506,8 @@ const AdminPortfolioPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-3 text-xs">
                         <span className="text-slate-500">{formatMarketCapShort(stock.marketCap)}</span>
-                        <span className={`font-bold ${stock.change >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
-                          {stock.change >= 0 ? '+' : ''}{stock.change.toFixed(2)}%
+                        <span className={`font-bold ${(stock.returnRate || 0) >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
+                          {(stock.returnRate || 0) >= 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
                         </span>
                       </div>
                     </div>
@@ -579,8 +579,8 @@ const AdminPortfolioPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-3 text-xs">
                         <span className="text-slate-600">{formatMarketCapShort(stock.marketCap)}</span>
-                        <span className={`font-bold ${stock.change >= 0 ? 'text-rose-400/60' : 'text-blue-400/60'}`}>
-                          {stock.change >= 0 ? '+' : ''}{stock.change.toFixed(2)}%
+                        <span className={`font-bold ${(stock.returnRate || 0) >= 0 ? 'text-rose-400/60' : 'text-blue-400/60'}`}>
+                          {(stock.returnRate || 0) >= 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
                         </span>
                       </div>
                     </div>

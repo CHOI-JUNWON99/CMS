@@ -65,7 +65,7 @@ const StockList: React.FC<StockListProps> = ({
         <div className="w-[8%] shrink-0"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
         <div className="flex-1 px-4"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
         <div className="w-[13%] shrink-0 flex justify-start"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-start" /></div>
-        <div className="w-[10%] shrink-0 flex justify-start"><HeaderButton label="RETURN" targetKey="change" className="justify-start" /></div>
+        <div className="w-[10%] shrink-0 flex justify-start"><HeaderButton label="RETURN" targetKey="returnRate" className="justify-start" /></div>
         <div className="w-[4%] shrink-0"></div>
       </div>
 
@@ -106,7 +106,7 @@ const StockList: React.FC<StockListProps> = ({
                   </div>
                   {/* 모바일 수익률 */}
                   <div className="lg:hidden flex flex-col items-end">
-                    <div className={`text-2xl font-black ${stock.change >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>{stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%</div>
+                    <div className={`text-2xl font-black ${(stock.returnRate || 0) >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>{(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%</div>
                     <div className={`text-[15px] font-bold mt-1 ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
                       {formatMarketCapShort(stock.marketCap)}
                     </div>
@@ -140,11 +140,11 @@ const StockList: React.FC<StockListProps> = ({
 
                 {/* RETURN 영역 - 10% */}
                 <div className={`hidden lg:flex lg:w-[10%] lg:shrink-0 justify-start font-black text-[17px] ${
-                  stock.change >= 0
+                  (stock.returnRate || 0) >= 0
                     ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
                     : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
                 }`}>
-                  {stock.change > 0 ? '+' : ''}{stock.change.toFixed(2)}%
+                  {(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
                 </div>
 
                 {/* 화살표 - 4% */}

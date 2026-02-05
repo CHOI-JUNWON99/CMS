@@ -51,7 +51,7 @@ const StockListView: React.FC = () => {
         if (segmentsRes.data) {
           segmentsRes.data.forEach((s: any) => {
             if (!segmentsByStock[s.stock_id]) segmentsByStock[s.stock_id] = [];
-            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, color: s.color, sort_order: s.sort_order });
+            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, sort_order: s.sort_order });
           });
         }
 
@@ -65,18 +65,18 @@ const StockListView: React.FC = () => {
             keywords: row.keywords || [],
             investmentPoints: pointsByStock[row.id] || [],
             marketCap: row.market_cap,
-            marketCapValue: row.market_cap_value,
-            price: row.price,
-            change: row.change,
-            returnRate: row.return_rate,
+            marketCapValue: row.market_cap_value || 0,
+            price: 0,
+            change: 0,
+            returnRate: row.return_rate || 0,
             per: row.per,
             pbr: row.pbr,
             psr: row.psr,
             description: row.description,
-            rating: row.rating,
-            views: row.views,
             issues: [], // 종목 리스트에서는 issues 불필요
             businessSegments: segmentsByStock[row.id] || [],
+            aiSummary: row.ai_summary || '',
+            aiSummaryKeywords: row.ai_summary_keywords || [],
           }));
           setStocks(assembled);
         }
@@ -121,7 +121,7 @@ const StockListView: React.FC = () => {
       setSortDirection(prev => prev === 'ASC' ? 'DESC' : 'ASC');
     } else {
       setSortKey(key);
-      setSortDirection(key === 'marketCapValue' || key === 'change' ? 'DESC' : 'ASC');
+      setSortDirection(key === 'marketCapValue' || key === 'returnRate' ? 'DESC' : 'ASC');
     }
   };
 
@@ -188,16 +188,14 @@ const StockDetailView: React.FC = () => {
               sort_order: p.sort_order,
             })) || [],
             marketCap: row.market_cap,
-            marketCapValue: row.market_cap_value,
-            price: row.price,
-            change: row.change,
-            returnRate: row.return_rate,
+            marketCapValue: row.market_cap_value || 0,
+            price: 0,
+            change: 0,
+            returnRate: row.return_rate || 0,
             per: row.per,
             pbr: row.pbr,
             psr: row.psr,
             description: row.description,
-            rating: row.rating,
-            views: row.views,
             issues: issuesRes.data?.map((issue: any) => ({
               id: issue.id,
               title: issue.title,
@@ -212,9 +210,10 @@ const StockDetailView: React.FC = () => {
               name: s.name,
               nameKr: s.name_kr,
               value: s.value,
-              color: s.color,
               sort_order: s.sort_order,
             })) || [],
+            aiSummary: row.ai_summary || '',
+            aiSummaryKeywords: row.ai_summary_keywords || [],
           };
           setStock(assembled);
         }
