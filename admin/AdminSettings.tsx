@@ -154,17 +154,17 @@ const AdminSettings: React.FC = () => {
       <div className="flex items-center gap-2">
         <button
           onClick={onToggle}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-slate-700 ${
             code.is_active
-              ? 'bg-orange-900/30 border border-orange-800 text-orange-400 hover:bg-orange-900/50'
-              : 'bg-emerald-900/30 border border-emerald-800 text-emerald-400 hover:bg-emerald-900/50'
+              ? 'bg-orange-900/30 text-orange-400 hover:bg-orange-900/50'
+              : 'bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50'
           }`}
         >
           {code.is_active ? '비활성화' : '활성화'}
         </button>
         <button
           onClick={onDelete}
-          className="px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all"
+          className="px-3 py-1.5 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all"
         >
           삭제
         </button>
@@ -193,7 +193,7 @@ const AdminSettings: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowUserAddModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/30 border border-emerald-800 text-emerald-400 text-xs font-black hover:bg-emerald-900/50 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/30 border border-slate-700 text-emerald-400 text-xs font-black hover:bg-emerald-900/50 transition-all"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -219,12 +219,9 @@ const AdminSettings: React.FC = () => {
               )}
             </div>
 
-            <div className="mt-4 p-3 rounded-lg bg-emerald-900/10 border border-emerald-900/30">
-              <p className="text-xs text-emerald-400/70">
-                사용자 인증코드로 로그인한 사용자는 1시간 동안 세션이 유지됩니다.
-                코드를 비활성화하면 해당 코드로 더 이상 로그인할 수 없습니다.
-              </p>
-            </div>
+            <p className="mt-4 text-xs text-slate-500">
+              사용자 인증코드로 로그인한 사용자는 1시간 동안 세션이 유지됩니다. 코드를 비활성화하면 해당 코드로 더 이상 로그인할 수 없습니다.
+            </p>
           </section>
 
           {/* 관리자 인증코드 섹션 */}
@@ -238,7 +235,7 @@ const AdminSettings: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowAdminAddModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -264,12 +261,9 @@ const AdminSettings: React.FC = () => {
               )}
             </div>
 
-            <div className="mt-4 p-3 rounded-lg bg-red-900/10 border border-red-900/30">
-              <p className="text-xs text-red-400/70">
-                관리자 인증코드로 /admin 페이지에 접속할 수 있습니다. 세션은 2시간 유지됩니다.
-                관리자 코드 관리에 주의하세요.
-              </p>
-            </div>
+            <p className="mt-4 text-xs text-slate-500">
+              관리자 인증코드로 /admin 페이지에 접속할 수 있습니다. 세션은 2시간 유지됩니다. 관리자 코드 관리에 주의하세요.
+            </p>
           </section>
 
           {/* 시스템 정보 */}

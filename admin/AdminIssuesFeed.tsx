@@ -387,7 +387,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
         <h2 className="text-lg font-black text-white">뉴스 관리 ({feedItems.length}건)</h2>
         <button
           onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -425,18 +425,8 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => openEditModal(item)}
-                      className="px-3 py-1 rounded-lg bg-blue-900/30 border border-blue-800 text-blue-400 text-xs font-bold hover:bg-blue-900/50 transition-all"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDeleteIssue(item.id)}
-                      className="px-3 py-1 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all"
-                    >
-                      삭제
-                    </button>
+                    <button onClick={() => openEditModal(item)} className="text-blue-400 hover:text-blue-300 text-xs">수정</button>
+                    <button onClick={() => handleDeleteIssue(item.id)} className="text-red-400 hover:text-red-300 text-xs">삭제</button>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

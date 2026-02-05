@@ -429,7 +429,7 @@ const AdminPortfolioPage: React.FC = () => {
                 {selectedPortfolio.isActive ? (
                   <button
                     onClick={() => handleDeactivate(selectedPortfolio.id)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-600 transition-all"
+                    className="px-3 py-1.5 rounded-lg bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-600 transition-all"
                   >
                     <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#ef4444', flexShrink: 0 }} />
                     활성화 중
@@ -437,7 +437,7 @@ const AdminPortfolioPage: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => handleSetActive(selectedPortfolio.id)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-600 transition-all"
+                    className="px-3 py-1.5 rounded-lg bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold flex items-center gap-2 hover:bg-slate-600 transition-all"
                   >
                     <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#000000', flexShrink: 0 }} />
                     비활성화 중
@@ -448,13 +448,13 @@ const AdminPortfolioPage: React.FC = () => {
                     setEditingPortfolio(selectedPortfolio);
                     setShowEditModal(true);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 transition-all"
+                  className="text-blue-400 hover:text-blue-300 text-xs"
                 >
                   수정
                 </button>
                 <button
                   onClick={() => handleDeletePortfolio(selectedPortfolio.id)}
-                  className="px-3 py-1.5 rounded-lg bg-red-900/30 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all"
+                  className="text-red-400 hover:text-red-300 text-xs"
                 >
                   삭제
                 </button>
@@ -495,7 +495,7 @@ const AdminPortfolioPage: React.FC = () => {
                 {includedStocks.map(stock => (
                   <div
                     key={stock.id}
-                    className="flex items-center justify-between gap-3 p-4 rounded-xl bg-[#112240] border border-green-500/20 hover:border-green-500/40 transition-all"
+                    className="flex items-center justify-between gap-3 p-4 rounded-xl bg-[#112240] border border-slate-800 hover:border-slate-700 transition-all"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">

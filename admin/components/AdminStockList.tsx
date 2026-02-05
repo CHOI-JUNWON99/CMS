@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Stock, SortKey, SortDirection } from '../../types';
 import { getAdminSupabase } from '../../lib/supabase';
 import * as XLSX from 'xlsx';
@@ -23,6 +23,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{ success: number; failed: number } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newStock, setNewStock] = useState({
     id: '',
     ticker: '',
@@ -34,6 +35,17 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
     returnRate: 0,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 검색 필터링
+  const filteredStocks = useMemo(() => {
+    if (!searchQuery.trim()) return stocks;
+    const query = searchQuery.toLowerCase();
+    return stocks.filter(s =>
+      s.nameKr.toLowerCase().includes(query) ||
+      s.ticker.toLowerCase().includes(query) ||
+      s.name.toLowerCase().includes(query)
+    );
+  }, [stocks, searchQuery]);
 
   const getSimplifiedSector = (sector: string) => {
     if (sector.includes('반도체')) return '반도체';
@@ -135,7 +147,9 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
     <div className="animate-in fade-in duration-500">
       {/* 액션 버튼들 */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-black text-white">종목 관리 ({stocks.length}개)</h2>
+        <h2 className="text-lg font-black text-white">
+          종목 관리 ({searchQuery ? `${filteredStocks.length}/${stocks.length}` : stocks.length}개)
+        </h2>
         <div className="flex items-center gap-3">
           {/* 엑셀 업로드 */}
           <input
@@ -148,7 +162,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-900/30 border border-emerald-800 text-emerald-400 text-xs font-black hover:bg-emerald-900/50 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-900/30 border border-slate-700 text-emerald-400 text-xs font-black hover:bg-emerald-900/50 transition-all disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -159,7 +173,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
           {/* 종목 추가 */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -178,74 +192,86 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
         </div>
       )}
 
-      {/* 테이블 */}
-      <div className="rounded-2xl border border-slate-800 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-slate-900/50 border-b border-slate-800">
-              <th className="text-left px-4 py-3">
-                <button onClick={() => onSort('name')} className="flex items-center gap-1 text-[11px] font-black tracking-wider text-slate-400 hover:text-white">
-                  종목명 <SortIcon active={sortKey === 'name'} direction={sortDirection} />
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button onClick={() => onSort('sector')} className="flex items-center gap-1 text-[11px] font-black tracking-wider text-slate-400 hover:text-white">
-                  섹터 <SortIcon active={sortKey === 'sector'} direction={sortDirection} />
-                </button>
-              </th>
-              <th className="text-right px-4 py-3">
-                <button onClick={() => onSort('marketCapValue')} className="flex items-center gap-1 text-[11px] font-black tracking-wider text-slate-400 hover:text-white ml-auto">
-                  시가총액 <SortIcon active={sortKey === 'marketCapValue'} direction={sortDirection} />
-                </button>
-              </th>
-              <th className="text-right px-4 py-3">
-                <button onClick={() => onSort('returnRate')} className="flex items-center gap-1 text-[11px] font-black tracking-wider text-slate-400 hover:text-white ml-auto">
-                  수익률 <SortIcon active={sortKey === 'returnRate'} direction={sortDirection} />
-                </button>
-              </th>
-              <th className="text-center px-4 py-3">
-                <span className="text-[11px] font-black tracking-wider text-slate-400">관리</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {stocks.map((stock) => (
-              <tr
-                key={stock.id}
-                className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
-              >
-                <td className="px-4 py-4">
-                  <div className="flex flex-col">
-                    <span className="font-black text-white">{stock.nameKr}</span>
-                    <span className="text-[11px] text-slate-500 font-mono">{stock.ticker}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-xs font-bold text-slate-400 px-2 py-1 rounded bg-slate-800">
+      {/* 검색 */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="종목명 또는 티커로 검색..."
+          className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-slate-600"
+        />
+      </div>
+
+      {/* 정렬 */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-xs font-bold text-slate-500">정렬</span>
+        <div className="flex gap-2">
+          {[
+            { key: 'name' as SortKey, label: '이름' },
+            { key: 'sector' as SortKey, label: '섹터' },
+            { key: 'marketCapValue' as SortKey, label: '시총' },
+            { key: 'returnRate' as SortKey, label: '수익률' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => onSort(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                sortKey === key
+                  ? 'bg-slate-700 text-white'
+                  : 'bg-slate-800/50 text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              {label}
+              {sortKey === key && (
+                <span className="ml-1">{sortDirection === 'ASC' ? '↑' : '↓'}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 종목 카드 그리드 */}
+      {filteredStocks.length === 0 ? (
+        <div className="text-center py-20 rounded-xl bg-slate-900/30 border border-slate-800">
+          <p className="text-slate-500 font-bold">
+            {searchQuery ? '검색 결과가 없습니다.' : '등록된 종목이 없습니다.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredStocks.map((stock) => (
+            <div
+              key={stock.id}
+              className="flex items-center justify-between gap-3 p-4 rounded-xl bg-[#112240] border border-slate-800 hover:border-slate-700 transition-all"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-white truncate">{stock.nameKr}</span>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 flex-shrink-0">
+                    {stock.ticker}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-slate-600 px-1.5 py-0.5 rounded bg-slate-800/50">
                     {getSimplifiedSector(stock.sector)}
                   </span>
-                </td>
-                <td className="px-4 py-4 text-right">
-                  <span className="font-black text-slate-300">{stock.marketCap || '-'}</span>
-                </td>
-                <td className="px-4 py-4 text-right">
-                  <span className={`font-black ${(stock.returnRate ?? 0) >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                  <span className="text-slate-500">{stock.marketCap || '-'}</span>
+                  <span className={`font-bold ${(stock.returnRate ?? 0) >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
                     {(stock.returnRate ?? 0) >= 0 ? '+' : ''}{(stock.returnRate ?? 0).toFixed(1)}%
                   </span>
-                </td>
-                <td className="px-4 py-4 text-center">
-                  <button
-                    onClick={() => onStockSelect(stock)}
-                    className="px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
-                  >
-                    수정
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </div>
+              <button
+                onClick={() => onStockSelect(stock)}
+                className="text-blue-400 hover:text-blue-300 text-xs flex-shrink-0"
+              >
+                수정
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 종목 추가 모달 */}
       {showAddModal && (

@@ -182,7 +182,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
         <h2 className="text-lg font-black text-white">자료실 관리 ({resources.length}개)</h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -224,15 +224,12 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
                     href={res.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold hover:text-white transition-all"
+                    className="text-blue-400 hover:text-blue-300 text-xs"
                   >
                     다운로드
                   </a>
                 )}
-                <button
-                  onClick={() => handleDeleteResource(res)}
-                  className="px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all"
-                >
+                <button onClick={() => handleDeleteResource(res)} className="text-red-400 hover:text-red-300 text-xs">
                   삭제
                 </button>
               </div>

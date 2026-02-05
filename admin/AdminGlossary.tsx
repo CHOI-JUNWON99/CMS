@@ -159,7 +159,7 @@ const AdminGlossary: React.FC<AdminGlossaryProps> = ({ onRefresh }) => {
   return (
     <div className="animate-in fade-in duration-500">
       {/* 주의사항 배너 */}
-      <div className="mb-6 p-4 rounded-xl bg-amber-900/20 border border-amber-700/50">
+      <div className="mb-6 p-4 rounded-xl bg-amber-900/20 border border-slate-700">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
             <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,7 +191,7 @@ const AdminGlossary: React.FC<AdminGlossaryProps> = ({ onRefresh }) => {
         <h2 className="text-lg font-black text-white">용어사전 관리 ({items.length}개)</h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -265,18 +265,8 @@ const AdminGlossary: React.FC<AdminGlossaryProps> = ({ onRefresh }) => {
                     <div className="text-sm text-slate-400 break-words">{item.definition}</div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => startEditing(item)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold hover:text-white hover:border-slate-600 transition-all"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTerm(item.term)}
-                      className="px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-all"
-                    >
-                      삭제
-                    </button>
+                    <button onClick={() => startEditing(item)} className="text-blue-400 hover:text-blue-300 text-xs">수정</button>
+                    <button onClick={() => handleDeleteTerm(item.term)} className="text-red-400 hover:text-red-300 text-xs">삭제</button>
                   </div>
                 </div>
               )}
