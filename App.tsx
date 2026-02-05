@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import SummaryCard from '@/components/SummaryCard';
 import StockList from '@/components/StockList';
@@ -129,7 +129,6 @@ const App: React.FC = () => {
 
         // 포트폴리오별 종목 ID 매핑
         const portfolioStockMap: Record<string, string[]> = {};
-        let allPortfolioStockIds: string[] = [];
         if (activePortfolios && activePortfolios.length > 0) {
           const portfolioIds = activePortfolios.map(p => p.id);
           const { data: portfolioStocks } = await supabase
@@ -142,7 +141,6 @@ const App: React.FC = () => {
               if (!portfolioStockMap[ps.portfolio_id]) portfolioStockMap[ps.portfolio_id] = [];
               portfolioStockMap[ps.portfolio_id].push(ps.stock_id);
             });
-            allPortfolioStockIds = [...new Set(portfolioStocks.map((ps: any) => ps.stock_id))];
           }
         }
 

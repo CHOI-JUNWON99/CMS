@@ -229,8 +229,8 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                   <span className="font-black text-slate-300">{stock.marketCap || '-'}</span>
                 </td>
                 <td className="px-4 py-4 text-right">
-                  <span className={`font-black ${stock.returnRate >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
-                    {stock.returnRate >= 0 ? '+' : ''}{stock.returnRate?.toFixed(1)}%
+                  <span className={`font-black ${(stock.returnRate ?? 0) >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                    {(stock.returnRate ?? 0) >= 0 ? '+' : ''}{(stock.returnRate ?? 0).toFixed(1)}%
                   </span>
                 </td>
                 <td className="px-4 py-4 text-center">
