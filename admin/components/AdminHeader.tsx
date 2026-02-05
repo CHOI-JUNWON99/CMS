@@ -62,7 +62,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
         </div>
 
         {/* 탭 네비게이션 */}
-        <nav className="flex gap-6 overflow-x-auto">
+        <nav className="flex gap-6 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const isActive = isTabActive(tab);
             return (
