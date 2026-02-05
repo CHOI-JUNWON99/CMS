@@ -31,3 +31,4 @@ seed.sql
 table.sql
 ADMIN_PLAN.md
 sql.md
+bulk_update_rpc.sql
