@@ -57,16 +57,6 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
     return sector;
   };
 
-  const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirection }) => (
-    <svg className={`w-3 h-3 transition-all ${active ? 'text-red-400' : 'text-slate-600'}`} fill="currentColor" viewBox="0 0 20 20">
-      {direction === 'ASC' ? (
-        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-      ) : (
-        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-      )}
-    </svg>
-  );
-
   // 엑셀 업로드 처리
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
