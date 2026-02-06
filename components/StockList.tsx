@@ -59,14 +59,13 @@ const StockList: React.FC<StockListProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header - 너비: 16% / 8% / flex-1 / 10% / 10% / 4% */}
+      {/* Header - 너비: 18% / 8% / flex-1 / 13% / 10% */}
       <div className={`hidden lg:flex px-14 py-2 items-center text-[11px] uppercase tracking-widest`}>
         <div className="w-[18%] shrink-0"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
         <div className="w-[8%] shrink-0"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
         <div className="flex-1 px-4"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
         <div className="w-[13%] shrink-0 flex justify-start"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-start" /></div>
         <div className="w-[10%] shrink-0 flex justify-start"><HeaderButton label="RETURN" targetKey="returnRate" className="justify-start" /></div>
-        <div className="w-[4%] shrink-0"></div>
       </div>
 
       <div className="flex flex-col gap-4 mt-1">
@@ -145,13 +144,6 @@ const StockList: React.FC<StockListProps> = ({
                     : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
                 }`}>
                   {(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
-                </div>
-
-                {/* 화살표 - 4% */}
-                <div className="hidden lg:block lg:w-[4%] lg:shrink-0 text-right">
-                  <span className={`transition-all duration-300 inline-block transform group-hover:translate-x-1 ${isDarkMode ? 'text-slate-500 group-hover:text-primary-accent' : 'text-gray-300 group-hover:text-primary'}`}>
-                    <svg className="w-6 h-6 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-                  </span>
                 </div>
               </div>
             </React.Fragment>

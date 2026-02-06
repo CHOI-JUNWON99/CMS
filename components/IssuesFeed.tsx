@@ -162,10 +162,9 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap">
                   <button onClick={() => stock && onStockClick(stock)} className={`text-base lg:text-lg font-black transition-all hover:translate-x-1 ${isDarkMode ? 'text-white hover:text-primary-accent' : 'text-gray-900 hover:text-primary'}`}>
                     {item.stockName}
-                    <span className="ml-1 text-sm font-black opacity-30">&rarr;</span>
                   </button>
                   <span className={`text-[12px] lg:text-[13px] font-mono font-black tracking-widest px-2 py-0.5 rounded border-2 ${isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-600' : 'bg-gray-100 text-gray-500 border-gray-300'}`}>{item.stockTicker}</span>
                 </div>

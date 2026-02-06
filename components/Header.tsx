@@ -127,8 +127,8 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
             <span className={`mx-1 text-lg font-light ${isDarkMode ? 'text-slate-500' : 'text-gray-300'}`}>&</span>
 
             <div className="flex items-baseline ml-1">
-              <span className="text-primary font-black text-2xl tracking-tighter">신한</span>
-              <span className={`ml-1 text-xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <span className="text-primary font-black text-xl tracking-tight">신한</span>
+              <span className={`ml-0.5 text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 증권 Wrap
               </span>
             </div>
