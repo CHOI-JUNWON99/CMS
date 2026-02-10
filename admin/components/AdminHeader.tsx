@@ -70,7 +70,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
                 key={tab.path}
                 to={tab.path}
                 className={`pb-4 text-[12px] font-black tracking-wider transition-all relative whitespace-nowrap ${
-                  isActive ? 'text-red-400' : 'text-slate-500 hover:text-slate-300'
+                  isActive ? 'text-red-400' : 'text-slate-300 hover:text-slate-300'
                 }`}
               >
                 {tab.label}

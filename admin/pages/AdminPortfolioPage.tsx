@@ -370,7 +370,7 @@ const AdminPortfolioPage: React.FC = () => {
       <div className="flex items-center justify-center py-32">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-bold text-slate-400">포트폴리오를 불러오는 중...</span>
+          <span className="text-sm font-bold text-slate-200">포트폴리오를 불러오는 중...</span>
         </div>
       </div>
     );
@@ -380,7 +380,7 @@ const AdminPortfolioPage: React.FC = () => {
     <div className="animate-in fade-in duration-500">
       {/* 포트폴리오 선택 영역 */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider mr-1">Portfolio:</span>
+        <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider mr-1">Portfolio:</span>
         {portfolios.map(p => (
           <button
             key={p.id}
@@ -388,7 +388,7 @@ const AdminPortfolioPage: React.FC = () => {
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all text-center ${
               selectedPortfolioId === p.id
                 ? 'bg-slate-700 text-white ring-1 ring-slate-400'
-                : 'bg-transparent text-slate-400 hover:bg-slate-800 hover:text-white'
+                : 'bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white'
             }`}
           >
             {p.name}
@@ -396,7 +396,7 @@ const AdminPortfolioPage: React.FC = () => {
         ))}
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3 py-1.5 rounded-lg bg-slate-800 border border-dashed border-slate-700 text-slate-500 text-xs font-bold hover:border-slate-600 hover:text-slate-400 transition-all"
+          className="px-3 py-1.5 rounded-lg bg-slate-800 border border-dashed border-slate-700 text-slate-300 text-xs font-bold hover:border-slate-600 hover:text-slate-200 transition-all"
         >
           + 새 포트폴리오
         </button>
@@ -405,7 +405,7 @@ const AdminPortfolioPage: React.FC = () => {
       {/* 선택된 포트폴리오가 없을 때 */}
       {!selectedPortfolio ? (
         <div className="text-center py-20 rounded-xl bg-slate-900/30 border border-slate-800">
-          <p className="text-slate-500 font-bold mb-2">포트폴리오가 없습니다.</p>
+          <p className="text-slate-300 font-bold mb-2">포트폴리오가 없습니다.</p>
           <button
             onClick={() => setShowAddModal(true)}
             className="text-red-400 text-sm font-bold hover:underline"
@@ -422,7 +422,7 @@ const AdminPortfolioPage: React.FC = () => {
               <div className="flex-1">
                 <h2 className="text-xl font-black text-white mb-1">{selectedPortfolio.name}</h2>
                 {selectedPortfolio.description && (
-                  <p className="text-sm text-slate-400">{selectedPortfolio.description}</p>
+                  <p className="text-sm text-slate-200">{selectedPortfolio.description}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -464,12 +464,12 @@ const AdminPortfolioPage: React.FC = () => {
             {/* 통계 */}
             <div className="flex items-center gap-8 pt-4 border-t border-slate-700/50">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">종목 수</span>
+                <span className="text-xs font-bold text-slate-300">종목 수</span>
                 <span className="text-lg font-black text-white">{includedStocks.length}</span>
               </div>
               <div className="w-px h-6 bg-slate-700" />
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">평균 수익률</span>
+                <span className="text-xs font-bold text-slate-300">평균 수익률</span>
                 <span className={`text-lg font-black ${averageReturn >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
                   {averageReturn >= 0 ? '+' : ''}{averageReturn.toFixed(2)}%
                 </span>
@@ -482,12 +482,12 @@ const AdminPortfolioPage: React.FC = () => {
             <h3 className="text-sm font-black text-white flex items-center gap-2 mb-4">
               <span className="w-2 h-2 rounded-full bg-green-500" />
               포트폴리오 구성 종목
-              <span className="text-slate-500 font-medium">({includedStocks.length})</span>
+              <span className="text-slate-300 font-medium">({includedStocks.length})</span>
             </h3>
 
             {includedStocks.length === 0 ? (
               <div className="text-center py-12 rounded-xl bg-slate-900/30 border border-slate-800">
-                <p className="text-slate-500 font-bold">포트폴리오에 포함된 종목이 없습니다.</p>
+                <p className="text-slate-300 font-bold">포트폴리오에 포함된 종목이 없습니다.</p>
                 <p className="text-slate-600 text-sm mt-1">아래에서 종목을 추가해주세요.</p>
               </div>
             ) : (
@@ -500,12 +500,12 @@ const AdminPortfolioPage: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-white truncate">{stock.nameKr}</span>
-                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 flex-shrink-0">
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 flex-shrink-0">
                           {stock.ticker}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs">
-                        <span className="text-slate-500">{formatMarketCapShort(stock.marketCap)}</span>
+                        <span className="text-slate-300">{formatMarketCapShort(stock.marketCap)}</span>
                         <span className={`font-bold ${(stock.returnRate || 0) >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
                           {(stock.returnRate || 0) >= 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
                         </span>
@@ -543,7 +543,7 @@ const AdminPortfolioPage: React.FC = () => {
             <h3 className="text-sm font-black text-white flex items-center gap-2 mb-4">
               <span className="w-2 h-2 rounded-full bg-slate-500" />
               미포함 종목
-              <span className="text-slate-500 font-medium">({excludedStocks.length})</span>
+              <span className="text-slate-300 font-medium">({excludedStocks.length})</span>
             </h3>
 
             {/* 검색 */}
@@ -553,13 +553,13 @@ const AdminPortfolioPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="종목명 또는 티커로 검색..."
-                className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-slate-600"
+                className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm placeholder:text-slate-300 focus:outline-none focus:border-slate-600"
               />
             </div>
 
             {excludedStocks.length === 0 ? (
               <div className="text-center py-12 rounded-xl bg-slate-900/30 border border-slate-800">
-                <p className="text-slate-500 font-bold">
+                <p className="text-slate-300 font-bold">
                   {searchQuery ? '검색 결과가 없습니다.' : '모든 종목이 포트폴리오에 포함되어 있습니다.'}
                 </p>
               </div>
@@ -573,7 +573,7 @@ const AdminPortfolioPage: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-slate-300 truncate">{stock.nameKr}</span>
-                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 flex-shrink-0">
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 flex-shrink-0">
                           {stock.ticker}
                         </span>
                       </div>
@@ -614,7 +614,7 @@ const AdminPortfolioPage: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">이름 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
                 <input
                   type="text"
                   value={newPortfolio.name}
@@ -625,7 +625,7 @@ const AdminPortfolioPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">설명</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">설명</label>
                 <textarea
                   value={newPortfolio.description}
                   onChange={(e) => setNewPortfolio({ ...newPortfolio, description: e.target.value })}
@@ -643,7 +643,7 @@ const AdminPortfolioPage: React.FC = () => {
                   setNewPortfolio({ name: '', description: '' });
                 }}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all"
               >
                 취소
               </button>
@@ -667,7 +667,7 @@ const AdminPortfolioPage: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">이름 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
                 <input
                   type="text"
                   value={editingPortfolio.name}
@@ -677,7 +677,7 @@ const AdminPortfolioPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">설명</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">설명</label>
                 <textarea
                   value={editingPortfolio.description}
                   onChange={(e) => setEditingPortfolio({ ...editingPortfolio, description: e.target.value })}
@@ -694,7 +694,7 @@ const AdminPortfolioPage: React.FC = () => {
                   setEditingPortfolio(null);
                 }}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all"
               >
                 취소
               </button>

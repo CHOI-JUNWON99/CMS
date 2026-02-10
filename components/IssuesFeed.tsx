@@ -32,9 +32,9 @@ const TermWithTooltip: React.FC<{ term: string; definition: string; isDarkMode: 
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`font-black underline decoration-dashed decoration-2 underline-offset-4 transition-colors ${
-          isDarkMode ? 'text-primary-accent decoration-blue-500/50' : 'text-primary decoration-primary/40'
-        } hover:decoration-solid`}
+        className={`font-black underline decoration-solid decoration-1 underline-offset-4 transition-colors ${
+          isDarkMode ? 'text-primary-accent decoration-blue-400/60' : 'text-primary decoration-primary/50'
+        }`}
       >
         {term}
       </button>
@@ -147,13 +147,13 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
               </div>
             )}
 
-            <div className={`relative pl-10 lg:pl-16 pb-16 group border-l-[3px] transition-all ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-              <div className={`absolute -left-[10.5px] top-1.5 w-5 h-5 rounded-full border-4 transition-all group-hover:scale-125 z-10 ${item.isCMS ? 'bg-primary border-white dark:border-primary/40 shadow-xl' : 'bg-slate-500 border-white dark:border-[#0a192f] shadow-lg'}`} />
+            <div className={`relative pl-0 min-[425px]:pl-10 lg:pl-16 pb-5 min-[425px]:pb-8 group border-l-0 min-[425px]:border-l-[3px] transition-all ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+              <div className={`hidden min-[425px]:block absolute -left-[10.5px] top-1.5 w-5 h-5 rounded-full border-4 transition-all group-hover:scale-125 z-10 ${item.isCMS ? 'bg-primary border-white dark:border-primary/40 shadow-xl' : 'bg-slate-500 border-white dark:border-[#0a192f] shadow-lg'}`} />
 
               <div className="flex flex-col mb-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className={`text-lg lg:text-2xl font-black tracking-tighter ${
-                    isToday ? 'text-primary underline decoration-primary/30' : (isDarkMode ? 'text-white' : 'text-gray-900')
+                  <span className={`text-base lg:text-xl font-black font-mono tracking-tight ${
+                    isToday ? 'text-primary underline decoration-primary/30' : (isDarkMode ? 'text-slate-200' : 'text-gray-900')
                   }`}>
                     {item.date}
                   </span>
@@ -171,18 +171,18 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
               </div>
 
               <div
-                className={`rounded-[2rem] lg:rounded-[2.5rem] p-6 lg:p-10 border-2 transition-all duration-500 transform hover:-translate-y-2 group ${
+                className={`rounded-[2rem] lg:rounded-[2.5rem] p-4 lg:p-6 border-2 transition-all duration-500 transform hover:-translate-y-2 group ${
                   item.isCMS
                     ? (isDarkMode ? 'bg-slate-800 border-blue-500/40 border-l-8 border-l-primary shadow-2xl' : 'bg-white border-blue-200 shadow-lg border-l-8 border-l-primary')
                     : (isDarkMode ? 'bg-[#112240] border-slate-600 hover:border-blue-500 shadow-2xl' : 'bg-white border-gray-300 hover:border-primary shadow-lg')
                 }`}
               >
-                <div className="flex flex-wrap gap-2 lg:gap-3 mb-6">
+                <div className="flex flex-wrap gap-2 lg:gap-3 mb-3">
                   {item.keywords?.map((kw, i) => (
                     <span key={i} className={`text-[10px] lg:text-sm font-black px-3 py-1 lg:px-4 lg:py-1.5 rounded-xl border-2 transition-all ${isDarkMode ? 'bg-slate-900 text-slate-100 border-slate-700' : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-primary'}`}>#{kw}</span>
                   ))}
                 </div>
-                {item.title && <h4 className={`text-lg lg:text-2xl font-black mb-5 tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {item.title && <h4 className={`text-lg lg:text-2xl font-black mb-3 tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   <TextWithCMS text={item.title} isDarkMode={isDarkMode} isTitle={true} glossary={glossary} />
                 </h4>}
                 <div className={`text-[14px] lg:text-[17px] leading-relaxed whitespace-pre-wrap font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-700'}`}>
@@ -202,7 +202,7 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
 
                 <div className="mt-8 flex justify-end">
                   <button onClick={() => stock && onStockClick(stock)} className={`text-[11px] font-black flex items-center gap-2 transition-all transform group-hover:translate-x-0 translate-x-4 opacity-0 group-hover:opacity-100 ${isDarkMode ? 'text-primary-accent' : 'text-primary'}`}>
-                    AI 분석 및 상세 보기 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M9 5l7 7-7 7" /></svg>
+                    종목 상세 보기 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
               </div>

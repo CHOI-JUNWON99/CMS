@@ -22,9 +22,10 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
   // 사업부문 상태
   const [businessSegments, setBusinessSegments] = useState(stock.businessSegments || []);
   const [showAddSegment, setShowAddSegment] = useState(false);
-  const [newSegment, setNewSegment] = useState({ name: '', nameKr: '', value: 0 });
+  const [newSegment, setNewSegment] = useState({ name: '', nameKr: '', value: 0, iconUrl: '' });
   const [editingSegmentId, setEditingSegmentId] = useState<any>(null);
-  const [editingSegmentData, setEditingSegmentData] = useState({ name: '', nameKr: '', value: 0 });
+  const [editingSegmentData, setEditingSegmentData] = useState({ name: '', nameKr: '', value: 0, iconUrl: '' });
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false);
 
   // AI 요약 키워드 (원시 문자열로 관리)
   const [aiKeywordsRaw, setAiKeywordsRaw] = useState(stock.aiSummaryKeywords?.join(', ') || '');
@@ -35,6 +36,37 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
   const [newIssue, setNewIssue] = useState({ title: '', content: '', keywords: '', date: '', isCMS: false });
   const [editingIssueId, setEditingIssueId] = useState<any>(null);
   const [editingIssueData, setEditingIssueData] = useState({ title: '', content: '', keywords: '', date: '', isCMS: false });
+
+  // 세그먼트 아이콘 업로드
+  const handleUploadSegmentIcon = async (file: File, isEditing: boolean) => {
+    setIsUploadingIcon(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${stock.id}-${Date.now()}.${fileExt}`;
+      const filePath = `segments/${fileName}`;
+
+      const { error: uploadError } = await getAdminSupabase().storage
+        .from('images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = getAdminSupabase().storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      if (isEditing) {
+        setEditingSegmentData(prev => ({ ...prev, iconUrl: publicUrl }));
+      } else {
+        setNewSegment(prev => ({ ...prev, iconUrl: publicUrl }));
+      }
+    } catch (err) {
+      console.error('아이콘 업로드 실패:', err);
+      alert('아이콘 업로드에 실패했습니다.');
+    } finally {
+      setIsUploadingIcon(false);
+    }
+  };
 
   // 기본 정보 저장
   const handleSaveBasicInfo = async () => {
@@ -172,10 +204,11 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
         name_kr: newSegment.nameKr,
         value: newSegment.value,
         sort_order: businessSegments.length,
+        icon_url: newSegment.iconUrl || null,
       });
       if (error) throw error;
       setBusinessSegments([...businessSegments, { ...newSegment, id: Date.now() } as any]);
-      setNewSegment({ name: '', nameKr: '', value: 0 });
+      setNewSegment({ name: '', nameKr: '', value: 0, iconUrl: '' });
       setShowAddSegment(false);
       onRefresh();
     } catch (err) {
@@ -200,7 +233,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
   // 사업부문 수정
   const handleEditSegment = (seg: any) => {
     setEditingSegmentId(seg.id);
-    setEditingSegmentData({ name: seg.name, nameKr: seg.nameKr, value: seg.value });
+    setEditingSegmentData({ name: seg.name, nameKr: seg.nameKr, value: seg.value, iconUrl: seg.iconUrl || '' });
   };
 
   const handleUpdateSegment = async () => {
@@ -210,6 +243,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
         name: editingSegmentData.name,
         name_kr: editingSegmentData.nameKr,
         value: editingSegmentData.value,
+        icon_url: editingSegmentData.iconUrl || null,
       }).eq('id', editingSegmentId).select();
       if (error) throw error;
       if (!data || data.length === 0) {
@@ -217,7 +251,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
         return;
       }
       setBusinessSegments(businessSegments.map((s: any) =>
-        s.id === editingSegmentId ? { ...s, name: editingSegmentData.name, nameKr: editingSegmentData.nameKr, value: editingSegmentData.value } : s
+        s.id === editingSegmentId ? { ...s, name: editingSegmentData.name, nameKr: editingSegmentData.nameKr, value: editingSegmentData.value, iconUrl: editingSegmentData.iconUrl } : s
       ));
       setEditingSegmentId(null);
       onRefresh();
@@ -335,7 +369,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-all"
+            className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:text-white transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
@@ -343,7 +377,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
           </button>
           <div>
             <h2 className="text-xl font-black text-white">{stock.nameKr} 수정</h2>
-            <span className="text-sm text-slate-500 font-mono">{stock.ticker}</span>
+            <span className="text-sm text-slate-300 font-mono">{stock.ticker}</span>
           </div>
         </div>
         <button
@@ -359,7 +393,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
         <h3 className="text-sm font-black text-red-400 mb-4 tracking-wider">기본 정보</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">한글명</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">한글명</label>
             <input
               type="text"
               value={editingStock.nameKr}
@@ -368,7 +402,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">영문명</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">영문명</label>
             <input
               type="text"
               value={editingStock.name}
@@ -377,7 +411,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">섹터</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">섹터</label>
             <input
               type="text"
               value={editingStock.sector}
@@ -386,7 +420,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">시가총액</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">시가총액</label>
             <input
               type="text"
               value={editingStock.marketCap}
@@ -396,7 +430,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">수익률 (%)</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">수익률 (%)</label>
             <input
               type="number"
               step="0.1"
@@ -406,7 +440,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">PER</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">PER</label>
             <input
               type="number"
               step="0.1"
@@ -416,7 +450,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">PBR</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">PBR</label>
             <input
               type="number"
               step="0.1"
@@ -426,7 +460,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">PSR</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">PSR</label>
             <input
               type="number"
               step="0.1"
@@ -437,7 +471,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
           </div>
         </div>
         <div className="mt-4">
-          <label className="block text-xs font-bold text-slate-400 mb-1">키워드 (쉼표로 구분)</label>
+          <label className="block text-xs font-bold text-slate-200 mb-1">키워드 (쉼표로 구분)</label>
           <input
             type="text"
             value={editingStock.keywords?.join(', ') || ''}
@@ -446,7 +480,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
           />
         </div>
         <div className="mt-4">
-          <label className="block text-xs font-bold text-slate-400 mb-1">핵심 비즈니스 개요</label>
+          <label className="block text-xs font-bold text-slate-200 mb-1">핵심 비즈니스 개요</label>
           <textarea
             value={editingStock.description || ''}
             onChange={(e) => setEditingStock({ ...editingStock, description: e.target.value })}
@@ -480,7 +514,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
           {businessSegments.map((seg: any, idx) => (
             <div key={seg.id || idx} className="p-5 rounded-xl border border-slate-700 bg-slate-800/50">
               {editingSegmentId === seg.id ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
@@ -504,6 +538,40 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                     className="w-24 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
                     placeholder="비율 %"
                   />
+                  {/* 아이콘 업로드 */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+                    {editingSegmentData.iconUrl ? (
+                      <div className="relative">
+                        <img src={editingSegmentData.iconUrl} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-600" />
+                        <button
+                          onClick={() => setEditingSegmentData({ ...editingSegmentData, iconUrl: '' })}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-slate-400 mb-1">아이콘 이미지 (권장: 64x64px)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUploadSegmentIcon(file, true);
+                        }}
+                        className="text-xs text-slate-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600"
+                        disabled={isUploadingIcon}
+                      />
+                    </div>
+                    {isUploadingIcon && <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />}
+                  </div>
                   <div className="flex gap-2">
                     <button onClick={handleUpdateSegment} className="px-3 py-1 rounded bg-red-600 text-white text-xs font-bold">저장</button>
                     <button onClick={() => setEditingSegmentId(null)} className="px-3 py-1 rounded bg-slate-700 text-slate-300 text-xs font-bold">취소</button>
@@ -511,11 +579,20 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
+                  {seg.iconUrl ? (
+                    <img src={seg.iconUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-600 shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                  )}
                   <div className="flex-1">
                     <span className="font-bold text-white text-sm">{seg.nameKr}</span>
-                    <span className="text-slate-500 text-xs ml-2">({seg.name})</span>
+                    <span className="text-slate-300 text-xs ml-2">({seg.name})</span>
                   </div>
-                  <span className="text-slate-400 text-sm font-bold">{seg.value}%</span>
+                  <span className="text-slate-200 text-sm font-bold">{seg.value}%</span>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => handleEditSegment(seg)} className="text-blue-400 hover:text-blue-300 text-xs">수정</button>
                     <button onClick={() => handleDeleteSegment(seg.id)} className="text-red-400 hover:text-red-300 text-xs">삭제</button>
@@ -526,8 +603,8 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
           ))}
         </div>
         {showAddSegment && (
-          <div className="mt-4 p-4 rounded-lg bg-slate-800 border border-slate-700">
-            <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="mt-4 p-4 rounded-lg bg-slate-800 border border-slate-700 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
                 placeholder="한글명"
@@ -543,18 +620,50 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                 className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
               />
             </div>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="number"
-                placeholder="비율 %"
-                value={newSegment.value || ''}
-                onChange={(e) => setNewSegment({ ...newSegment, value: Number(e.target.value) })}
-                className="w-24 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
-              />
+            <input
+              type="number"
+              placeholder="비율 %"
+              value={newSegment.value || ''}
+              onChange={(e) => setNewSegment({ ...newSegment, value: Number(e.target.value) })}
+              className="w-24 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
+            />
+            {/* 아이콘 업로드 */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+              {newSegment.iconUrl ? (
+                <div className="relative">
+                  <img src={newSegment.iconUrl} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-600" />
+                  <button
+                    onClick={() => setNewSegment({ ...newSegment, iconUrl: '' })}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
+              <div className="flex-1">
+                <label className="block text-[10px] text-slate-400 mb-1">아이콘 이미지 (권장: 64x64px)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUploadSegmentIcon(file, false);
+                  }}
+                  className="text-xs text-slate-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600"
+                  disabled={isUploadingIcon}
+                />
+              </div>
+              {isUploadingIcon && <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />}
             </div>
             <div className="flex gap-2">
               <button onClick={handleAddSegment} className="px-3 py-1 rounded bg-red-600 text-white text-xs font-bold">저장</button>
-              <button onClick={() => setShowAddSegment(false)} className="px-3 py-1 rounded bg-slate-700 text-slate-300 text-xs font-bold">취소</button>
+              <button onClick={() => { setShowAddSegment(false); setNewSegment({ name: '', nameKr: '', value: 0, iconUrl: '' }); }} className="px-3 py-1 rounded bg-slate-700 text-slate-300 text-xs font-bold">취소</button>
             </div>
           </div>
         )}
@@ -572,7 +681,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">키워드 (쉼표로 구분)</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">키워드 (쉼표로 구분)</label>
             <input
               type="text"
               value={aiKeywordsRaw}
@@ -591,7 +700,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">요약 내용</label>
+            <label className="block text-xs font-bold text-slate-200 mb-1">요약 내용</label>
             <textarea
               value={editingStock.aiSummary || ''}
               onChange={(e) => setEditingStock({ ...editingStock, aiSummary: e.target.value })}
@@ -651,7 +760,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                 <div className="flex items-start gap-3">
                   <div className="flex-1">
                     <div className="font-bold text-white text-sm">{point.title}</div>
-                    <div className="text-xs text-slate-400 mt-1">{point.description}</div>
+                    <div className="text-xs text-slate-200 mt-1">{point.description}</div>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => handleEditPoint(point)} className="text-blue-400 hover:text-blue-300 text-xs">수정</button>
@@ -737,7 +846,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                 onChange={(e) => setNewIssue({ ...newIssue, isCMS: e.target.checked })}
                 className="rounded"
               />
-              <span className="text-xs text-slate-400">CMS증권 코멘트</span>
+              <span className="text-xs text-slate-200">CMS증권 코멘트</span>
             </label>
             <div className="flex gap-2">
               <button onClick={handleAddIssue} className="px-3 py-1 rounded bg-red-600 text-white text-xs font-bold">저장</button>
@@ -788,7 +897,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                       onChange={(e) => setEditingIssueData({ ...editingIssueData, isCMS: e.target.checked })}
                       className="rounded"
                     />
-                    <span className="text-xs text-slate-400">CMS증권 코멘트</span>
+                    <span className="text-xs text-slate-200">CMS증권 코멘트</span>
                   </label>
                   <div className="flex gap-2">
                     <button onClick={handleUpdateIssue} className="px-3 py-1 rounded bg-red-600 text-white text-xs font-bold">저장</button>
@@ -799,7 +908,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                 <>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-500">{issue.date}</span>
+                      <span className="text-xs font-bold text-slate-300">{issue.date}</span>
                       {issue.isCMS && <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black">CMS</span>}
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -808,11 +917,11 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
                     </div>
                   </div>
                   {issue.title && <div className="font-bold text-white text-sm mb-1">{issue.title}</div>}
-                  <div className="text-xs text-slate-400 line-clamp-3">{issue.content}</div>
+                  <div className="text-xs text-slate-200 line-clamp-3">{issue.content}</div>
                   {issue.keywords?.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {issue.keywords.map((kw: string, i: number) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-slate-700 text-slate-400 text-[10px]">#{kw}</span>
+                        <span key={i} className="px-2 py-0.5 rounded bg-slate-700 text-slate-200 text-[10px]">#{kw}</span>
                       ))}
                     </div>
                   )}

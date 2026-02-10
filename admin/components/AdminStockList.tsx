@@ -205,13 +205,13 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="종목명 또는 티커로 검색..."
-          className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-slate-600"
+          className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700 text-white text-sm placeholder:text-slate-300 focus:outline-none focus:border-slate-600"
         />
       </div>
 
       {/* 정렬 */}
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-xs font-bold text-slate-500">정렬</span>
+        <span className="text-xs font-bold text-slate-300">정렬</span>
         <div className="flex gap-2">
           {[
             { key: 'name' as SortKey, label: '이름' },
@@ -225,7 +225,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 sortKey === key
                   ? 'bg-slate-700 text-white'
-                  : 'bg-slate-800/50 text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+                  : 'bg-slate-800/50 text-slate-300 hover:text-slate-300 hover:bg-slate-800'
               }`}
             >
               {label}
@@ -240,7 +240,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
       {/* 종목 카드 그리드 */}
       {filteredStocks.length === 0 ? (
         <div className="text-center py-20 rounded-xl bg-slate-900/30 border border-slate-800">
-          <p className="text-slate-500 font-bold">
+          <p className="text-slate-300 font-bold">
             {searchQuery ? '검색 결과가 없습니다.' : '등록된 종목이 없습니다.'}
           </p>
         </div>
@@ -255,7 +255,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-white truncate">{stock.nameKr}</span>
-                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 flex-shrink-0">
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 flex-shrink-0">
                     {stock.ticker}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                   <span className="text-slate-600 px-1.5 py-0.5 rounded bg-slate-800/50">
                     {getSimplifiedSector(stock.sector)}
                   </span>
-                  <span className="text-slate-500">{stock.marketCap || '-'}</span>
+                  <span className="text-slate-300">{stock.marketCap || '-'}</span>
                   <span className={`font-bold ${(stock.returnRate ?? 0) >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
                     {(stock.returnRate ?? 0) >= 0 ? '+' : ''}{(stock.returnRate ?? 0).toFixed(1)}%
                   </span>
@@ -286,7 +286,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">종목 ID *</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">종목 ID *</label>
                   <input
                     type="text"
                     value={newStock.id}
@@ -296,7 +296,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">티커</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">티커</label>
                   <input
                     type="text"
                     value={newStock.ticker}
@@ -309,7 +309,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">영문명</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">영문명</label>
                   <input
                     type="text"
                     value={newStock.name}
@@ -319,7 +319,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">한글명 *</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">한글명 *</label>
                   <input
                     type="text"
                     value={newStock.nameKr}
@@ -331,7 +331,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">섹터</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">섹터</label>
                 <input
                   type="text"
                   value={newStock.sector}
@@ -342,7 +342,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">기업 설명</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">기업 설명</label>
                 <textarea
                   value={newStock.description}
                   onChange={(e) => setNewStock({ ...newStock, description: e.target.value })}
@@ -354,7 +354,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">시가총액</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">시가총액</label>
                   <input
                     type="text"
                     value={newStock.marketCap}
@@ -364,7 +364,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">수익률 (%)</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">수익률 (%)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -379,7 +379,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
                 취소
               </button>
@@ -419,14 +419,14 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                     <thead>
                       <tr className="border-b border-slate-700">
                         <th className="text-left py-2 px-2 text-emerald-400 font-mono">ticker</th>
-                        <th className="text-left py-2 px-2 text-slate-400 font-mono">marketCap</th>
-                        <th className="text-left py-2 px-2 text-slate-400 font-mono">totalReturn</th>
-                        <th className="text-left py-2 px-2 text-slate-400 font-mono">PER</th>
-                        <th className="text-left py-2 px-2 text-slate-400 font-mono">PBR</th>
-                        <th className="text-left py-2 px-2 text-slate-400 font-mono">PSR</th>
+                        <th className="text-left py-2 px-2 text-slate-200 font-mono">marketCap</th>
+                        <th className="text-left py-2 px-2 text-slate-200 font-mono">totalReturn</th>
+                        <th className="text-left py-2 px-2 text-slate-200 font-mono">PER</th>
+                        <th className="text-left py-2 px-2 text-slate-200 font-mono">PBR</th>
+                        <th className="text-left py-2 px-2 text-slate-200 font-mono">PSR</th>
                       </tr>
                     </thead>
-                    <tbody className="text-slate-500">
+                    <tbody className="text-slate-300">
                       <tr className="border-b border-slate-800">
                         <td className="py-2 px-2">AAPL</td>
                         <td className="py-2 px-2">35조 3,500억원</td>
@@ -452,7 +452,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowUploadGuide(false)}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
                 취소
               </button>
@@ -496,7 +496,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
                 <p className="text-white text-2xl font-black mb-2">
                   {uploadResult.updated}개 종목
                 </p>
-                <p className="text-slate-400 text-sm mb-4">성공적으로 업데이트되었습니다.</p>
+                <p className="text-slate-200 text-sm mb-4">성공적으로 업데이트되었습니다.</p>
                 {uploadResult.skipped.length > 0 && (
                   <div className="p-3 rounded-lg bg-amber-900/20 border border-amber-800/50 mb-4">
                     <p className="text-amber-400 text-sm font-bold mb-1">

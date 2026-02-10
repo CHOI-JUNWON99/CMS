@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Resource } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, getAdminSupabase } from '../lib/supabase';
 
 interface AdminResourcesViewProps {
   onRefresh: () => void;
@@ -75,15 +75,15 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       const file = newResource.file;
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
-      // Storage 업로드
-      const { error: uploadError } = await supabase.storage
+      // Storage 업로드 (관리자 클라이언트 사용)
+      const { error: uploadError } = await getAdminSupabase().storage
         .from('resources')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       // Public URL 가져오기
-      const { data: urlData } = supabase.storage.from('resources').getPublicUrl(fileName);
+      const { data: urlData } = getAdminSupabase().storage.from('resources').getPublicUrl(fileName);
 
       // 파일 사이즈 계산
       const fileSize = file.size < 1024 * 1024
@@ -146,7 +146,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       if (resource.fileUrl) {
         const fileName = resource.fileUrl.split('/').pop();
         if (fileName) {
-          await supabase.storage.from('resources').remove([fileName]);
+          await getAdminSupabase().storage.from('resources').remove([fileName]);
         }
       }
 
@@ -171,7 +171,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       case 'EXCEL': return 'bg-emerald-900/30 text-emerald-400 border-emerald-800';
       case 'WORD': return 'bg-blue-900/30 text-blue-400 border-blue-800';
       case 'PPT': return 'bg-orange-900/30 text-orange-400 border-orange-800';
-      default: return 'bg-slate-800 text-slate-400 border-slate-700';
+      default: return 'bg-slate-800 text-slate-200 border-slate-700';
     }
   };
 
@@ -209,7 +209,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-white text-sm truncate">{res.title}</div>
-                  <div className="text-xs text-slate-500 truncate">{res.description}</div>
+                  <div className="text-xs text-slate-300 truncate">{res.description}</div>
                   <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-600">
                     <span>{res.category}</span>
                     <span>{res.date}</span>
@@ -237,7 +237,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
           ))}
 
           {resources.length === 0 && (
-            <div className="text-center py-20 text-slate-500 font-bold">
+            <div className="text-center py-20 text-slate-300 font-bold">
               등록된 자료가 없습니다.
             </div>
           )}
@@ -252,7 +252,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">제목 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">제목 *</label>
                 <input
                   type="text"
                   value={newResource.title}
@@ -263,7 +263,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">설명</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">설명</label>
                 <textarea
                   value={newResource.description}
                   onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
@@ -275,7 +275,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">카테고리</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">카테고리</label>
                   <input
                     type="text"
                     value={newResource.category}
@@ -285,7 +285,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">파일 형식</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">파일 형식</label>
                   <select
                     value={newResource.fileType}
                     onChange={(e) => setNewResource({ ...newResource, fileType: e.target.value as any })}
@@ -300,7 +300,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">파일 업로드 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">파일 업로드 *</label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -309,7 +309,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-red-600 file:text-white file:text-xs file:font-bold"
                 />
                 {newResource.file && (
-                  <p className="text-xs text-slate-500 mt-1">선택됨: {newResource.file.name}</p>
+                  <p className="text-xs text-slate-300 mt-1">선택됨: {newResource.file.name}</p>
                 )}
               </div>
             </div>
@@ -320,7 +320,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
                   setShowAddModal(false);
                   setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null });
                 }}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
                 취소
               </button>

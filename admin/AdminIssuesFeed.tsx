@@ -480,7 +480,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
         )}
 
         {feedItems.length === 0 && (
-          <div className="text-center py-20 text-slate-500 font-bold">
+          <div className="text-center py-20 text-slate-300 font-bold">
             등록된 뉴스가 없습니다.
           </div>
         )}
@@ -495,13 +495,13 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
             <div className="space-y-4">
               {/* 종목 검색 선택 */}
               <div className="relative">
-                <label className="block text-xs font-bold text-slate-400 mb-1">종목 선택 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">종목 선택 *</label>
                 {newIssue.stockId ? (
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
                     <span className="text-white text-sm font-bold">{newIssue.stockName}</span>
                     <button
                       onClick={() => setNewIssue({ ...newIssue, stockId: '', stockName: '' })}
-                      className="text-slate-400 hover:text-white"
+                      className="text-slate-200 hover:text-white"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -531,11 +531,11 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                               className="w-full px-3 py-2 text-left hover:bg-slate-700 transition-colors"
                             >
                               <span className="text-white text-sm font-bold">{stock.nameKr}</span>
-                              <span className="text-slate-400 text-xs ml-2">({stock.ticker})</span>
+                              <span className="text-slate-200 text-xs ml-2">({stock.ticker})</span>
                             </button>
                           ))
                         ) : (
-                          <div className="px-3 py-2 text-slate-500 text-sm">검색 결과가 없습니다</div>
+                          <div className="px-3 py-2 text-slate-300 text-sm">검색 결과가 없습니다</div>
                         )}
                       </div>
                     )}
@@ -545,7 +545,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               {/* 제목 (필수) */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">제목 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">제목 *</label>
                 <input
                   type="text"
                   value={newIssue.title}
@@ -557,7 +557,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               {/* 내용 */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">내용 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">내용 *</label>
                 <textarea
                   value={newIssue.content}
                   onChange={(e) => setNewIssue({ ...newIssue, content: e.target.value })}
@@ -569,7 +569,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               {/* 이미지 업로드 */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">이미지 (선택, 여러 장 가능)</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">이미지 (선택, 여러 장 가능)</label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -581,7 +581,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-dashed border-slate-600 text-slate-400 text-sm hover:border-slate-500 hover:text-slate-300 transition-all"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-dashed border-slate-600 text-slate-200 text-sm hover:border-slate-500 hover:text-slate-300 transition-all"
                 >
                   <svg className="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -603,7 +603,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                             className="w-full px-2 py-1 rounded bg-slate-800 border border-slate-700 text-white text-xs"
                             placeholder="캡션 (선택)"
                           />
-                          <p className="text-[10px] text-slate-500 mt-1 truncate">{img.file.name}</p>
+                          <p className="text-[10px] text-slate-300 mt-1 truncate">{img.file.name}</p>
                         </div>
                         <button
                           onClick={() => handleRemoveImage(idx)}
@@ -621,7 +621,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">키워드 (쉼표 구분)</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">키워드 (쉼표 구분)</label>
                   <input
                     type="text"
                     value={newIssue.keywords}
@@ -631,7 +631,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">날짜 (YY/MM/DD) *</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">날짜 (YY/MM/DD) *</label>
                   <input
                     type="text"
                     value={newIssue.date}
@@ -649,7 +649,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                   onChange={(e) => setNewIssue({ ...newIssue, isCMS: e.target.checked })}
                   className="rounded border-slate-600"
                 />
-                <span className="text-sm text-slate-400">CMS증권 코멘트</span>
+                <span className="text-sm text-slate-200">CMS증권 코멘트</span>
               </label>
             </div>
 
@@ -657,7 +657,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
               <button
                 onClick={closeAddModal}
                 disabled={isUploading}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
               >
                 취소
               </button>
@@ -682,15 +682,15 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
             <div className="space-y-4">
               {/* 종목 표시 (수정 불가) */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">종목</label>
-                <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 text-sm">
+                <label className="block text-xs font-bold text-slate-200 mb-1">종목</label>
+                <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
                   {editIssue.stockName}
                 </div>
               </div>
 
               {/* 제목 */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">제목 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">제목 *</label>
                 <input
                   type="text"
                   value={editIssue.title}
@@ -702,7 +702,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               {/* 내용 */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">내용 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">내용 *</label>
                 <textarea
                   value={editIssue.content}
                   onChange={(e) => setEditIssue({ ...editIssue, content: e.target.value })}
@@ -715,7 +715,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
               {/* 기존 이미지 */}
               {editIssue.existingImages.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">기존 이미지</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">기존 이미지</label>
                   <div className="grid grid-cols-3 gap-2">
                     {editIssue.existingImages.map((url, idx) => (
                       <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border border-slate-700">
@@ -736,7 +736,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               {/* 새 이미지 추가 */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">새 이미지 추가</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">새 이미지 추가</label>
                 <input
                   ref={editFileInputRef}
                   type="file"
@@ -748,7 +748,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                 <button
                   type="button"
                   onClick={() => editFileInputRef.current?.click()}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-dashed border-slate-600 text-slate-400 text-sm hover:border-slate-500 hover:text-slate-300 transition-all"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-dashed border-slate-600 text-slate-200 text-sm hover:border-slate-500 hover:text-slate-300 transition-all"
                 >
                   <svg className="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -762,7 +762,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                       <div key={idx} className="flex items-start gap-3 p-2 rounded-lg bg-slate-900/50 border border-slate-700">
                         <img src={img.preview} alt="미리보기" className="w-16 h-16 object-cover rounded" />
                         <div className="flex-1">
-                          <p className="text-[10px] text-slate-500 truncate">{img.file.name}</p>
+                          <p className="text-[10px] text-slate-300 truncate">{img.file.name}</p>
                         </div>
                         <button
                           onClick={() => handleRemoveEditImage(idx)}
@@ -780,7 +780,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">키워드 (쉼표 구분)</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">키워드 (쉼표 구분)</label>
                   <input
                     type="text"
                     value={editIssue.keywords}
@@ -790,7 +790,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">날짜 (YY/MM/DD) *</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">날짜 (YY/MM/DD) *</label>
                   <input
                     type="text"
                     value={editIssue.date}
@@ -808,7 +808,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                   onChange={(e) => setEditIssue({ ...editIssue, isCMS: e.target.checked })}
                   className="rounded border-slate-600"
                 />
-                <span className="text-sm text-slate-400">CMS증권 코멘트</span>
+                <span className="text-sm text-slate-200">CMS증권 코멘트</span>
               </label>
             </div>
 
@@ -816,7 +816,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
               <button
                 onClick={closeEditModal}
                 disabled={isUploading}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
               >
                 취소
               </button>

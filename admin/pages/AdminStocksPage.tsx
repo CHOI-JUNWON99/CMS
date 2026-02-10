@@ -51,7 +51,7 @@ const StockListView: React.FC = () => {
         if (segmentsRes.data) {
           segmentsRes.data.forEach((s: any) => {
             if (!segmentsByStock[s.stock_id]) segmentsByStock[s.stock_id] = [];
-            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, sort_order: s.sort_order });
+            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, iconUrl: s.icon_url, sort_order: s.sort_order });
           });
         }
 
@@ -130,7 +130,7 @@ const StockListView: React.FC = () => {
       <div className="flex items-center justify-center py-32">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-bold text-slate-400">종목을 불러오는 중...</span>
+          <span className="text-sm font-bold text-slate-200">종목을 불러오는 중...</span>
         </div>
       </div>
     );
@@ -210,6 +210,7 @@ const StockDetailView: React.FC = () => {
               name: s.name,
               nameKr: s.name_kr,
               value: s.value,
+              iconUrl: s.icon_url,
               sort_order: s.sort_order,
             })) || [],
             aiSummary: row.ai_summary || '',
@@ -236,7 +237,7 @@ const StockDetailView: React.FC = () => {
       <div className="flex items-center justify-center py-32">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-bold text-slate-400">종목 정보를 불러오는 중...</span>
+          <span className="text-sm font-bold text-slate-200">종목 정보를 불러오는 중...</span>
         </div>
       </div>
     );
@@ -244,7 +245,7 @@ const StockDetailView: React.FC = () => {
 
   if (!stock) {
     return (
-      <div className="text-center py-20 text-slate-500">
+      <div className="text-center py-20 text-slate-300">
         종목을 찾을 수 없습니다.
       </div>
     );

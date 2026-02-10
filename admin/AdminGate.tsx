@@ -56,7 +56,7 @@ const AdminGate: React.FC<AdminGateProps> = ({ onAuthenticated }) => {
           <h1 className="text-3xl font-black text-white tracking-tight mb-2">
             관리자 페이지
           </h1>
-          <p className="text-slate-500 text-sm font-bold tracking-wide">
+          <p className="text-slate-300 text-sm font-bold tracking-wide">
             Administrator Access Only
           </p>
         </div>

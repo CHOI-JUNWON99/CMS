@@ -38,7 +38,7 @@ const AdminGlossaryPage: React.FC = () => {
       <div className="flex items-center justify-center py-32">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-bold text-slate-400">용어사전을 불러오는 중...</span>
+          <span className="text-sm font-bold text-slate-200">용어사전을 불러오는 중...</span>
         </div>
       </div>
     );

@@ -15,9 +15,11 @@ export interface StockIssue {
 }
 
 export interface BusinessSegment {
+  id?: string;
   name: string;
   nameKr: string;
   value: number;
+  iconUrl?: string;
 }
 
 export interface InvestmentPoint {

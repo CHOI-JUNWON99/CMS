@@ -195,7 +195,7 @@ const App: React.FC = () => {
         if (segmentsRes.data) {
           segmentsRes.data.forEach((s: any) => {
             if (!segmentsByStock[s.stock_id]) segmentsByStock[s.stock_id] = [];
-            segmentsByStock[s.stock_id].push({ name: s.name, nameKr: s.name_kr, value: s.value });
+            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, iconUrl: s.icon_url });
           });
         }
 
@@ -356,7 +356,7 @@ const App: React.FC = () => {
                 onClick={() => setActiveTab('ISSUES')}
                 className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'ISSUES' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
-                MARKET INSIGHTS {activeTab === 'ISSUES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
+                NEWS {activeTab === 'ISSUES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
               </button>
               <button
                 onClick={() => setActiveTab('RESOURCES')}
@@ -408,7 +408,7 @@ const App: React.FC = () => {
             )}
           </div>
         ) : (
-          selectedStock && <StockDetail stock={selectedStock} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
+          selectedStock && <StockDetail stock={selectedStock} onBack={handleBackToDashboard} isDarkMode={isDarkMode} glossary={glossary} />
         )}
       </main>
       <footer className={`py-12 border-t mt-20 ${isDarkMode ? 'bg-[#0a192f] border-slate-800' : 'bg-gray-50 border-gray-100'}`}>

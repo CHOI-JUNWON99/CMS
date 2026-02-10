@@ -141,13 +141,13 @@ const AdminSettings: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="font-mono font-bold text-white text-lg">{code.code}</span>
           <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-            code.is_active ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'
+            code.is_active ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-200'
           }`}>
             {code.is_active ? '활성' : '비활성'}
           </span>
         </div>
         {code.expires_at && (
-          <span className="text-[10px] text-slate-500 mt-1">만료: {code.expires_at}</span>
+          <span className="text-[10px] text-slate-300 mt-1">만료: {code.expires_at}</span>
         )}
       </div>
 
@@ -213,13 +213,13 @@ const AdminSettings: React.FC = () => {
                   />
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-500 font-bold">
+                <div className="text-center py-8 text-slate-300 font-bold">
                   등록된 사용자 인증코드가 없습니다.
                 </div>
               )}
             </div>
 
-            <p className="mt-4 text-xs text-slate-500">
+            <p className="mt-4 text-xs text-slate-300">
               사용자 인증코드로 로그인한 사용자는 1시간 동안 세션이 유지됩니다. 코드를 비활성화하면 해당 코드로 더 이상 로그인할 수 없습니다.
             </p>
           </section>
@@ -255,31 +255,31 @@ const AdminSettings: React.FC = () => {
                   />
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-500 font-bold">
+                <div className="text-center py-8 text-slate-300 font-bold">
                   등록된 관리자 인증코드가 없습니다.
                 </div>
               )}
             </div>
 
-            <p className="mt-4 text-xs text-slate-500">
+            <p className="mt-4 text-xs text-slate-300">
               관리자 인증코드로 /admin 페이지에 접속할 수 있습니다. 세션은 2시간 유지됩니다. 관리자 코드 관리에 주의하세요.
             </p>
           </section>
 
           {/* 시스템 정보 */}
           <section className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
-            <h3 className="text-sm font-black text-slate-400 tracking-wider mb-4">시스템 정보</h3>
+            <h3 className="text-sm font-black text-slate-200 tracking-wider mb-4">시스템 정보</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">버전</span>
+                <span className="text-slate-300">버전</span>
                 <span className="text-white font-mono">1.0.0</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">사용자 세션 시간</span>
+                <span className="text-slate-300">사용자 세션 시간</span>
                 <span className="text-white">1시간</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">관리자 세션 시간</span>
+                <span className="text-slate-300">관리자 세션 시간</span>
                 <span className="text-white">2시간</span>
               </div>
             </div>
@@ -292,10 +292,10 @@ const AdminSettings: React.FC = () => {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-md p-6">
             <h3 className="text-lg font-black text-white mb-2">사용자 인증코드 추가</h3>
-            <p className="text-xs text-slate-500 mb-6">새로운 사용자 인증코드를 추가합니다.</p>
+            <p className="text-xs text-slate-300 mb-6">새로운 사용자 인증코드를 추가합니다.</p>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1">인증코드</label>
+              <label className="block text-xs font-bold text-slate-200 mb-1">인증코드</label>
               <input
                 type="text"
                 value={newUserCode}
@@ -312,7 +312,7 @@ const AdminSettings: React.FC = () => {
                   setShowUserAddModal(false);
                   setNewUserCode('');
                 }}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
                 취소
               </button>
@@ -332,10 +332,10 @@ const AdminSettings: React.FC = () => {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-md p-6">
             <h3 className="text-lg font-black text-white mb-2">관리자 인증코드 추가</h3>
-            <p className="text-xs text-slate-500 mb-6">새로운 관리자 인증코드를 추가합니다. 관리자 코드는 신중하게 관리하세요.</p>
+            <p className="text-xs text-slate-300 mb-6">새로운 관리자 인증코드를 추가합니다. 관리자 코드는 신중하게 관리하세요.</p>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1">인증코드</label>
+              <label className="block text-xs font-bold text-slate-200 mb-1">인증코드</label>
               <input
                 type="text"
                 value={newAdminCode}
@@ -352,7 +352,7 @@ const AdminSettings: React.FC = () => {
                   setShowAdminAddModal(false);
                   setNewAdminCode('');
                 }}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 text-sm font-bold hover:bg-slate-800 transition-all"
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
                 취소
               </button>

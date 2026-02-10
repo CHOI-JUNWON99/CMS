@@ -63,9 +63,9 @@ const StockList: React.FC<StockListProps> = ({
       <div className={`hidden lg:flex px-14 py-2 items-center text-[11px] uppercase tracking-widest`}>
         <div className="w-[18%] shrink-0"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
         <div className="w-[8%] shrink-0"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
-        <div className="flex-1 px-4"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
+        <div className="flex-1 px-4 flex justify-center"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
         <div className="w-[13%] shrink-0 flex justify-start"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-start" /></div>
-        <div className="w-[10%] shrink-0 flex justify-start"><HeaderButton label="RETURN" targetKey="returnRate" className="justify-start" /></div>
+        <div className="w-[10%] shrink-0 flex justify-start"><HeaderButton label="YTD" targetKey="returnRate" className="justify-start" /></div>
       </div>
 
       <div className="flex flex-col gap-4 mt-1">
