@@ -64,6 +64,16 @@ export interface Client {
   isActive: boolean;
 }
 
+export interface SharedPassword {
+  id: string;
+  name: string;
+  password: string;
+  isMaster: boolean;  // true면 모든 소속 접근
+  clientIds: string[];  // 선택적 공유 시 접근 가능한 소속 ID 목록
+  brandColor?: string;
+  isActive: boolean;
+}
+
 export interface Resource {
   id: string;
   title: string;

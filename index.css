@@ -8,6 +8,11 @@
   --color-primary-light: 59 130 246; /* blue-500 RGB */
   --color-primary-dark: 23 37 84;    /* blue-950 RGB */
   --color-primary-accent: 96 165 250; /* blue-400 RGB (다크모드용) */
+
+  /* Accent Color (UI 강조색) - 네비게이션, 뱃지, 버튼 등 */
+  --color-accent: 55 65 81;          /* gray-700 RGB - 차콜그레이 */
+  --color-accent-light: 75 85 99;    /* gray-600 RGB */
+  --color-accent-dark: 31 41 55;     /* gray-800 RGB */
 }
 
 body {

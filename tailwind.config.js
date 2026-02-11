@@ -26,6 +26,11 @@ export default {
           dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
           accent: 'rgb(var(--color-primary-accent) / <alpha-value>)',
         },
+        accent: {
+          DEFAULT: 'rgb(var(--color-accent) / <alpha-value>)',
+          light: 'rgb(var(--color-accent-light) / <alpha-value>)',
+          dark: 'rgb(var(--color-accent-dark) / <alpha-value>)',
+        },
       },
     },
   },

@@ -109,7 +109,7 @@ const ResourcesView: React.FC<ResourcesViewProps> = ({ isDarkMode }) => {
             onClick={() => setActiveCategory(cat)}
             className={`px-4 py-1.5 rounded-full text-[12px] font-black transition-all border ${
               activeCategory === cat
-                ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                ? 'bg-accent text-white border-accent shadow-md shadow-accent/20'
                 : isDarkMode
                   ? 'bg-slate-800/40 text-slate-400 border-slate-700 hover:border-slate-500'
                   : 'bg-gray-100 text-gray-500 border-gray-100 hover:bg-gray-200'

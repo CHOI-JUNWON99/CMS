@@ -90,8 +90,8 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
           onClick={onExtendSession}
           className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-black transition-all active:scale-95 ${
             isDarkMode
-              ? 'bg-primary/20 border-primary/40 text-primary-accent hover:bg-primary/30'
-              : 'bg-blue-50 border-blue-200 text-primary hover:bg-blue-100'
+              ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
           }`}
           title="세션을 1시간 연장합니다"
         >
@@ -127,8 +127,8 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
           onClick={onLogout}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black transition-all active:scale-95 ${
             isDarkMode
-              ? 'bg-red-900/20 border-red-800/50 text-red-400 hover:bg-red-900/30'
-              : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+              ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
           }`}
           title="로그아웃"
         >

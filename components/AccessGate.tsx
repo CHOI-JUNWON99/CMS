@@ -20,37 +20,66 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
     setError('');
 
     try {
-      // 비밀번호로 소속(클라이언트) 찾기
-      const { data, error: queryError } = await supabase
+      // 1. 먼저 단일 소속 비밀번호 확인
+      const { data: clientData } = await supabase
         .from('clients')
         .select('id, name, logo_url, brand_color')
         .eq('password', code.trim())
         .eq('is_active', true)
         .single();
 
-      if (queryError || !data) {
-        setError('잘못된 비밀번호입니다.');
-        setCode('');
+      if (clientData) {
+        // 단일 소속 로그인 성공
+        const expiresAt = Date.now() + SESSION_DURATION_MS;
+        localStorage.setItem('cms_authenticated', 'true');
+        localStorage.setItem('cms_expires_at', String(expiresAt));
+        localStorage.setItem('cms_code_version', '1');
+        localStorage.setItem('cms_access_type', 'single');
+        localStorage.setItem('cms_client_id', clientData.id);
+        localStorage.setItem('cms_client_name', clientData.name);
+        if (clientData.logo_url) {
+          localStorage.setItem('cms_client_logo', clientData.logo_url);
+        }
+        if (clientData.brand_color) {
+          localStorage.setItem('cms_client_brand_color', clientData.brand_color);
+        }
+        onAuthenticated();
         return;
       }
 
-      // 세션 정보 저장
-      const expiresAt = Date.now() + SESSION_DURATION_MS;
-      localStorage.setItem('cms_authenticated', 'true');
-      localStorage.setItem('cms_expires_at', String(expiresAt));
-      localStorage.setItem('cms_code_version', '1');
+      // 2. 공유 비밀번호 확인
+      const { data: sharedData } = await supabase
+        .from('shared_passwords')
+        .select('id, name, is_master, client_ids, brand_color')
+        .eq('password', code.trim())
+        .eq('is_active', true)
+        .single();
 
-      // 클라이언트(소속) 정보 저장
-      localStorage.setItem('cms_client_id', data.id);
-      localStorage.setItem('cms_client_name', data.name);
-      if (data.logo_url) {
-        localStorage.setItem('cms_client_logo', data.logo_url);
-      }
-      if (data.brand_color) {
-        localStorage.setItem('cms_client_brand_color', data.brand_color);
+      if (sharedData) {
+        // 공유 비밀번호 로그인 성공
+        const expiresAt = Date.now() + SESSION_DURATION_MS;
+        localStorage.setItem('cms_authenticated', 'true');
+        localStorage.setItem('cms_expires_at', String(expiresAt));
+        localStorage.setItem('cms_code_version', '1');
+
+        if (sharedData.is_master) {
+          localStorage.setItem('cms_access_type', 'master');
+        } else {
+          localStorage.setItem('cms_access_type', 'shared');
+          localStorage.setItem('cms_client_ids', JSON.stringify(sharedData.client_ids || []));
+        }
+
+        localStorage.setItem('cms_client_name', sharedData.name);
+        if (sharedData.brand_color) {
+          localStorage.setItem('cms_client_brand_color', sharedData.brand_color);
+        }
+        onAuthenticated();
+        return;
       }
 
-      onAuthenticated();
+      // 3. 둘 다 없으면 에러
+      setError('잘못된 비밀번호입니다.');
+      setCode('');
     } catch {
       setError('인증 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {

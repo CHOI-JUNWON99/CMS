@@ -13,6 +13,7 @@ interface PortfolioGroup {
   id: string;
   name: string;
   stocks: Stock[];
+  brandColor?: string;
 }
 
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1시간
@@ -25,6 +26,8 @@ function clearSession() {
   localStorage.removeItem('cms_client_name');
   localStorage.removeItem('cms_client_logo');
   localStorage.removeItem('cms_client_brand_color');
+  localStorage.removeItem('cms_access_type');
+  localStorage.removeItem('cms_client_ids');
 }
 
 function isSessionValid(): boolean {
@@ -133,19 +136,26 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // 클라이언트 ID 가져오기
+        // 접근 타입 및 클라이언트 정보 가져오기
+        const accessType = localStorage.getItem('cms_access_type') || 'single';
         const clientId = localStorage.getItem('cms_client_id');
+        const clientIdsJson = localStorage.getItem('cms_client_ids');
+        const clientIds: string[] = clientIdsJson ? JSON.parse(clientIdsJson) : [];
 
-        // 활성화된 포트폴리오 조회 (클라이언트별 필터링)
+        // 활성화된 포트폴리오 조회 (접근 타입에 따라 필터링, 클라이언트 브랜드 색상 포함)
         let portfolioQuery = supabase
           .from('portfolios')
-          .select('id, name')
+          .select('id, name, client_id, clients(brand_color)')
           .eq('is_active', true);
 
-        // 클라이언트 ID가 있으면 해당 클라이언트의 포트폴리오만 가져옴
-        if (clientId) {
+        if (accessType === 'single' && clientId) {
+          // 단일 소속: 해당 클라이언트의 포트폴리오만
           portfolioQuery = portfolioQuery.eq('client_id', clientId);
+        } else if (accessType === 'shared' && clientIds.length > 0) {
+          // 선택적 공유: 선택된 클라이언트들의 포트폴리오만
+          portfolioQuery = portfolioQuery.in('client_id', clientIds);
         }
+        // master인 경우: 필터 없음 (모든 포트폴리오)
 
         const { data: activePortfolios } = await portfolioQuery;
 
@@ -171,17 +181,20 @@ const App: React.FC = () => {
           }
         }
 
-        // 접근 가능한 종목만 로드 (클라이언트가 설정된 경우)
+        // 접근 가능한 종목만 로드
         let stocksQuery = supabase.from('stocks').select('*');
-        if (clientId && accessibleStockIds.length > 0) {
+        const hasClientFilter = accessType === 'single' || accessType === 'shared';
+
+        if (hasClientFilter && accessibleStockIds.length > 0) {
           stocksQuery = stocksQuery.in('id', accessibleStockIds);
-        } else if (clientId && accessibleStockIds.length === 0) {
-          // 클라이언트가 설정되었지만 접근 가능한 종목이 없는 경우
+        } else if (hasClientFilter && accessibleStockIds.length === 0) {
+          // 클라이언트 필터가 있지만 접근 가능한 종목이 없는 경우
           setAllStocks([]);
           setPortfolioGroups([]);
           setIsLoading(false);
           return;
         }
+        // master인 경우: 모든 종목 로드
 
         const [stocksRes, pointsRes, segmentsRes, issuesRes, glossaryRes] = await Promise.all([
           stocksQuery,
@@ -268,12 +281,13 @@ const App: React.FC = () => {
           const all = stocksRes.data.map(mapRow);
           setAllStocks(all);
 
-          // 포트폴리오별 그룹 생성
+          // 포트폴리오별 그룹 생성 (클라이언트 브랜드 색상 포함)
           if (activePortfolios && activePortfolios.length > 0) {
-            const groups: PortfolioGroup[] = activePortfolios.map(p => ({
+            const groups: PortfolioGroup[] = activePortfolios.map((p: any) => ({
               id: p.id,
               name: p.name,
               stocks: all.filter(s => (portfolioStockMap[p.id] || []).includes(s.id)),
+              brandColor: p.clients?.brand_color,
             }));
             setPortfolioGroups(groups);
           } else {
@@ -390,21 +404,21 @@ const App: React.FC = () => {
             <nav className={`flex gap-10 mb-8 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-100'}`}>
               <button
                 onClick={() => { setActiveTab('PORTFOLIO'); setExpandedPortfolios(new Set()); }}
-                className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'PORTFOLIO' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
+                className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'PORTFOLIO' ? (isDarkMode ? 'text-slate-200' : 'text-accent') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
-                PORTFOLIO {activeTab === 'PORTFOLIO' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
+                PORTFOLIO {activeTab === 'PORTFOLIO' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-accent rounded-full" />}
               </button>
               <button
                 onClick={() => setActiveTab('ISSUES')}
-                className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'ISSUES' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
+                className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'ISSUES' ? (isDarkMode ? 'text-slate-200' : 'text-accent') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
-                NEWS {activeTab === 'ISSUES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
+                NEWS {activeTab === 'ISSUES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-accent rounded-full" />}
               </button>
               <button
                 onClick={() => setActiveTab('RESOURCES')}
-                className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'RESOURCES' ? (isDarkMode ? 'text-blue-400' : 'text-blue-900') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
+                className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'RESOURCES' ? (isDarkMode ? 'text-slate-200' : 'text-accent') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
-                RESOURCES {activeTab === 'RESOURCES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-blue-900 rounded-full" />}
+                RESOURCES {activeTab === 'RESOURCES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-accent rounded-full" />}
               </button>
             </nav>
             {activeTab === 'PORTFOLIO' ? (
@@ -424,7 +438,7 @@ const App: React.FC = () => {
                           return next;
                         })}
                         portfolioName={group.name}
-                        brandColor={clientBrandColor}
+                        brandColor={group.brandColor || clientBrandColor}
                       />
                       <div className={`transition-all duration-700 ease-in-out origin-top ${
                         isExpanded
