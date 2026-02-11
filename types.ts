@@ -10,6 +10,8 @@ export interface StockIssue {
   content: string;
   keywords: string[];
   date: string;
+  createdAt?: string;
+  updatedAt?: string;
   isCMS?: boolean;
   images?: IssueImage[];
 }
@@ -51,6 +53,17 @@ export interface Stock {
   aiSummaryKeywords?: string[];
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  code: string;
+  password?: string;  // 소속별 비밀번호 (사용자 로그인용)
+  description?: string;
+  logoUrl?: string;
+  brandColor?: string;  // 브랜드 색상 (헤더, 포트폴리오 카드 등)
+  isActive: boolean;
+}
+
 export interface Resource {
   id: string;
   title: string;
@@ -60,6 +73,7 @@ export interface Resource {
   date: string;
   fileSize: string;
   fileUrl?: string;
+  clientId?: string | null;
 }
 
 export type ViewMode = 'DASHBOARD' | 'DETAIL';
@@ -78,5 +92,7 @@ export interface FeedItem {
   content: string;
   keywords: string[];
   date: string;
+  createdAt?: string;
+  updatedAt?: string;
   images?: IssueImage[];
 }

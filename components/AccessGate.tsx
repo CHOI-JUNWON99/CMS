@@ -20,24 +20,37 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
     setError('');
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('verify_access_code', {
-        input_code: code.trim(),
-      });
+      // 비밀번호로 소속(클라이언트) 찾기
+      const { data, error: queryError } = await supabase
+        .from('clients')
+        .select('id, name, logo_url, brand_color')
+        .eq('password', code.trim())
+        .eq('is_active', true)
+        .single();
 
-      if (rpcError) throw rpcError;
-
-      if (data === true) {
-        // 코드 버전 저장
-        const { data: version } = await supabase.rpc('get_active_code_version');
-        const expiresAt = Date.now() + SESSION_DURATION_MS;
-        localStorage.setItem('cms_authenticated', 'true');
-        localStorage.setItem('cms_expires_at', String(expiresAt));
-        localStorage.setItem('cms_code_version', String(version ?? 1));
-        onAuthenticated();
-      } else {
-        setError('잘못된 인증코드입니다.');
+      if (queryError || !data) {
+        setError('잘못된 비밀번호입니다.');
         setCode('');
+        return;
       }
+
+      // 세션 정보 저장
+      const expiresAt = Date.now() + SESSION_DURATION_MS;
+      localStorage.setItem('cms_authenticated', 'true');
+      localStorage.setItem('cms_expires_at', String(expiresAt));
+      localStorage.setItem('cms_code_version', '1');
+
+      // 클라이언트(소속) 정보 저장
+      localStorage.setItem('cms_client_id', data.id);
+      localStorage.setItem('cms_client_name', data.name);
+      if (data.logo_url) {
+        localStorage.setItem('cms_client_logo', data.logo_url);
+      }
+      if (data.brand_color) {
+        localStorage.setItem('cms_client_brand_color', data.brand_color);
+      }
+
+      onAuthenticated();
     } catch {
       setError('인증 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
@@ -53,7 +66,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
             CMS
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight mb-2">
-            CMS X 신한증권 Wrap
+            CMS Portfolio Service
           </h1>
           <p className="text-slate-500 text-sm font-bold tracking-wide">
             Premium Management System
@@ -66,7 +79,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="인증코드를 입력하세요"
+              placeholder="비밀번호를 입력하세요"
               autoFocus
               className="w-full px-6 py-4 rounded-2xl bg-slate-800/50 border-2 border-slate-700 text-white text-center text-lg font-bold tracking-widest placeholder:text-slate-600 placeholder:tracking-normal placeholder:font-medium focus:outline-none focus:border-primary transition-colors"
             />

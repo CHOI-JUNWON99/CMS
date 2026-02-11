@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Resource } from '../types';
+import { Resource, Client } from '../types';
 import { supabase, getAdminSupabase } from '../lib/supabase';
 
 interface AdminResourcesViewProps {
@@ -11,14 +11,46 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
   const [newResource, setNewResource] = useState({
     title: '',
     description: '',
     fileType: 'PDF' as 'PDF' | 'EXCEL' | 'WORD' | 'PPT',
     category: '',
     file: null as File | null,
+    clientId: '' as string,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 클라이언트 로딩
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+
+        if (data) {
+          setClients(data.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            code: row.code,
+            description: row.description,
+            logoUrl: row.logo_url,
+            isActive: row.is_active,
+          })));
+        }
+      } catch (err) {
+        console.error('클라이언트 로딩 실패:', err);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   // 데이터 로딩
   useEffect(() => {
@@ -36,6 +68,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
             date: r.date,
             fileSize: r.file_size,
             fileUrl: r.file_url,
+            clientId: r.client_id,
           })));
         }
       } catch (err) {
@@ -94,25 +127,26 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       const today = new Date();
       const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
 
-      // DB 저장 (RPC 사용 - 관리자 인증 포함)
-      const adminCode = localStorage.getItem('cms_admin_code') || '';
-      const { error: dbError } = await supabase.rpc('add_resource', {
-        admin_code: adminCode,
-        p_id: `res-${Date.now()}`,
-        p_title: newResource.title,
-        p_description: newResource.description || '',
-        p_file_type: newResource.fileType,
-        p_category: newResource.category || '기타',
-        p_date: dateStr,
-        p_file_size: fileSize,
-        p_file_url: urlData.publicUrl,
-      });
+      // DB 저장 (직접 insert 사용 - client_id 포함)
+      const { error: dbError } = await supabase
+        .from('resources')
+        .insert({
+          id: `res-${Date.now()}`,
+          title: newResource.title,
+          description: newResource.description || '',
+          file_type: newResource.fileType,
+          category: newResource.category || '기타',
+          date: dateStr,
+          file_size: fileSize,
+          file_url: urlData.publicUrl,
+          client_id: newResource.clientId || null,
+        });
 
       if (dbError) throw dbError;
 
       // 리셋
       setShowAddModal(false);
-      setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null });
+      setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null, clientId: '' });
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       // 새로고침
@@ -175,6 +209,12 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
     }
   };
 
+  const getClientName = (clientId?: string | null) => {
+    if (!clientId) return '모두 공개';
+    const client = clients.find(c => c.id === clientId);
+    return client?.name || '알 수 없음';
+  };
+
   return (
     <div className="animate-in fade-in duration-500">
       {/* 헤더 */}
@@ -214,6 +254,9 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
                     <span>{res.category}</span>
                     <span>{res.date}</span>
                     <span>{res.fileSize}</span>
+                    <span className={`px-1.5 py-0.5 rounded ${res.clientId ? 'bg-blue-900/30 text-blue-400' : 'bg-emerald-900/30 text-emerald-400'}`}>
+                      {getClientName(res.clientId)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -251,6 +294,21 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
             <h3 className="text-lg font-black text-white mb-6">새 자료 추가</h3>
 
             <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">공개 범위 *</label>
+                <select
+                  value={newResource.clientId}
+                  onChange={(e) => setNewResource({ ...newResource, clientId: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
+                >
+                  <option value="">모두 공개</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name} 전용</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">'모두 공개'를 선택하면 모든 클라이언트가 이 자료를 볼 수 있습니다.</p>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">제목 *</label>
                 <input
@@ -318,7 +376,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
               <button
                 onClick={() => {
                   setShowAddModal(false);
-                  setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null });
+                  setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null, clientId: '' });
                 }}
                 className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >

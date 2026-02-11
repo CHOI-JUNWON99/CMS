@@ -105,6 +105,18 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
     return `${yy}/${mm}/${dd}`;
   }, []);
 
+  // 날짜/시간 포맷 함수
+  const formatDateTime = (timestamp?: string) => {
+    if (!timestamp) return null;
+    const date = new Date(timestamp);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}.${mm}.${dd}. ${hh}:${min}`;
+  };
+
   const feedItems = React.useMemo(() => {
     const items: FeedItem[] = [];
     stocks.forEach(stock => {
@@ -121,12 +133,19 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
             content: issue.content,
             keywords: issue.keywords || [],
             date: issue.date,
+            createdAt: issue.createdAt,
+            updatedAt: issue.updatedAt,
             images: issue.images
           });
         });
       }
     });
-    return items.sort((a, b) => b.date.localeCompare(a.date));
+    // updatedAt 또는 createdAt 기준으로 정렬
+    return items.sort((a, b) => {
+      const dateA = a.updatedAt || a.createdAt || a.date;
+      const dateB = b.updatedAt || b.createdAt || b.date;
+      return dateB.localeCompare(dateA);
+    });
   }, [stocks]);
 
   return (
@@ -171,38 +190,58 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
               </div>
 
               <div
-                className={`rounded-[2rem] lg:rounded-[2.5rem] p-4 lg:p-6 border-2 transition-all duration-500 transform hover:-translate-y-2 group ${
+                className={`rounded-2xl p-5 lg:p-7 border transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl group ${
                   item.isCMS
-                    ? (isDarkMode ? 'bg-slate-800 border-blue-500/40 border-l-8 border-l-primary shadow-2xl' : 'bg-white border-blue-200 shadow-lg border-l-8 border-l-primary')
-                    : (isDarkMode ? 'bg-[#112240] border-slate-600 hover:border-blue-500 shadow-2xl' : 'bg-white border-gray-300 hover:border-primary shadow-lg')
+                    ? (isDarkMode ? 'bg-[#112240] border-slate-700 border-l-4 border-l-primary shadow-lg' : 'bg-white border-gray-200 border-l-4 border-l-primary shadow-md')
+                    : (isDarkMode ? 'bg-[#112240] border-slate-700 shadow-lg' : 'bg-white border-gray-200 shadow-md')
                 }`}
               >
-                <div className="flex flex-wrap gap-2 lg:gap-3 mb-3">
-                  {item.keywords?.map((kw, i) => (
-                    <span key={i} className={`text-[10px] lg:text-sm font-black px-3 py-1 lg:px-4 lg:py-1.5 rounded-xl border-2 transition-all ${isDarkMode ? 'bg-slate-900 text-slate-100 border-slate-700' : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-primary'}`}>#{kw}</span>
-                  ))}
-                </div>
-                {item.title && <h4 className={`text-lg lg:text-2xl font-black mb-3 tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {/* 1. 제목 */}
+                {item.title && <h4 className={`text-xl lg:text-2xl font-black mb-3 tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   <TextWithCMS text={item.title} isDarkMode={isDarkMode} isTitle={true} glossary={glossary} />
                 </h4>}
-                <div className={`text-[14px] lg:text-[17px] leading-relaxed whitespace-pre-wrap font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-700'}`}>
+
+                {/* 2. 태그 */}
+                {item.keywords && item.keywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {item.keywords.map((kw, i) => (
+                      <span key={i} className={`text-[12px] lg:text-[13px] font-bold px-3 py-1 rounded-full border transition-all ${isDarkMode ? 'bg-transparent text-slate-300 border-slate-600' : 'bg-white text-gray-600 border-gray-300'}`}>#{kw}</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* 3. 업데이트 날짜 (updatedAt > createdAt > date 순서로 표시) */}
+                <div className={`text-[11px] lg:text-[13px] mb-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                  <span className={"ml-0.5 font-medium"}>업데이트</span>
+                  <span className="ml-2 font-medium">
+                    {formatDateTime(item.updatedAt) || formatDateTime(item.createdAt) || item.date}
+                  </span>
+                </div>
+
+                {/* 4. 구분선 */}
+                <div className={`border-t mb-2 ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`} />
+
+                {/* 5. 내용 */}
+                <div className={`text-[14px] lg:text-[15px] leading-relaxed whitespace-pre-wrap font-medium ${isDarkMode ? 'text-slate-200' : 'text-gray-700'}`}>
                   <TextWithCMS text={item.content} isDarkMode={isDarkMode} hideBadge={true} glossary={glossary} />
                 </div>
 
                 {/* 피드용 이미지 갤러리 */}
                 {item.images && item.images.length > 0 && (
-                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {item.images.map((img, i) => (
-                      <div key={i} className={`aspect-video rounded-2xl overflow-hidden border ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                      <div key={i} className={`aspect-video rounded-xl overflow-hidden border ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
                         <img src={img.url} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
                 )}
 
-                <div className="mt-8 flex justify-end">
-                  <button onClick={() => stock && onStockClick(stock)} className={`text-[11px] font-black flex items-center gap-2 transition-all transform group-hover:translate-x-0 translate-x-4 opacity-0 group-hover:opacity-100 ${isDarkMode ? 'text-primary-accent' : 'text-primary'}`}>
-                    종목 상세 보기 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M9 5l7 7-7 7" /></svg>
+                {/* 6. AI 분석 및 상세 보기 링크 */}
+                <div className="mt-6 flex justify-end">
+                  <button onClick={() => stock && onStockClick(stock)} className={`text-[13px] font-bold flex items-center gap-1 transition-all hover:gap-2 ${isDarkMode ? 'text-primary-accent' : 'text-primary'}`}>
+                    AI 분석 및 상세 보기
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
+import { Client } from '../../types';
 
 interface Portfolio {
   id: string;
@@ -7,6 +8,7 @@ interface Portfolio {
   description: string;
   isActive: boolean;
   createdAt: string;
+  clientId?: string | null;
 }
 
 interface StockItem {
@@ -33,12 +35,46 @@ const AdminPortfolioPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
 
+  // 클라이언트 관련 상태
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>('all');
+
   // 모달 상태
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
-  const [newPortfolio, setNewPortfolio] = useState({ name: '', description: '' });
+  const [newPortfolio, setNewPortfolio] = useState({ name: '', description: '', clientId: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 클라이언트 목록 로딩
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+
+        if (data) {
+          setClients(data.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            code: row.code,
+            description: row.description,
+            logoUrl: row.logo_url,
+            isActive: row.is_active,
+          })));
+        }
+      } catch (err) {
+        console.error('클라이언트 로딩 실패:', err);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   // 포트폴리오 목록 로딩
   useEffect(() => {
@@ -58,6 +94,7 @@ const AdminPortfolioPage: React.FC = () => {
             description: row.description || '',
             isActive: row.is_active ?? false,
             createdAt: row.created_at,
+            clientId: row.client_id,
           }));
           setPortfolios(mapped);
 
@@ -139,8 +176,22 @@ const AdminPortfolioPage: React.FC = () => {
     fetchPortfolioStocks();
   }, [selectedPortfolioId]);
 
+  // 클라이언트 필터링된 포트폴리오
+  const filteredPortfolios = useMemo(() => {
+    if (selectedClientId === 'all') return portfolios;
+    if (selectedClientId === 'none') return portfolios.filter(p => !p.clientId);
+    return portfolios.filter(p => p.clientId === selectedClientId);
+  }, [portfolios, selectedClientId]);
+
   // 선택된 포트폴리오
   const selectedPortfolio = portfolios.find(p => p.id === selectedPortfolioId);
+
+  // 클라이언트 이름 가져오기
+  const getClientName = (clientId?: string | null) => {
+    if (!clientId) return null;
+    const client = clients.find(c => c.id === clientId);
+    return client?.name || null;
+  };
 
   // 포트폴리오에 포함된 종목 ID Set
   const portfolioStockIds = useMemo(() => {
@@ -178,30 +229,41 @@ const AdminPortfolioPage: React.FC = () => {
       return;
     }
 
+    if (clients.length > 0 && !newPortfolio.clientId) {
+      alert('클라이언트를 선택해주세요.');
+      return;
+    }
+
     setIsSubmitting(true);
-    const adminCode = localStorage.getItem('cms_admin_code') || '';
 
     try {
-      const { data, error } = await supabase.rpc('add_portfolio', {
-        admin_code: adminCode,
-        p_name: newPortfolio.name.trim(),
-        p_description: newPortfolio.description.trim(),
-      });
+      // 직접 insert 사용 (client_id 포함)
+      const { data, error } = await supabase
+        .from('portfolios')
+        .insert({
+          name: newPortfolio.name.trim(),
+          description: newPortfolio.description.trim(),
+          is_active: false,
+          client_id: newPortfolio.clientId || null,
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
 
       const newP: Portfolio = {
-        id: data,
+        id: data.id,
         name: newPortfolio.name.trim(),
         description: newPortfolio.description.trim(),
         isActive: false,
         createdAt: new Date().toISOString(),
+        clientId: newPortfolio.clientId || null,
       };
 
       setPortfolios([newP, ...portfolios]);
-      setSelectedPortfolioId(data);
+      setSelectedPortfolioId(data.id);
       setShowAddModal(false);
-      setNewPortfolio({ name: '', description: '' });
+      setNewPortfolio({ name: '', description: '', clientId: '' });
     } catch (err) {
       console.error('포트폴리오 추가 실패:', err);
       alert('추가에 실패했습니다.');
@@ -218,21 +280,28 @@ const AdminPortfolioPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const adminCode = localStorage.getItem('cms_admin_code') || '';
 
     try {
-      const { error } = await supabase.rpc('update_portfolio', {
-        admin_code: adminCode,
-        p_portfolio_id: editingPortfolio.id,
-        p_name: editingPortfolio.name.trim(),
-        p_description: editingPortfolio.description.trim(),
-      });
+      // 직접 update 사용 (client_id 포함)
+      const { error } = await supabase
+        .from('portfolios')
+        .update({
+          name: editingPortfolio.name.trim(),
+          description: editingPortfolio.description.trim(),
+          client_id: editingPortfolio.clientId || null,
+        })
+        .eq('id', editingPortfolio.id);
 
       if (error) throw error;
 
       setPortfolios(portfolios.map(p =>
         p.id === editingPortfolio.id
-          ? { ...p, name: editingPortfolio.name.trim(), description: editingPortfolio.description.trim() }
+          ? {
+              ...p,
+              name: editingPortfolio.name.trim(),
+              description: editingPortfolio.description.trim(),
+              clientId: editingPortfolio.clientId,
+            }
           : p
       ));
       setShowEditModal(false);
@@ -378,10 +447,47 @@ const AdminPortfolioPage: React.FC = () => {
 
   return (
     <div className="animate-in fade-in duration-500">
+      {/* 클라이언트 필터 */}
+      {clients.length > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider">Client:</span>
+          <select
+            value={selectedClientId}
+            onChange={(e) => {
+              const newClientId = e.target.value;
+              setSelectedClientId(newClientId);
+
+              // 필터링된 포트폴리오 중 첫 번째 자동 선택
+              let filtered;
+              if (newClientId === 'all') {
+                filtered = portfolios;
+              } else if (newClientId === 'none') {
+                filtered = portfolios.filter(p => !p.clientId);
+              } else {
+                filtered = portfolios.filter(p => p.clientId === newClientId);
+              }
+
+              if (filtered.length > 0) {
+                setSelectedPortfolioId(filtered[0].id);
+              } else {
+                setSelectedPortfolioId(null);
+              }
+            }}
+            className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-slate-600"
+          >
+            <option value="all">전체</option>
+            <option value="none">미지정</option>
+            {clients.map(client => (
+              <option key={client.id} value={client.id}>{client.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* 포트폴리오 선택 영역 */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider mr-1">Portfolio:</span>
-        {portfolios.map(p => (
+        {filteredPortfolios.map(p => (
           <button
             key={p.id}
             onClick={() => setSelectedPortfolioId(p.id)}
@@ -391,7 +497,12 @@ const AdminPortfolioPage: React.FC = () => {
                 : 'bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            {p.name}
+            <span>{p.name}</span>
+            {getClientName(p.clientId) && (
+              <span className="ml-1.5 text-[9px] text-slate-300 opacity-60">
+                ({getClientName(p.clientId)})
+              </span>
+            )}
           </button>
         ))}
         <button
@@ -613,6 +724,22 @@ const AdminPortfolioPage: React.FC = () => {
             <h3 className="text-lg font-black text-white mb-6">새 포트폴리오</h3>
 
             <div className="space-y-4">
+              {clients.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">클라이언트 *</label>
+                  <select
+                    value={newPortfolio.clientId}
+                    onChange={(e) => setNewPortfolio({ ...newPortfolio, clientId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
+                  >
+                    <option value="">클라이언트 선택</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
                 <input
@@ -640,7 +767,7 @@ const AdminPortfolioPage: React.FC = () => {
               <button
                 onClick={() => {
                   setShowAddModal(false);
-                  setNewPortfolio({ name: '', description: '' });
+                  setNewPortfolio({ name: '', description: '', clientId: '' });
                 }}
                 disabled={isSubmitting}
                 className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all"
@@ -666,6 +793,23 @@ const AdminPortfolioPage: React.FC = () => {
             <h3 className="text-lg font-black text-white mb-6">포트폴리오 수정</h3>
 
             <div className="space-y-4">
+              {clients.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-200 mb-1">소속</label>
+                  <select
+                    value={editingPortfolio.clientId || ''}
+                    onChange={(e) => setEditingPortfolio({ ...editingPortfolio, clientId: e.target.value || null })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
+                  >
+                    <option value="">미지정</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">소속을 변경하면 해당 소속의 사용자만 이 포트폴리오를 볼 수 있습니다.</p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
                 <input

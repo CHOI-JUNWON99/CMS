@@ -21,6 +21,10 @@ function clearSession() {
   localStorage.removeItem('cms_authenticated');
   localStorage.removeItem('cms_expires_at');
   localStorage.removeItem('cms_code_version');
+  localStorage.removeItem('cms_client_id');
+  localStorage.removeItem('cms_client_name');
+  localStorage.removeItem('cms_client_logo');
+  localStorage.removeItem('cms_client_brand_color');
 }
 
 function isSessionValid(): boolean {
@@ -55,6 +59,14 @@ const App: React.FC = () => {
   const [allStocks, setAllStocks] = useState<Stock[]>([]);
   const [glossary, setGlossary] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [clientBrandColor, setClientBrandColor] = useState<string | null>(null);
+
+  // 클라이언트 브랜드 색상 로드
+  useEffect(() => {
+    if (isAuthenticated) {
+      setClientBrandColor(localStorage.getItem('cms_client_brand_color'));
+    }
+  }, [isAuthenticated]);
 
   // 로그아웃 처리
   const logout = useCallback(() => {
@@ -121,14 +133,26 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // 활성화된 포트폴리오 전체 조회
-        const { data: activePortfolios } = await supabase
+        // 클라이언트 ID 가져오기
+        const clientId = localStorage.getItem('cms_client_id');
+
+        // 활성화된 포트폴리오 조회 (클라이언트별 필터링)
+        let portfolioQuery = supabase
           .from('portfolios')
           .select('id, name')
           .eq('is_active', true);
 
+        // 클라이언트 ID가 있으면 해당 클라이언트의 포트폴리오만 가져옴
+        if (clientId) {
+          portfolioQuery = portfolioQuery.eq('client_id', clientId);
+        }
+
+        const { data: activePortfolios } = await portfolioQuery;
+
         // 포트폴리오별 종목 ID 매핑
         const portfolioStockMap: Record<string, string[]> = {};
+        let accessibleStockIds: string[] = [];
+
         if (activePortfolios && activePortfolios.length > 0) {
           const portfolioIds = activePortfolios.map(p => p.id);
           const { data: portfolioStocks } = await supabase
@@ -140,12 +164,27 @@ const App: React.FC = () => {
             portfolioStocks.forEach((ps: any) => {
               if (!portfolioStockMap[ps.portfolio_id]) portfolioStockMap[ps.portfolio_id] = [];
               portfolioStockMap[ps.portfolio_id].push(ps.stock_id);
+              accessibleStockIds.push(ps.stock_id);
             });
+            // 중복 제거
+            accessibleStockIds = [...new Set(accessibleStockIds)];
           }
         }
 
+        // 접근 가능한 종목만 로드 (클라이언트가 설정된 경우)
+        let stocksQuery = supabase.from('stocks').select('*');
+        if (clientId && accessibleStockIds.length > 0) {
+          stocksQuery = stocksQuery.in('id', accessibleStockIds);
+        } else if (clientId && accessibleStockIds.length === 0) {
+          // 클라이언트가 설정되었지만 접근 가능한 종목이 없는 경우
+          setAllStocks([]);
+          setPortfolioGroups([]);
+          setIsLoading(false);
+          return;
+        }
+
         const [stocksRes, pointsRes, segmentsRes, issuesRes, glossaryRes] = await Promise.all([
-          supabase.from('stocks').select('*'),
+          stocksQuery,
           supabase.from('investment_points').select('*').order('sort_order'),
           supabase.from('business_segments').select('*').order('sort_order'),
           supabase.from('issues').select('*').order('date', { ascending: false }),
@@ -173,6 +212,8 @@ const App: React.FC = () => {
               content: issue.content,
               keywords: issue.keywords || [],
               date: issue.date,
+              createdAt: issue.created_at,
+              updatedAt: issue.updated_at,
               isCMS: issue.is_cms,
               images: imageUrls.map((url: string) => ({ url })),
             };
@@ -334,6 +375,7 @@ const App: React.FC = () => {
         visitorCount={visitorCount}
         remainingTime={remainingTime}
         onExtendSession={handleExtendSession}
+        onLogout={logout}
       />
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
         {isLoading ? (
@@ -382,6 +424,7 @@ const App: React.FC = () => {
                           return next;
                         })}
                         portfolioName={group.name}
+                        brandColor={clientBrandColor}
                       />
                       <div className={`transition-all duration-700 ease-in-out origin-top ${
                         isExpanded

@@ -16,7 +16,22 @@ const ResourcesView: React.FC<ResourcesViewProps> = ({ isDarkMode }) => {
     const fetchResources = async () => {
       setIsLoading(true);
       try {
-        const { data } = await supabase.from('resources').select('*').order('date', { ascending: false });
+        // 클라이언트 ID 가져오기
+        const clientId = localStorage.getItem('cms_client_id');
+
+        let query = supabase.from('resources').select('*').order('date', { ascending: false });
+
+        // 클라이언트가 설정된 경우: 해당 클라이언트 전용 자료 + 공개 자료
+        if (clientId) {
+          query = query.or(`client_id.eq.${clientId},client_id.is.null`);
+        }
+        // 클라이언트가 없는 경우: 공개 자료만
+        else {
+          query = query.is('client_id', null);
+        }
+
+        const { data } = await query;
+
         if (data) {
           setResources(data.map((r: any) => ({
             id: r.id,

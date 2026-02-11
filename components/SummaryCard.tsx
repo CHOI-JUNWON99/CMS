@@ -6,9 +6,10 @@ interface SummaryCardProps {
   isExpanded: boolean;
   onToggle: () => void;
   portfolioName: string;
+  brandColor?: string | null;
 }
 
-const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, isExpanded, onToggle, portfolioName }) => {
+const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, isExpanded, onToggle, portfolioName, brandColor }) => {
   const isPositive = averageReturn >= 0;
 
   return (
@@ -98,7 +99,10 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
       </div>
 
       {/* Bottom Color Bar */}
-      <div className="h-1.5 bg-primary w-full" />
+      <div
+        className="h-1.5 w-full"
+        style={{ backgroundColor: brandColor || '#1e3a8a' }}
+      />
     </div>
   );
 };

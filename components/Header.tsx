@@ -8,15 +8,27 @@ interface HeaderProps {
   visitorCount?: number;
   remainingTime?: string;
   onExtendSession?: () => void;
+  onLogout?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, visitorCount, remainingTime, onExtendSession }) => {
+const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, visitorCount, remainingTime, onExtendSession, onLogout }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // 클라이언트 브랜딩 정보
+  const [clientName, setClientName] = useState<string | null>(null);
+  const [clientLogo, setClientLogo] = useState<string | null>(null);
+  const [clientBrandColor, setClientBrandColor] = useState<string | null>(null);
+
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 519px)');
+    setClientName(localStorage.getItem('cms_client_name'));
+    setClientLogo(localStorage.getItem('cms_client_logo'));
+    setClientBrandColor(localStorage.getItem('cms_client_brand_color'));
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 599px)');
     const handler = (e: MediaQueryListEvent | MediaQueryList) => {
       setIsMobile(e.matches);
       if (!e.matches) setIsMenuOpen(false);
@@ -109,6 +121,23 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
           </svg>
         )}
       </button>
+
+      {onLogout && (
+        <button
+          onClick={onLogout}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black transition-all active:scale-95 ${
+            isDarkMode
+              ? 'bg-red-900/20 border-red-800/50 text-red-400 hover:bg-red-900/30'
+              : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+          }`}
+          title="로그아웃"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span>로그아웃</span>
+        </button>
+      )}
     </>
   );
 
@@ -123,16 +152,29 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
             CMS
           </div>
 
-          <div className="flex items-center">
-            <span className={`mx-1 text-lg font-light ${isDarkMode ? 'text-slate-500' : 'text-gray-300'}`}>&</span>
-
-            <div className="flex items-baseline ml-1">
-              <span className="text-primary font-black text-xl tracking-tight">신한</span>
-              <span className={`ml-0.5 text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                증권 Wrap
+          {clientName ? (
+            <div className="flex items-center">
+              <span className={`mx-1 text-lg font-light ${isDarkMode ? 'text-slate-500' : 'text-gray-300'}`}>&</span>
+              <div className="flex items-center gap-2 ml-1">
+                {clientLogo && (
+                  <img src={clientLogo} alt={clientName} className="h-6 w-auto object-contain" />
+                )}
+                <span
+                  className="text-xl font-black tracking-tight"
+                  style={{ color: clientBrandColor || (isDarkMode ? '#ffffff' : '#111827') }}
+                >
+                  {clientName}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center">
+              <span className={`mx-1 text-lg font-light ${isDarkMode ? 'text-slate-500' : 'text-gray-300'}`}>&</span>
+              <span className={`ml-1 text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Portfolio
               </span>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Desktop: inline items */}
