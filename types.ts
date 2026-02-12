@@ -44,7 +44,8 @@ export interface Stock {
   returnRate?: number;
   description: string;
   issues: StockIssue[];
-  lastUpdate?: string;
+  lastUpdate?: string;  // DB: last_update
+  createdAt?: string;   // DB: created_at
   businessSegments?: BusinessSegment[];
   per?: number;
   pbr?: number;

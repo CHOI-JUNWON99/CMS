@@ -9,6 +9,7 @@ interface Portfolio {
   isActive: boolean;
   createdAt: string;
   clientId?: string | null;
+  returnRate: number;
 }
 
 interface StockItem {
@@ -43,7 +44,7 @@ const AdminPortfolioPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
-  const [newPortfolio, setNewPortfolio] = useState({ name: '', description: '', clientId: '' });
+  const [newPortfolio, setNewPortfolio] = useState({ name: '', description: '', clientId: '', returnRate: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 클라이언트 목록 로딩
@@ -95,6 +96,7 @@ const AdminPortfolioPage: React.FC = () => {
             isActive: row.is_active ?? false,
             createdAt: row.created_at,
             clientId: row.client_id,
+            returnRate: row.return_rate || 0,
           }));
           setPortfolios(mapped);
 
@@ -215,13 +217,6 @@ const AdminPortfolioPage: React.FC = () => {
     );
   }, [allStocks, portfolioStockIds, searchQuery]);
 
-  // 평균 수익률
-  const averageReturn = useMemo(() => {
-    if (includedStocks.length === 0) return 0;
-    const sum = includedStocks.reduce((acc, s) => acc + (s.returnRate || 0), 0);
-    return sum / includedStocks.length;
-  }, [includedStocks]);
-
   // 포트폴리오 추가
   const handleAddPortfolio = async () => {
     if (!newPortfolio.name.trim()) {
@@ -245,6 +240,7 @@ const AdminPortfolioPage: React.FC = () => {
           description: newPortfolio.description.trim(),
           is_active: false,
           client_id: newPortfolio.clientId || null,
+          return_rate: newPortfolio.returnRate || 0,
         })
         .select('id')
         .single();
@@ -258,12 +254,13 @@ const AdminPortfolioPage: React.FC = () => {
         isActive: false,
         createdAt: new Date().toISOString(),
         clientId: newPortfolio.clientId || null,
+        returnRate: newPortfolio.returnRate || 0,
       };
 
       setPortfolios([newP, ...portfolios]);
       setSelectedPortfolioId(data.id);
       setShowAddModal(false);
-      setNewPortfolio({ name: '', description: '', clientId: '' });
+      setNewPortfolio({ name: '', description: '', clientId: '', returnRate: 0 });
     } catch (err) {
       console.error('포트폴리오 추가 실패:', err);
       alert('추가에 실패했습니다.');
@@ -282,13 +279,14 @@ const AdminPortfolioPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // 직접 update 사용 (client_id 포함)
+      // 직접 update 사용 (client_id, return_rate 포함)
       const { error } = await supabase
         .from('portfolios')
         .update({
           name: editingPortfolio.name.trim(),
           description: editingPortfolio.description.trim(),
           client_id: editingPortfolio.clientId || null,
+          return_rate: editingPortfolio.returnRate || 0,
         })
         .eq('id', editingPortfolio.id);
 
@@ -301,6 +299,7 @@ const AdminPortfolioPage: React.FC = () => {
               name: editingPortfolio.name.trim(),
               description: editingPortfolio.description.trim(),
               clientId: editingPortfolio.clientId,
+              returnRate: editingPortfolio.returnRate,
             }
           : p
       ));
@@ -580,9 +579,9 @@ const AdminPortfolioPage: React.FC = () => {
               </div>
               <div className="w-px h-6 bg-slate-700" />
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-300">평균 수익률</span>
-                <span className={`text-lg font-black ${averageReturn >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
-                  {averageReturn >= 0 ? '+' : ''}{averageReturn.toFixed(2)}%
+                <span className="text-xs font-bold text-slate-300">수익률</span>
+                <span className={`text-lg font-black ${selectedPortfolio.returnRate >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
+                  {selectedPortfolio.returnRate >= 0 ? '+' : ''}{selectedPortfolio.returnRate.toFixed(2)}%
                 </span>
               </div>
             </div>
@@ -761,13 +760,25 @@ const AdminPortfolioPage: React.FC = () => {
                   placeholder="포트폴리오 설명 (선택)"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">수익률 (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newPortfolio.returnRate || ''}
+                  onChange={(e) => setNewPortfolio({ ...newPortfolio, returnRate: Number(e.target.value) })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
+                  placeholder="예: 12.5"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => {
                   setShowAddModal(false);
-                  setNewPortfolio({ name: '', description: '', clientId: '' });
+                  setNewPortfolio({ name: '', description: '', clientId: '', returnRate: 0 });
                 }}
                 disabled={isSubmitting}
                 className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-all"
@@ -827,6 +838,18 @@ const AdminPortfolioPage: React.FC = () => {
                   onChange={(e) => setEditingPortfolio({ ...editingPortfolio, description: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm resize-none focus:outline-none focus:border-slate-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">수익률 (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingPortfolio.returnRate || ''}
+                  onChange={(e) => setEditingPortfolio({ ...editingPortfolio, returnRate: Number(e.target.value) })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
+                  placeholder="예: 12.5"
                 />
               </div>
             </div>

@@ -5,13 +5,12 @@ interface HeaderProps {
   onHomeClick: () => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
-  visitorCount?: number;
   remainingTime?: string;
   onExtendSession?: () => void;
   onLogout?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, visitorCount, remainingTime, onExtendSession, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, remainingTime, onExtendSession, onLogout }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -19,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
   // 클라이언트 브랜딩 정보
   const [clientName, setClientName] = useState<string | null>(null);
   const [clientLogo, setClientLogo] = useState<string | null>(null);
-  const [clientBrandColor, setClientBrandColor] = useState<string | null>(null);
+  const [_clientBrandColor, setClientBrandColor] = useState<string | null>(null);
 
   useEffect(() => {
     setClientName(localStorage.getItem('cms_client_name'));
@@ -56,20 +55,6 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
 
   const statusItems = (
     <>
-      {visitorCount !== undefined && (
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black ${
-          isDarkMode
-            ? 'bg-slate-800 border-slate-700 text-slate-300'
-            : 'bg-gray-50 border-gray-200 text-gray-600'
-        }`}>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-          <span>{visitorCount.toLocaleString()}</span>
-        </div>
-      )}
-
       {remainingTime && (
         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black transition-colors ${
           isUrgent
@@ -159,10 +144,7 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, v
                 {clientLogo && (
                   <img src={clientLogo} alt={clientName} className="h-6 w-auto object-contain" />
                 )}
-                <span
-                  className="text-xl font-black tracking-tight"
-                  style={{ color: clientBrandColor || (isDarkMode ? '#ffffff' : '#111827') }}
-                >
+                <span className={`text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {clientName}
                 </span>
               </div>

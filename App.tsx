@@ -14,6 +14,7 @@ interface PortfolioGroup {
   name: string;
   stocks: Stock[];
   brandColor?: string;
+  returnRate: number;
 }
 
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1시간
@@ -55,7 +56,6 @@ const App: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('ASC');
 
   const [expandedPortfolios, setExpandedPortfolios] = useState<Set<string>>(new Set());
-  const [visitorCount, setVisitorCount] = useState<number>(0);
   const [remainingTime, setRemainingTime] = useState<string>('60:00');
 
   const [portfolioGroups, setPortfolioGroups] = useState<PortfolioGroup[]>([]);
@@ -113,22 +113,6 @@ const App: React.FC = () => {
     setRemainingTime(formatRemaining(SESSION_DURATION_MS));
   }, [logout]);
 
-  // 방문자 수 조회
-  const fetchVisitorCount = useCallback(async () => {
-    try {
-      const { data } = await supabase.rpc('get_visitor_count');
-      if (data !== null) setVisitorCount(Number(data));
-    } catch {
-      // 실패 시 무시
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchVisitorCount();
-    }
-  }, [isAuthenticated, fetchVisitorCount]);
-
   // Supabase 데이터 페칭
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -145,7 +129,7 @@ const App: React.FC = () => {
         // 활성화된 포트폴리오 조회 (접근 타입에 따라 필터링, 클라이언트 브랜드 색상 포함)
         let portfolioQuery = supabase
           .from('portfolios')
-          .select('id, name, client_id, clients(brand_color)')
+          .select('id, name, return_rate, client_id, clients(brand_color)')
           .eq('is_active', true);
 
         if (accessType === 'single' && clientId) {
@@ -276,6 +260,8 @@ const App: React.FC = () => {
             businessSegments: segmentsByStock[row.id] || [],
             aiSummary: row.ai_summary || '',
             aiSummaryKeywords: row.ai_summary_keywords || [],
+            lastUpdate: row.last_update,
+            createdAt: row.created_at,
           });
 
           const all = stocksRes.data.map(mapRow);
@@ -288,6 +274,7 @@ const App: React.FC = () => {
               name: p.name,
               stocks: all.filter(s => (portfolioStockMap[p.id] || []).includes(s.id)),
               brandColor: p.clients?.brand_color,
+              returnRate: p.return_rate || 0,
             }));
             setPortfolioGroups(groups);
           } else {
@@ -305,14 +292,8 @@ const App: React.FC = () => {
   }, [isAuthenticated]);
 
   // 인증 성공 핸들러
-  const handleAuthenticated = async () => {
+  const handleAuthenticated = () => {
     setIsAuthenticated(true);
-    try {
-      await supabase.rpc('record_visit');
-    } catch {
-      // 실패 시 무시
-    }
-    fetchVisitorCount();
   };
 
   const getSimplifiedSector = (sector: string) => {
@@ -347,12 +328,6 @@ const App: React.FC = () => {
     });
   }, [sortKey, sortDirection]);
 
-  const getAverageReturn = (list: Stock[]) => {
-    if (list.length === 0) return 0;
-    const sum = list.reduce((acc, stock) => acc + (stock.returnRate || 0), 0);
-    return sum / list.length;
-  };
-
   const handleStockSelect = (stock: Stock) => {
     setSelectedStock(stock);
     setViewMode('DETAIL');
@@ -373,6 +348,19 @@ const App: React.FC = () => {
     }
   };
 
+  // 포트폴리오 조회수 기록 (사용자에게 노출되지 않음)
+  const recordPortfolioView = useCallback(async (portfolioId: string) => {
+    try {
+      const clientId = localStorage.getItem('cms_client_id');
+      await supabase.rpc('record_portfolio_view', {
+        p_portfolio_id: portfolioId,
+        p_client_id: clientId || null,
+      });
+    } catch {
+      // 실패 시 무시 (사용자 경험에 영향 없음)
+    }
+  }, []);
+
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   // 미인증 → 인증코드 입력 화면
@@ -386,7 +374,6 @@ const App: React.FC = () => {
         onHomeClick={handleBackToDashboard}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
-        visitorCount={visitorCount}
         remainingTime={remainingTime}
         onExtendSession={handleExtendSession}
         onLogout={logout}
@@ -428,15 +415,22 @@ const App: React.FC = () => {
                   return (
                     <div key={group.id} className="mb-10">
                       <SummaryCard
-                        averageReturn={getAverageReturn(group.stocks)}
+                        averageReturn={group.returnRate}
                         isDarkMode={isDarkMode}
                         isExpanded={isExpanded}
-                        onToggle={() => setExpandedPortfolios(prev => {
-                          const next = new Set(prev);
-                          if (next.has(group.id)) next.delete(group.id);
-                          else next.add(group.id);
-                          return next;
-                        })}
+                        onToggle={() => {
+                          const wasExpanded = expandedPortfolios.has(group.id);
+                          if (!wasExpanded) {
+                            // 확장될 때만 조회수 기록
+                            recordPortfolioView(group.id);
+                          }
+                          setExpandedPortfolios(prev => {
+                            const next = new Set(prev);
+                            if (next.has(group.id)) next.delete(group.id);
+                            else next.add(group.id);
+                            return next;
+                          });
+                        }}
                         portfolioName={group.name}
                         brandColor={group.brandColor || clientBrandColor}
                       />

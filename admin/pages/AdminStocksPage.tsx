@@ -77,6 +77,8 @@ const StockListView: React.FC = () => {
             businessSegments: segmentsByStock[row.id] || [],
             aiSummary: row.ai_summary || '',
             aiSummaryKeywords: row.ai_summary_keywords || [],
+            lastUpdate: row.last_update,
+            createdAt: row.created_at,
           }));
           setStocks(assembled);
         }
@@ -215,6 +217,8 @@ const StockDetailView: React.FC = () => {
             })) || [],
             aiSummary: row.ai_summary || '',
             aiSummaryKeywords: row.ai_summary_keywords || [],
+            lastUpdate: row.last_update,
+            createdAt: row.created_at,
           };
           setStock(assembled);
         }

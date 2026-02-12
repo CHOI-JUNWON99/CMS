@@ -11,6 +11,7 @@ const tabs = [
   { path: '/admin/issues', label: '뉴스 관리', matchPrefix: false },
   { path: '/admin/resources', label: '자료실 관리', matchPrefix: false },
   { path: '/admin/glossary', label: '용어사전', matchPrefix: false },
+  { path: '/admin/analytics', label: '조회수 분석', matchPrefix: false },
   { path: '/admin/settings', label: '설정', matchPrefix: false },
 ];
 

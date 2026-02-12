@@ -8,6 +8,7 @@ import AdminIssuesPage from './pages/AdminIssuesPage';
 import AdminResourcesPage from './pages/AdminResourcesPage';
 import AdminGlossaryPage from './pages/AdminGlossaryPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
+import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 
 function isAdminSessionValid(): boolean {
   const auth = localStorage.getItem('cms_admin_authenticated');
@@ -49,6 +50,7 @@ const AdminApp: React.FC = () => {
           <Route path="/issues" element={<AdminIssuesPage />} />
           <Route path="/resources" element={<AdminResourcesPage />} />
           <Route path="/glossary" element={<AdminGlossaryPage />} />
+          <Route path="/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/settings" element={<AdminSettingsPage />} />
         </Routes>
       </main>
