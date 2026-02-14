@@ -32,3 +32,5 @@ table.sql
 ADMIN_PLAN.md
 sql.md
 bulk_update_rpc.sql
+bulk_insert_issues_rpc.sql
+get_portfolio_analytics_rpc.sql

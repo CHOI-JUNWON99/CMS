@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { Stock } from '../types';
 import { supabase, getAdminSupabase } from '../lib/supabase';
 
@@ -57,6 +58,16 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
   const [editImageUploads, setEditImageUploads] = useState<ImageUpload[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  // 엑셀 일괄 업로드 관련 state
+  const [isExcelUploading, setIsExcelUploading] = useState(false);
+  const [excelUploadResult, setExcelUploadResult] = useState<{
+    inserted: number;
+    skipped: string[];
+    errors: { ticker: string; row: number; reason: string }[];
+  } | null>(null);
+  const [showExcelUploadGuide, setShowExcelUploadGuide] = useState(false);
+  const excelFileInputRef = useRef<HTMLInputElement>(null);
 
   // 종목 검색 필터링
   const filteredStocks = useMemo(() => {
@@ -380,20 +391,113 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
     }
   };
 
+  // 엑셀 일괄 업로드 처리
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsExcelUploading(true);
+    setExcelUploadResult(null);
+    setShowExcelUploadGuide(false);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<{
+        ticker?: string;
+        title?: string;
+        content?: string;
+        date?: string;
+        is_cms?: boolean | string | number;
+        keywords?: string;
+      }>(sheet);
+
+      // 데이터 변환
+      const bulkData = rows
+        .filter(row => row.ticker && row.title && row.content && row.date)
+        .map(row => ({
+          ticker: row.ticker,
+          title: row.title,
+          content: row.content,
+          date: row.date,
+          is_cms: row.is_cms === true || row.is_cms === 'TRUE' || row.is_cms === 1,
+          keywords: row.keywords
+            ? row.keywords.split(',').map(k => k.trim()).filter(k => k)
+            : [],
+        }));
+
+      if (bulkData.length === 0) {
+        setExcelUploadResult({
+          inserted: 0,
+          skipped: [],
+          errors: [{ ticker: '-', row: 0, reason: '유효한 데이터가 없습니다. ticker, title, content, date는 필수입니다.' }],
+        });
+        return;
+      }
+
+      // RPC 호출
+      const adminCode = localStorage.getItem('cms_admin_code') || '';
+      const { data: result, error } = await supabase.rpc('bulk_insert_issues', {
+        admin_code: adminCode,
+        data: bulkData,
+      });
+
+      if (error) throw error;
+
+      setExcelUploadResult({
+        inserted: result?.inserted ?? 0,
+        skipped: result?.skipped ?? [],
+        errors: result?.errors ?? [],
+      });
+    } catch (err: any) {
+      console.error('엑셀 처리 오류:', err);
+      setExcelUploadResult({
+        inserted: 0,
+        skipped: [],
+        errors: [{ ticker: '-', row: 0, reason: err.message || '엑셀 파일 처리 중 오류가 발생했습니다.' }],
+      });
+    } finally {
+      setIsExcelUploading(false);
+      if (excelFileInputRef.current) excelFileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="animate-in fade-in duration-500">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-black text-white">뉴스 관리 ({feedItems.length}건)</h2>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-          </svg>
-          뉴스 추가
-        </button>
+        <div className="flex items-center gap-3">
+          {/* 엑셀 일괄 업로드 버튼 */}
+          <input
+            ref={excelFileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleExcelUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => setShowExcelUploadGuide(true)}
+            disabled={isExcelUploading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-900/30 border border-slate-700 text-emerald-400 text-xs font-black hover:bg-emerald-900/50 transition-all disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            {isExcelUploading ? '업로드 중...' : '엑셀 일괄 등록'}
+          </button>
+          {/* 뉴스 추가 버튼 */}
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            뉴스 추가
+          </button>
+        </div>
       </div>
 
       {/* 피드 리스트 - 타임라인 스타일 */}
@@ -828,6 +932,179 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({ stocks, glossary: _gl
                 {isUploading ? '저장 중...' : '저장'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 엑셀 업로드 가이드 모달 */}
+      {showExcelUploadGuide && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-2xl p-6 my-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-black text-white">뉴스 엑셀 일괄 등록</h3>
+              <button
+                onClick={() => setShowExcelUploadGuide(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-emerald-900/20 border border-emerald-700/50">
+                <p className="text-emerald-300 text-sm font-bold mb-2">기능 안내</p>
+                <p className="text-slate-300 text-sm">엑셀 파일로 뉴스를 일괄 등록합니다. (신규 등록만, 기존 데이터 업데이트 없음)</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                <p className="text-white text-sm font-bold mb-3">엑셀 양식</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left py-2 px-2 text-slate-300 font-bold">컬럼명</th>
+                        <th className="text-left py-2 px-2 text-slate-300 font-bold">필수</th>
+                        <th className="text-left py-2 px-2 text-slate-300 font-bold">설명</th>
+                        <th className="text-left py-2 px-2 text-slate-300 font-bold">예시</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-slate-400">
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-2 px-2 font-mono text-emerald-400">ticker</td>
+                        <td className="py-2 px-2 text-red-400">필수</td>
+                        <td className="py-2 px-2">종목 티커</td>
+                        <td className="py-2 px-2 font-mono">9988.HK</td>
+                      </tr>
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-2 px-2 font-mono text-emerald-400">title</td>
+                        <td className="py-2 px-2 text-red-400">필수</td>
+                        <td className="py-2 px-2">뉴스 제목</td>
+                        <td className="py-2 px-2">Qwen App MAU 돌파</td>
+                      </tr>
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-2 px-2 font-mono text-emerald-400">content</td>
+                        <td className="py-2 px-2 text-red-400">필수</td>
+                        <td className="py-2 px-2">뉴스 내용</td>
+                        <td className="py-2 px-2">산하 Qwen App이...</td>
+                      </tr>
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-2 px-2 font-mono text-emerald-400">date</td>
+                        <td className="py-2 px-2 text-red-400">필수</td>
+                        <td className="py-2 px-2">날짜 (YY/MM/DD)</td>
+                        <td className="py-2 px-2 font-mono">25/01/15</td>
+                      </tr>
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-2 px-2 font-mono text-emerald-400">is_cms</td>
+                        <td className="py-2 px-2 text-slate-500">선택</td>
+                        <td className="py-2 px-2">CMS 코멘트 여부</td>
+                        <td className="py-2 px-2 font-mono">TRUE / FALSE</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-2 font-mono text-emerald-400">keywords</td>
+                        <td className="py-2 px-2 text-slate-500">선택</td>
+                        <td className="py-2 px-2">쉼표 구분 키워드</td>
+                        <td className="py-2 px-2">AI, 클라우드</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-700/50">
+                <p className="text-amber-300 text-sm font-bold mb-2">주의사항</p>
+                <ul className="text-slate-300 text-sm space-y-1 list-disc list-inside">
+                  <li>첫 번째 행은 반드시 헤더여야 합니다</li>
+                  <li>ticker는 DB에 등록된 종목 티커와 정확히 일치해야 합니다</li>
+                  <li>date는 반드시 YY/MM/DD 형식으로 입력하세요 (예: 25/01/15)</li>
+                  <li>이미지는 엑셀로 업로드할 수 없습니다 (개별 편집 사용)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowExcelUploadGuide(false)}
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm font-bold hover:bg-slate-800 transition-all"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => excelFileInputRef.current?.click()}
+                className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-all"
+              >
+                엑셀 파일 선택
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 엑셀 업로드 결과 모달 */}
+      {excelUploadResult && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#112240] rounded-2xl border border-slate-700 p-6" style={{ maxWidth: '500px', width: '100%' }}>
+            {excelUploadResult.errors.length > 0 && excelUploadResult.inserted === 0 ? (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-black text-red-400">업로드 실패</h3>
+                </div>
+                <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                  {excelUploadResult.errors.map((err, i) => (
+                    <p key={i} className="text-sm text-slate-300">
+                      {err.row > 0 ? `행 ${err.row}: ` : ''}{err.reason}
+                    </p>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-900/50 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-black text-emerald-400">업로드 완료</h3>
+                </div>
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-900/30">
+                    <span className="text-emerald-300 text-sm">등록 완료</span>
+                    <span className="text-emerald-400 text-lg font-black">{excelUploadResult.inserted}건</span>
+                  </div>
+                  {excelUploadResult.skipped.length > 0 && (
+                    <div className="p-3 rounded-lg bg-amber-900/30">
+                      <p className="text-amber-300 text-sm mb-1">스킵된 티커 (존재하지 않는 종목)</p>
+                      <p className="text-amber-200 text-xs">{excelUploadResult.skipped.join(', ')}</p>
+                    </div>
+                  )}
+                  {excelUploadResult.errors.length > 0 && (
+                    <div className="p-3 rounded-lg bg-red-900/30 max-h-32 overflow-y-auto">
+                      <p className="text-red-300 text-sm mb-1">오류 발생</p>
+                      {excelUploadResult.errors.map((err, i) => (
+                        <p key={i} className="text-red-200 text-xs">행 {err.row}: {err.reason}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => {
+                const hadInserts = excelUploadResult.inserted > 0;
+                setExcelUploadResult(null);
+                if (hadInserts) onRefresh();
+              }}
+              className="w-full py-2.5 rounded-lg bg-slate-700 text-white text-sm font-bold hover:bg-slate-600 transition-all"
+            >
+              확인
+            </button>
           </div>
         </div>
       )}
