@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Stock } from '../types';
 import { supabase, getAdminSupabase } from '../lib/supabase';
 import { convertToWebP } from '../lib/imageUtils';
+import { generateAiSummary } from '../lib/aiSummary';
 
 interface SegmentIcon {
   id: string;
@@ -55,6 +56,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
 
   // AI 요약 키워드 (원시 문자열로 관리)
   const [aiKeywordsRaw, setAiKeywordsRaw] = useState(stock.aiSummaryKeywords?.join(', ') || '');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // 이슈 상태
   const [issues, setIssues] = useState(stock.issues || []);
@@ -367,6 +369,42 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
       date: issue.date || '',
       isCMS: !!issue.isCMS,
     });
+  };
+
+  // AI 요약 재생성
+  const handleGenerateAiSummary = async () => {
+    if (issues.length === 0) {
+      alert('요약을 생성할 이슈 데이터가 없습니다.');
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const result = await generateAiSummary(
+        stock.nameKr,
+        issues.map(issue => ({
+          date: issue.date,
+          title: issue.title || '',
+          content: issue.content
+        }))
+      );
+
+      // 결과를 입력 필드에 채움
+      setEditingStock(prev => ({ ...prev, aiSummary: result.summary }));
+      setAiKeywordsRaw(result.keywords.join(', '));
+
+      alert('AI 요약이 생성되었습니다. 확인 후 "AI 요약 저장" 버튼을 눌러주세요.');
+    } catch (error) {
+      console.error('AI 요약 생성 실패:', error);
+      const errorMsg = (error as Error).message;
+      if (errorMsg.includes('429') || errorMsg.includes('quota')) {
+        alert('API 요청 한도 초과!\n\n무료 티어 일일 한도를 초과했습니다.\n내일 다시 시도하거나, Google AI Studio에서 새 API 키를 발급받으세요.');
+      } else {
+        alert('AI 요약 생성에 실패했습니다: ' + errorMsg);
+      }
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
   // AI 기업활동 요약 저장
@@ -726,13 +764,32 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
 
       {/* AI 기업활동 요약 섹션 */}
       <section className="mb-10 p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="text-sm font-black text-red-400 tracking-wider">AI 기업활동 요약</h3>
           </div>
-          <h3 className="text-sm font-black text-red-400 tracking-wider">AI 기업활동 요약</h3>
+          <button
+            onClick={handleGenerateAiSummary}
+            disabled={isGeneratingAi || issues.length === 0}
+            className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isGeneratingAi ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                생성 중...
+              </>
+            ) : (
+              <>AI 요약 재생성</>
+            )}
+          </button>
         </div>
         <div className="space-y-4">
           <div>

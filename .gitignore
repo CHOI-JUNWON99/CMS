@@ -26,11 +26,12 @@ npm-debug.log*
 .cache/
 
 # Docs
-ERD.docs
-seed.sql
-table.sql
-ADMIN_PLAN.md
-sql.md
-bulk_update_rpc.sql
-bulk_insert_issues_rpc.sql
-get_portfolio_analytics_rpc.sql
+docs/ERD.docs
+docs/seed.sql
+docs/table.sql
+docs/ADMIN_PLAN.md
+docs/sql.md
+docs/bulk_update_rpc.sql
+docs/bulk_insert_issues_rpc.sql
+docs/get_portfolio_analytics_rpc.sql
+docs/AI_SUMMARY_IMPLEMENTATION.md

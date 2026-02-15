@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Stock, IssueImage } from '../types';
-import { GoogleGenAI, Type } from "@google/genai";
 
 interface StockDetailProps {
   stock: Stock;
@@ -17,11 +16,6 @@ interface UnifiedInsight {
   content: string;
   keywords: string[];
   images?: IssueImage[];
-}
-
-interface IssueAnalysis {
-  interpretation: string;
-  glossary: { term: string; definition: string }[];
 }
 
 interface AiBriefing {
@@ -123,11 +117,8 @@ const DefaultSegmentIcon: React.FC<{ isDark: boolean }> = ({ isDark }) => (
 
 const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, glossary }) => {
   const [aiBriefing, setAiBriefing] = useState<AiBriefing | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedInsight, setSelectedInsight] = useState<UnifiedInsight | null>(null);
-  const [isAnalyzingIssue, setIsAnalyzingIssue] = useState(false);
-  const [issueAnalysis, setIssueAnalysis] = useState<IssueAnalysis | null>(null);
 
   const timelineData = useMemo(() => {
     return stock.issues.map(issue => ({
@@ -142,83 +133,19 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
   }, [stock]);
 
   useEffect(() => {
-    const fetchAiSummary = async () => {
-      // DB에 저장된 AI 요약이 있으면 그것을 사용
-      if (stock.aiSummary && stock.aiSummary.trim()) {
-        setAiBriefing({
-          summary: stock.aiSummary,
-          keywords: stock.aiSummaryKeywords || [],
-        });
-        return;
-      }
-
-      if (timelineData.length === 0) {
-        setAiBriefing(null);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `기업(${stock.nameKr})의 최신 타임라인 정보들을 종합 분석하여, 이 회사가 현재 어떤 방향으로 나아가고 있는지 요약해줘. 한국어로 3~4문장 정도로 답변해. 타임라인 정보: ${timelineData.map(item => `[${item.date}] ${item.title}`).join(', ')}`;
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                summary: { type: Type.STRING },
-                keywords: { type: Type.ARRAY, items: { type: Type.STRING } }
-              },
-              required: ['summary', 'keywords']
-            }
-          }
-        });
-        const data = JSON.parse(response.text || '{}');
-        setAiBriefing(data);
-      } catch (error) {
-        console.error("AI Summary Error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchAiSummary();
-  }, [stock, timelineData]);
-
-  const handleInsightClick = async (insight: UnifiedInsight) => {
-    setSelectedInsight(insight);
-    setIsAnalyzingIssue(true);
-    setIssueAnalysis(null);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: `이슈: ${insight.title}\n내용: ${insight.content}\n\n위 내용에 대한 해석과 용어 풀이를 한국어로 제공해줘.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              interpretation: { type: Type.STRING },
-              glossary: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: { term: { type: Type.STRING }, definition: { type: Type.STRING } }
-                }
-              }
-            }
-          }
-        }
+    // DB에 저장된 AI 요약만 표시 (관리자 페이지에서 생성)
+    if (stock.aiSummary && stock.aiSummary.trim()) {
+      setAiBriefing({
+        summary: stock.aiSummary,
+        keywords: stock.aiSummaryKeywords || [],
       });
-      const data = JSON.parse(response.text || '{}');
-      setIssueAnalysis(data);
-    } catch (error) {
-      console.error('Analysis Error:', error);
-    } finally {
-      setIsAnalyzingIssue(false);
+    } else {
+      setAiBriefing(null);
     }
+  }, [stock]);
+
+  const handleInsightClick = (insight: UnifiedInsight) => {
+    setSelectedInsight(insight);
   };
 
   const formatMarketCapDetail = (capStr: string) => {
@@ -401,11 +328,7 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
                   <h3 className="text-[15px] xs:text-[18px] font-black tracking-tight text-primary">AI 기업 활동 요약</h3>
                 </div>
 
-                {isLoading ? (
-                  <div className="flex items-center gap-2 justify-center py-10 xs:py-16">
-                    {[0, 1, 2].map(i => <div key={i} className="w-2 h-2 xs:w-2.5 xs:h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}
-                  </div>
-                ) : aiBriefing ? (
+                {aiBriefing ? (
                   <div className="space-y-4 xs:space-y-8 flex-1">
                     <div className="flex flex-wrap gap-1.5 xs:gap-2">
                       {aiBriefing.keywords.map((kw, i) => (
@@ -495,7 +418,7 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
 
                 <div
                   onClick={() => handleInsightClick(item)}
-                  className={`p-4 xs:p-8 lg:p-10 rounded-xl xs:rounded-[2rem] border transition-all cursor-pointer hover:shadow-2xl hover:border-primary/30 hover:-translate-y-1 ${isDarkMode ? 'bg-[#112240] border-slate-600' : 'bg-white border-gray-300 shadow-sm'} ${item.isCMS ? 'border-l-[6px] xs:border-l-[10px] border-l-primary' : ''}`}
+                  className={`p-4 xs:p-8 lg:p-10 rounded-xl xs:rounded-[1rem] border transition-all cursor-pointer hover:shadow-2xl hover:border-primary/30 hover:-translate-y-1 ${isDarkMode ? 'bg-[#112240] border-slate-600' : 'bg-white border-gray-300 shadow-sm'} ${item.isCMS ? 'border-l-[6px] xs:border-l-[10px] border-l-primary' : ''}`}
                 >
                   <h4 className={`text-base xs:text-xl lg:text-2xl font-black mb-3 xs:mb-6 leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     <TextWithCMS text={item.title} isDarkMode={isDarkMode} isTitle={true} glossary={glossary} />
@@ -515,8 +438,8 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
                   )}
 
                   <div className="mt-4 xs:mt-8 flex justify-end">
-                    <span className="text-[10px] xs:text-xs font-black text-primary flex items-center gap-1 xs:gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                      AI 심층 분석 보기 <svg className="w-3.5 h-3.5 xs:w-4 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                    <span className={`text-[10px] xs:text-xs font-black flex items-center gap-1 xs:gap-1.5 transition-all hover:gap-2 ${isDarkMode ? 'text-slate-300 hover:text-slate-100' : 'text-accent hover:text-accent-dark'}`}>
+                      상세 보기 <svg className="w-3.5 h-3.5 xs:w-4 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
                     </span>
                   </div>
                 </div>
@@ -544,44 +467,10 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
                 </button>
               </div>
 
-              <div className="mb-6 xs:mb-12">
+              <div>
                 <h2 className={`text-xl xs:text-3xl font-black mb-4 xs:mb-6 leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}><TextWithCMS text={selectedInsight.title} isDarkMode={isDarkMode} glossary={glossary} /></h2>
                 <div className={`p-4 xs:p-8 rounded-xl xs:rounded-[2rem] text-[13px] xs:text-[17px] leading-relaxed font-bold whitespace-pre-wrap ${isDarkMode ? 'bg-slate-800 text-slate-200' : 'bg-gray-50 text-gray-700'}`}><TextWithCMS text={selectedInsight.content} isDarkMode={isDarkMode} hideBadge={true} glossary={glossary} /></div>
               </div>
-
-              {isAnalyzingIssue ? (
-                <div className="flex flex-col items-center justify-center py-12 xs:py-20 gap-3 xs:gap-4">
-                  <div className="w-8 h-8 xs:w-10 xs:h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs xs:text-sm font-black text-primary tracking-widest uppercase">Analyzing with Gemini 2.0</span>
-                </div>
-              ) : issueAnalysis && (
-                <div className="space-y-8 xs:space-y-12 animate-in slide-in-from-bottom-6">
-                  <section>
-                    <div className="flex items-center gap-2 xs:gap-3 mb-4 xs:mb-6">
-                       <span className="w-1 xs:w-1.5 h-5 xs:h-6 bg-primary rounded-full" />
-                       <h3 className={`text-base xs:text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>전문가 관점의 해석</h3>
-                    </div>
-                    <p className={`text-[13px] xs:text-[17px] leading-relaxed font-bold p-4 xs:p-8 rounded-xl xs:rounded-[2rem] border ${isDarkMode ? 'bg-primary/10 border-blue-800 text-slate-200' : 'bg-blue-50/30 border-blue-100 text-gray-800'}`}>{issueAnalysis.interpretation}</p>
-                  </section>
-
-                  {issueAnalysis.glossary.length > 0 && (
-                    <section>
-                      <div className="flex items-center gap-2 xs:gap-3 mb-4 xs:mb-6">
-                         <span className="w-1 xs:w-1.5 h-5 xs:h-6 bg-primary rounded-full" />
-                         <h3 className={`text-base xs:text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>핵심 용어 정리</h3>
-                      </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 xs:gap-4">
-                        {issueAnalysis.glossary.map((item, i) => (
-                          <div key={i} className={`p-4 xs:p-6 rounded-xl xs:rounded-2xl border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:border-blue-500' : 'bg-white border-gray-200 hover:border-primary'}`}>
-                            <dt className="text-primary font-black text-xs xs:text-sm mb-1.5 xs:mb-2 uppercase tracking-tight">{item.term}</dt>
-                            <dd className={`text-[12px] xs:text-[14px] font-bold leading-snug ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>{item.definition}</dd>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-                </div>
-              )}
             </div>
             <div className={`p-4 xs:p-8 text-center ${isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}`}>
                <button onClick={() => setSelectedInsight(null)} className="px-8 xs:px-12 py-3 xs:py-4 rounded-xl xs:rounded-2xl bg-primary text-white font-black text-sm xs:text-lg shadow-xl shadow-primary/20 active:scale-95 transition-transform">닫기</button>
