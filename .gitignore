@@ -26,6 +26,7 @@ npm-debug.log*
 .cache/
 
 # Docs
+docs/
 docs/ERD.docs
 docs/seed.sql
 docs/table.sql
