@@ -24,9 +24,53 @@ export function formatMarketCapShort(capStr: string): string {
  */
 export function parseMarketCap(capStr: string): { jo: string; ok: string } | null {
   if (!capStr) return null;
-  const parts = capStr.split(' ');
-  if (parts.length < 2) return null;
-  const jo = parts[0].replace('조', '');
-  const ok = parts[1].replace('억원', '').replace('억', '').replace(',', '');
+
+  // 정규식으로 조/억 추출 (공백 유무 상관없이)
+  const joMatch = capStr.match(/(\d+(?:,\d+)*)\s*조/);
+  const okMatch = capStr.match(/조\s*(\d+(?:,\d+)*)\s*억/);
+
+  if (!joMatch || !okMatch) return null;
+
+  const jo = joMatch[1].replace(/,/g, '');
+  const ok = okMatch[1].replace(/,/g, '');
   return { jo, ok };
+}
+
+/**
+ * 시가총액 텍스트를 숫자(원 단위)로 변환
+ * 정렬 및 DB 저장용
+ *
+ * 지원 형식:
+ * - "33조 1,287억원" → 33128700000000
+ * - "1,500억원" → 150000000000
+ * - "50억원" → 5000000000
+ * - "8,000만원" → 80000000
+ */
+export function parseMarketCapToValue(capStr: string): number {
+  if (!capStr) return 0;
+
+  let total = 0;
+
+  // 조 단위 추출 (예: "33조" → 33)
+  const joMatch = capStr.match(/(\d+(?:,\d+)*)\s*조/);
+  if (joMatch) {
+    const joValue = parseInt(joMatch[1].replace(/,/g, ''), 10);
+    total += joValue * 1_0000_0000_0000; // 1조 = 10^12
+  }
+
+  // 억 단위 추출 (예: "1,287억" → 1287)
+  const okMatch = capStr.match(/(\d+(?:,\d+)*)\s*억/);
+  if (okMatch) {
+    const okValue = parseInt(okMatch[1].replace(/,/g, ''), 10);
+    total += okValue * 1_0000_0000; // 1억 = 10^8
+  }
+
+  // 만 단위 추출 (예: "8,000만" → 8000)
+  const manMatch = capStr.match(/(\d+(?:,\d+)*)\s*만/);
+  if (manMatch) {
+    const manValue = parseInt(manMatch[1].replace(/,/g, ''), 10);
+    total += manValue * 1_0000; // 1만 = 10^4
+  }
+
+  return total;
 }

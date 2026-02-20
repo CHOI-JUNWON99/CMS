@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAdminSupabase } from '@/shared/lib/supabase';
 import { generateAiSummary } from '@/shared/lib/aiSummary';
 import { toast } from '@/shared/stores';
@@ -30,6 +30,12 @@ const AiSummarySection: React.FC<Props> = ({
   const [keywordsRaw, setKeywordsRaw] = useState(initialKeywords?.join(', ') || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // prop이 변경되면 state 업데이트
+  useEffect(() => {
+    setSummary(initialSummary || '');
+    setKeywordsRaw(initialKeywords?.join(', ') || '');
+  }, [initialSummary, initialKeywords]);
 
   const handleGenerate = async () => {
     if (issues.length === 0) {

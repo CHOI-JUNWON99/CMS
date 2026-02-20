@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAdminSupabase } from '@/shared/lib/supabase';
 import { toast, confirm } from '@/shared/stores';
 import { Stock } from '@/shared/types';
+import { parseMarketCapToValue } from '@/shared/utils';
 
 interface Props {
   stock: Stock;
@@ -12,8 +13,16 @@ interface Props {
 const BasicInfoSection: React.FC<Props> = ({ stock, onRefresh, onBack }) => {
   const [editingStock, setEditingStock] = useState({
     ...stock,
-    tickers: (stock.tickers && stock.tickers.length > 0) ? stock.tickers : [stock.ticker],  // 복수 티커 초기화
+    tickers: (stock.tickers && stock.tickers.length > 0) ? stock.tickers : [stock.ticker],
   });
+
+  // stock prop이 변경되면 editingStock도 업데이트
+  useEffect(() => {
+    setEditingStock({
+      ...stock,
+      tickers: (stock.tickers && stock.tickers.length > 0) ? stock.tickers : [stock.ticker],
+    });
+  }, [stock]);
   const [isSaving, setIsSaving] = useState(false);
   const [newTicker, setNewTicker] = useState('');
   const [editingTickerIdx, setEditingTickerIdx] = useState<number | null>(null);
@@ -32,11 +41,12 @@ const BasicInfoSection: React.FC<Props> = ({ stock, onRefresh, onBack }) => {
         .update({
           name: editingStock.name,
           name_kr: editingStock.nameKr,
-          ticker: editingStock.tickers?.[0] || editingStock.ticker,  // 기본 티커
-          tickers: tickersToSave,  // 2개 이상일 때만 배열 저장
+          ticker: editingStock.tickers?.[0] || editingStock.ticker,
+          tickers: tickersToSave,
           sector: editingStock.sector,
           description: editingStock.description,
           market_cap: editingStock.marketCap,
+          market_cap_value: parseMarketCapToValue(editingStock.marketCap),
           return_rate: editingStock.returnRate,
           per: editingStock.per,
           pbr: editingStock.pbr,

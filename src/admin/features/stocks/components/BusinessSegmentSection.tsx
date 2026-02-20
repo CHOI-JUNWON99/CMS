@@ -12,15 +12,59 @@ interface BusinessSegment {
   name: string;
   nameKr: string;
   value: number;
-  iconUrl?: string;
+  iconUrls?: string[];
 }
 
 interface Props {
   stockId: string;
   businessSegments: BusinessSegment[];
+  onRefresh: () => void;
 }
 
-const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) => {
+const MAX_ICONS = 3;
+
+// 컴포넌트 외부에 정의하여 리렌더링 시 재생성 방지
+const IconsPreview: React.FC<{
+  iconUrls: string[];
+  onRemove: (index: number) => void;
+  onOpenPicker: () => void;
+  canAdd: boolean;
+}> = ({ iconUrls, onRemove, onOpenPicker, canAdd }) => (
+  <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+    <label className="block text-[10px] text-slate-400 mb-2">
+      아이콘 (최대 {MAX_ICONS}개)
+    </label>
+    <div className="flex items-center gap-2 flex-wrap">
+      {iconUrls.map((url, index) => (
+        <div key={index} className="relative">
+          <img
+            src={url}
+            alt=""
+            className="w-12 h-12 rounded-lg object-cover border border-slate-600"
+          />
+          <button
+            onClick={() => onRemove(index)}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      {canAdd && (
+        <button
+          onClick={onOpenPicker}
+          className="w-12 h-12 rounded-lg bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center hover:border-slate-500 transition-colors"
+        >
+          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
+    </div>
+  </div>
+);
+
+const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments, onRefresh }) => {
   const addMutation = useAddBusinessSegment();
   const updateMutation = useUpdateBusinessSegment();
   const deleteMutation = useDeleteBusinessSegment();
@@ -30,7 +74,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
     name: '',
     nameKr: '',
     value: 0,
-    iconUrl: '',
+    iconUrls: [] as string[],
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,7 +82,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
     name: '',
     nameKr: '',
     value: 0,
-    iconUrl: '',
+    iconUrls: [] as string[],
   });
 
   const [showIconPicker, setShowIconPicker] = useState<'new' | 'edit' | null>(null);
@@ -51,12 +95,13 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
         name: newSegment.name,
         nameKr: newSegment.nameKr,
         value: newSegment.value,
-        iconUrl: newSegment.iconUrl || undefined,
+        iconUrls: newSegment.iconUrls.length > 0 ? newSegment.iconUrls : undefined,
         sortOrder: businessSegments.length,
       });
-      setNewSegment({ name: '', nameKr: '', value: 0, iconUrl: '' });
+      setNewSegment({ name: '', nameKr: '', value: 0, iconUrls: [] });
       setShowAddForm(false);
       toast.success('사업 부문이 추가되었습니다.');
+      onRefresh();
     } catch {
       toast.error('추가 실패');
     }
@@ -68,7 +113,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
       name: seg.name,
       nameKr: seg.nameKr,
       value: seg.value,
-      iconUrl: seg.iconUrl || '',
+      iconUrls: seg.iconUrls || [],
     });
   };
 
@@ -81,10 +126,11 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
         name: editingData.name,
         nameKr: editingData.nameKr,
         value: editingData.value,
-        iconUrl: editingData.iconUrl || undefined,
+        iconUrls: editingData.iconUrls.length > 0 ? editingData.iconUrls : undefined,
       });
       setEditingId(null);
       toast.success('사업 부문이 수정되었습니다.');
+      onRefresh();
     } catch {
       toast.error('수정 실패');
     }
@@ -96,6 +142,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
     try {
       await deleteMutation.mutateAsync({ id: segmentId, stockId });
       toast.success('사업 부문이 삭제되었습니다.');
+      onRefresh();
     } catch {
       toast.error('삭제 실패');
     }
@@ -103,67 +150,30 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
 
   const handleSelectIcon = (iconUrl: string) => {
     if (showIconPicker === 'edit') {
-      setEditingData(prev => ({ ...prev, iconUrl }));
+      if (editingData.iconUrls.length < MAX_ICONS && !editingData.iconUrls.includes(iconUrl)) {
+        setEditingData(prev => ({ ...prev, iconUrls: [...prev.iconUrls, iconUrl] }));
+      }
     } else {
-      setNewSegment(prev => ({ ...prev, iconUrl }));
+      if (newSegment.iconUrls.length < MAX_ICONS && !newSegment.iconUrls.includes(iconUrl)) {
+        setNewSegment(prev => ({ ...prev, iconUrls: [...prev.iconUrls, iconUrl] }));
+      }
     }
     setShowIconPicker(null);
   };
 
-  const IconPreview = ({
-    iconUrl,
-    onRemove,
-    onOpenPicker,
-  }: {
-    iconUrl: string;
-    onRemove: () => void;
-    onOpenPicker: () => void;
-  }) => (
-    <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-      <div className="flex items-center gap-3 mb-2">
-        {iconUrl ? (
-          <div className="relative">
-            <img
-              src={iconUrl}
-              alt=""
-              className="w-12 h-12 rounded-lg object-cover border border-slate-600"
-            />
-            <button
-              onClick={onRemove}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs"
-            >
-              ×
-            </button>
-          </div>
-        ) : (
-          <div className="w-12 h-12 rounded-lg bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center">
-            <svg
-              className="w-5 h-5 text-slate-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        )}
-        <div className="flex-1">
-          <label className="block text-[10px] text-slate-400 mb-1">아이콘 이미지</label>
-          <button
-            onClick={onOpenPicker}
-            className="px-3 py-1.5 rounded bg-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-600"
-          >
-            라이브러리에서 선택
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const removeIcon = (target: 'new' | 'edit', index: number) => {
+    if (target === 'edit') {
+      setEditingData(prev => ({
+        ...prev,
+        iconUrls: prev.iconUrls.filter((_, i) => i !== index),
+      }));
+    } else {
+      setNewSegment(prev => ({
+        ...prev,
+        iconUrls: prev.iconUrls.filter((_, i) => i !== index),
+      }));
+    }
+  };
 
   return (
     <>
@@ -196,7 +206,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
                         setEditingData({ ...editingData, nameKr: e.target.value })
                       }
                       className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
-                      placeholder="한글명"
+                      placeholder="제목"
                     />
                     <input
                       type="text"
@@ -205,7 +215,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
                         setEditingData({ ...editingData, name: e.target.value })
                       }
                       className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
-                      placeholder="영문명"
+                      placeholder="소제목"
                     />
                   </div>
                   <input
@@ -217,10 +227,11 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
                     className="w-24 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
                     placeholder="비율 %"
                   />
-                  <IconPreview
-                    iconUrl={editingData.iconUrl}
-                    onRemove={() => setEditingData({ ...editingData, iconUrl: '' })}
+                  <IconsPreview
+                    iconUrls={editingData.iconUrls}
+                    onRemove={(index) => removeIcon('edit', index)}
                     onOpenPicker={() => setShowIconPicker('edit')}
+                    canAdd={editingData.iconUrls.length < MAX_ICONS}
                   />
                   <div className="flex gap-2">
                     <button
@@ -240,29 +251,35 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  {seg.iconUrl ? (
-                    <img
-                      src={seg.iconUrl}
-                      alt=""
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-600 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center shrink-0">
-                      <svg
-                        className="w-5 h-5 text-slate-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.5"
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  {/* 다중 아이콘 표시 */}
+                  <div className="flex gap-1 shrink-0">
+                    {seg.iconUrls && seg.iconUrls.length > 0 ? (
+                      seg.iconUrls.map((url, i) => (
+                        <img
+                          key={i}
+                          src={url}
+                          alt=""
+                          className="w-10 h-10 rounded-lg object-cover border border-slate-600"
                         />
-                      </svg>
-                    </div>
-                  )}
+                      ))
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-slate-700 border border-slate-600 flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-slate-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.5"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1">
                     <span className="font-bold text-white text-sm">{seg.nameKr}</span>
                     <span className="text-slate-300 text-xs ml-2">({seg.name})</span>
@@ -294,14 +311,14 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder="한글명"
+                placeholder="제목"
                 value={newSegment.nameKr}
                 onChange={(e) => setNewSegment({ ...newSegment, nameKr: e.target.value })}
                 className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
               />
               <input
                 type="text"
-                placeholder="영문명"
+                placeholder="소제목"
                 value={newSegment.name}
                 onChange={(e) => setNewSegment({ ...newSegment, name: e.target.value })}
                 className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
@@ -314,10 +331,11 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
               onChange={(e) => setNewSegment({ ...newSegment, value: Number(e.target.value) })}
               className="w-24 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
             />
-            <IconPreview
-              iconUrl={newSegment.iconUrl}
-              onRemove={() => setNewSegment({ ...newSegment, iconUrl: '' })}
+            <IconsPreview
+              iconUrls={newSegment.iconUrls}
+              onRemove={(index) => removeIcon('new', index)}
               onOpenPicker={() => setShowIconPicker('new')}
+              canAdd={newSegment.iconUrls.length < MAX_ICONS}
             />
             <div className="flex gap-2">
               <button
@@ -330,7 +348,7 @@ const BusinessSegmentSection: React.FC<Props> = ({ stockId, businessSegments }) 
               <button
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewSegment({ name: '', nameKr: '', value: 0, iconUrl: '' });
+                  setNewSegment({ name: '', nameKr: '', value: 0, iconUrls: [] });
                 }}
                 className="px-3 py-1 rounded bg-slate-700 text-slate-300 text-xs font-bold"
               >

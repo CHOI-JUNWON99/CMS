@@ -1,2 +1,2 @@
 export { getSimplifiedSector, getAllSimplifiedSectors } from './sector';
-export { formatMarketCapShort, parseMarketCap } from './format';
+export { formatMarketCapShort, parseMarketCap, parseMarketCapToValue } from './format';

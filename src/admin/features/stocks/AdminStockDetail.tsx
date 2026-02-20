@@ -48,7 +48,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
       name: s.name,
       nameKr: s.nameKr,
       value: s.value,
-      iconUrl: s.iconUrl,
+      iconUrls: s.iconUrls,
     }));
 
   // 이슈 데이터 변환 (id가 있는 것만 필터링)
@@ -69,7 +69,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
       <BasicInfoSection stock={stock} onRefresh={onRefresh} onBack={onBack} />
 
       {/* 사업부문 */}
-      <BusinessSegmentSection stockId={stock.id} businessSegments={businessSegments} />
+      <BusinessSegmentSection stockId={stock.id} businessSegments={businessSegments} onRefresh={onRefresh} />
 
       {/* AI 기업활동 요약 */}
       <AiSummarySection
@@ -82,10 +82,10 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
       />
 
       {/* 투자 포인트 */}
-      <InvestmentPointSection stockId={stock.id} investmentPoints={investmentPoints} />
+      <InvestmentPointSection stockId={stock.id} investmentPoints={investmentPoints} onRefresh={onRefresh} />
 
       {/* 뉴스 / 이슈 */}
-      <IssueSection stockId={stock.id} issues={issues} />
+      <IssueSection stockId={stock.id} issues={issues} onRefresh={onRefresh} />
     </div>
   );
 };

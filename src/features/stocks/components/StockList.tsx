@@ -97,7 +97,7 @@ const StockList: React.FC<StockListProps> = ({
                   </div>
                   {/* 모바일 수익률 */}
                   <div className="lg:hidden flex flex-col items-end">
-                    <div className={`text-2xl font-black ${(stock.returnRate || 0) >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>{(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%</div>
+                    <div className={`text-2xl font-black ${(stock.returnRate || 0) >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>{(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(1)}%</div>
                     <div className={`text-[15px] font-bold mt-1 ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>
                       {formatMarketCapShort(stock.marketCap)}
                     </div>
@@ -135,7 +135,7 @@ const StockList: React.FC<StockListProps> = ({
                     ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
                     : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
                 }`}>
-                  {(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
+                  {(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(1)}%
                 </div>
               </div>
             </React.Fragment>

@@ -15,9 +15,10 @@ interface InvestmentPoint {
 interface Props {
   stockId: string;
   investmentPoints: InvestmentPoint[];
+  onRefresh: () => void;
 }
 
-const InvestmentPointSection: React.FC<Props> = ({ stockId, investmentPoints }) => {
+const InvestmentPointSection: React.FC<Props> = ({ stockId, investmentPoints, onRefresh }) => {
   const addMutation = useAddInvestmentPoint();
   const updateMutation = useUpdateInvestmentPoint();
   const deleteMutation = useDeleteInvestmentPoint();
@@ -40,6 +41,7 @@ const InvestmentPointSection: React.FC<Props> = ({ stockId, investmentPoints }) 
       setNewPoint({ title: '', description: '' });
       setShowAddForm(false);
       toast.success('투자 포인트가 추가되었습니다.');
+      onRefresh();
     } catch {
       toast.error('추가 실패');
     }
@@ -61,6 +63,7 @@ const InvestmentPointSection: React.FC<Props> = ({ stockId, investmentPoints }) 
       });
       setEditingId(null);
       toast.success('투자 포인트가 수정되었습니다.');
+      onRefresh();
     } catch {
       toast.error('수정 실패');
     }
@@ -72,6 +75,7 @@ const InvestmentPointSection: React.FC<Props> = ({ stockId, investmentPoints }) 
     try {
       await deleteMutation.mutateAsync({ id: pointId, stockId });
       toast.success('투자 포인트가 삭제되었습니다.');
+      onRefresh();
     } catch {
       toast.error('삭제 실패');
     }

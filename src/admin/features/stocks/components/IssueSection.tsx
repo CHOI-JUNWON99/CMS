@@ -14,9 +14,10 @@ interface Issue {
 interface Props {
   stockId: string;
   issues: Issue[];
+  onRefresh: () => void;
 }
 
-const IssueSection: React.FC<Props> = ({ stockId, issues }) => {
+const IssueSection: React.FC<Props> = ({ stockId, issues, onRefresh }) => {
   const addMutation = useAddIssue();
   const updateMutation = useUpdateIssue();
   const deleteMutation = useDeleteIssue();
@@ -53,6 +54,7 @@ const IssueSection: React.FC<Props> = ({ stockId, issues }) => {
       setNewIssue({ title: '', content: '', keywords: '', date: '', isCMS: false });
       setShowAddForm(false);
       toast.success('이슈가 추가되었습니다.');
+      onRefresh();
     } catch {
       toast.error('추가 실패');
     }
@@ -83,6 +85,7 @@ const IssueSection: React.FC<Props> = ({ stockId, issues }) => {
       });
       setEditingId(null);
       toast.success('이슈가 수정되었습니다.');
+      onRefresh();
     } catch {
       toast.error('수정 실패');
     }
@@ -94,6 +97,7 @@ const IssueSection: React.FC<Props> = ({ stockId, issues }) => {
     try {
       await deleteMutation.mutateAsync({ id: issueId, stockId });
       toast.success('이슈가 삭제되었습니다.');
+      onRefresh();
     } catch {
       toast.error('삭제 실패');
     }

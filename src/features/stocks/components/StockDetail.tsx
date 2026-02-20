@@ -151,13 +151,26 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
 
   const renderMarketCap = (capStr: string) => {
     const parsed = parseMarketCap(capStr);
-    if (!parsed) return <span>{capStr}</span>;
+    if (!parsed) {
+      // 파싱 실패 시 원본 텍스트를 YTD와 동일한 스타일로 표시
+      return (
+        <span className={`text-base xs:text-lg sm:text-2xl lg:text-2xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
+          {capStr}
+        </span>
+      );
+    }
     return (
-      <span className={`inline-flex items-baseline ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
-        <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black tracking-tight">{parsed.jo}</span>
-        <span className="text-sm xs:text-base sm:text-lg lg:text-xl font-black mx-0.5">조</span>
-        <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black tracking-tight ml-1">{parsed.ok}</span>
-        <span className="text-sm xs:text-base sm:text-lg lg:text-xl font-black ml-0.5">억</span>
+      <span className={`flex flex-col items-start xs:flex-row xs:items-baseline ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
+        {/* 조 그룹 */}
+        <span className="whitespace-nowrap">
+          <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black tracking-tight">{parsed.jo}</span>
+          <span className="text-sm xs:text-base sm:text-lg lg:text-xl font-black mx-0.5">조</span>
+        </span>
+        {/* 억원 그룹 */}
+        <span className="whitespace-nowrap xs:ml-1">
+          <span className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black tracking-tight">{parsed.ok}</span>
+          <span className="text-sm xs:text-base sm:text-lg lg:text-xl font-black ml-0.5">억원</span>
+        </span>
       </span>
     );
   };
@@ -191,8 +204,8 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
             </div>
           </div>
 
-          <div className="flex flex-col">
-            <div className={`w-full lg:w-auto flex flex-col gap-3 xs:gap-4 sm:gap-6 px-4 xs:px-6 sm:px-10 py-4 xs:py-6 sm:py-8 rounded-2xl sm:rounded-[2rem] border shadow-xl ${isDarkMode ? 'bg-[#112240] border-slate-700 shadow-black/40' : 'bg-white border-gray-200 shadow-gray-200/40'}`}>
+          <div className="flex flex-col w-full lg:w-auto">
+            <div className={`w-full flex flex-col gap-3 xs:gap-4 sm:gap-6 px-4 xs:px-6 sm:px-10 py-4 xs:py-6 sm:py-8 rounded-2xl sm:rounded-[2rem] border shadow-xl ${isDarkMode ? 'bg-[#112240] border-slate-700 shadow-black/40' : 'bg-white border-gray-200 shadow-gray-200/40'}`}>
               <div className={`grid grid-cols-2 gap-x-4 xs:gap-x-6 sm:gap-x-8 border-b pb-3 xs:pb-4 sm:pb-6 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
                 <div className={`flex flex-col pr-4 xs:pr-6 sm:pr-8 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
                   <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>MARKET CAP</span>
@@ -200,32 +213,34 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
                 </div>
                 <div className="flex flex-col pl-2 xs:pl-4 sm:pl-4">
                   <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>YTD</span>
-                  <span className={`text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-black leading-none ${
-                    (stock.returnRate || 0) >= 0
-                      ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
-                      : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
-                  }`}>
-                    {(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(2)}%
-                  </span>
+                  <div className="flex-1 flex items-center">
+                    <span className={`text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-black leading-none ${
+                      (stock.returnRate || 0) >= 0
+                        ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
+                        : (isDarkMode ? 'text-blue-400' : 'text-blue-600')
+                    }`}>
+                      {(stock.returnRate || 0) > 0 ? '+' : ''}{(stock.returnRate || 0).toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2 xs:gap-x-4 sm:gap-x-6">
-                <div className={`flex items-center gap-1 xs:gap-1.5 pr-2 xs:pr-4 sm:pr-6 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                  <span className={`text-[9px] xs:text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PER</span>
-                  <span className={`text-xs xs:text-sm sm:text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <div className="grid grid-cols-3">
+                <div className={`flex items-center justify-center gap-1.5 xs:gap-2 py-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                  <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PER</span>
+                  <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {stock.per ? stock.per.toFixed(1) : '-'}
                   </span>
                 </div>
-                <div className={`flex items-center gap-1 xs:gap-1.5 px-2 xs:px-4 sm:px-6 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                  <span className={`text-[9px] xs:text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PBR</span>
-                  <span className={`text-xs xs:text-sm sm:text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className={`flex items-center justify-center gap-1.5 xs:gap-2 py-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                  <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PBR</span>
+                  <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {stock.pbr ? stock.pbr.toFixed(1) : '-'}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 xs:gap-1.5 pl-2 xs:pl-4 sm:pl-6">
-                  <span className={`text-[9px] xs:text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PSR</span>
-                  <span className={`text-xs xs:text-sm sm:text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="flex items-center justify-center gap-1.5 xs:gap-2 py-1">
+                  <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PSR</span>
+                  <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {stock.psr ? stock.psr.toFixed(1) : '-'}
                   </span>
                 </div>
@@ -303,21 +318,27 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
                           }`}
                         >
                           <div className="flex items-center gap-2 xs:gap-3 mb-2 xs:mb-4">
-                            <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl border flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'border-slate-600 bg-slate-700/50' : 'border-gray-300 bg-white'}`}>
-                              {seg.iconUrl ? (
-                                <img src={seg.iconUrl} alt="" className="w-full h-full object-cover" />
+                            <div className="flex gap-1 shrink-0">
+                              {seg.iconUrls && seg.iconUrls.length > 0 ? (
+                                seg.iconUrls.map((url, i) => (
+                                  <div key={i} className={`w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl border flex items-center justify-center overflow-hidden ${isDarkMode ? 'border-slate-600 bg-slate-700/50' : 'border-gray-300 bg-white'}`}>
+                                    <img src={url} alt="" className="w-full h-full object-cover" />
+                                  </div>
+                                ))
                               ) : (
-                                <DefaultSegmentIcon isDark={isDarkMode} />
+                                <div className={`w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl border flex items-center justify-center ${isDarkMode ? 'border-slate-600 bg-slate-700/50' : 'border-gray-300 bg-white'}`}>
+                                  <DefaultSegmentIcon isDark={isDarkMode} />
+                                </div>
                               )}
                             </div>
-                            <span className={`text-xl xs:text-2xl font-black tracking-tight ${isDarkMode ? 'text-primary-accent' : 'text-primary'}`}>
+                            <span className={`ml-auto text-xl xs:text-2xl font-black tracking-tight ${isDarkMode ? 'text-primary-accent' : 'text-primary'}`}>
                               {seg.value}<span className={`text-sm xs:text-base font-bold ml-0.5 ${isDarkMode ? 'text-primary-accent/60' : 'text-primary/50'}`}>%</span>
                             </span>
                           </div>
-                          <div className={`text-[11px] xs:text-[13px] font-black leading-snug ${isDarkMode ? 'text-slate-200' : 'text-gray-800'}`}>
+                          <div className={`text-[11px] xs:text-[15px] font-black leading-snug ${isDarkMode ? 'text-slate-200' : 'text-gray-800'}`}>
                             {seg.nameKr}
                           </div>
-                          <div className={`text-[7px] xs:text-[9px] font-bold uppercase tracking-wider mt-0.5 xs:mt-1 ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>
+                          <div className={`text-[7px] xs:text-[13px] font-bold uppercase tracking-wider mt-0.5 xs:mt-1 ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>
                             {seg.name}
                           </div>
                         </div>

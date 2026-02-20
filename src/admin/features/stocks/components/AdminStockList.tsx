@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Stock, SortKey, SortDirection } from '@/shared/types';
 import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
-import { getSimplifiedSector } from '@/shared/utils';
+import { getSimplifiedSector, parseMarketCapToValue } from '@/shared/utils';
 import { toast, useAdminAuthStore } from '@/shared/stores';
 import * as XLSX from 'xlsx';
 import {
@@ -182,6 +182,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
         sector: newStock.sector,
         description: newStock.description,
         market_cap: newStock.marketCap,
+        market_cap_value: parseMarketCapToValue(newStock.marketCap),
         return_rate: newStock.returnRate,
         keywords: [],
         created_at: new Date().toISOString(),

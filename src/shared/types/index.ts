@@ -21,10 +21,11 @@ export interface BusinessSegment {
   name: string;
   nameKr: string;
   value: number;
-  iconUrl?: string;
+  iconUrls?: string[];
 }
 
 export interface InvestmentPoint {
+  id?: string;
   title: string;
   description: string;
 }
@@ -150,7 +151,7 @@ export interface DbBusinessSegmentRow {
   name: string;
   name_kr: string;
   value: number;
-  icon_url: string | null;
+  icon_urls: string[] | null;
   sort_order: number | null;
 }
 

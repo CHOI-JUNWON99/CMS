@@ -12,7 +12,7 @@ export function useAddBusinessSegment() {
       name: string;
       nameKr: string;
       value: number;
-      iconUrl?: string;
+      iconUrls?: string[];
       sortOrder: number;
     }) => {
       const { error } = await getAdminSupabase()
@@ -22,7 +22,7 @@ export function useAddBusinessSegment() {
           name: data.name,
           name_kr: data.nameKr,
           value: data.value,
-          icon_url: data.iconUrl || null,
+          icon_urls: data.iconUrls || [],
           sort_order: data.sortOrder,
         });
       if (error) throw error;
@@ -45,7 +45,7 @@ export function useUpdateBusinessSegment() {
       name: string;
       nameKr: string;
       value: number;
-      iconUrl?: string;
+      iconUrls?: string[];
     }) => {
       const { error } = await getAdminSupabase()
         .from('business_segments')
@@ -53,7 +53,7 @@ export function useUpdateBusinessSegment() {
           name: data.name,
           name_kr: data.nameKr,
           value: data.value,
-          icon_url: data.iconUrl || null,
+          icon_urls: data.iconUrls || [],
         })
         .eq('id', data.id);
       if (error) throw error;

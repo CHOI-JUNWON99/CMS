@@ -53,7 +53,7 @@ export function useStocksWithRelations(stockIds: string[]) {
           name: s.name,
           nameKr: s.name_kr,
           value: s.value,
-          iconUrl: s.icon_url ?? undefined,
+          iconUrls: s.icon_urls || [],
         });
       });
 

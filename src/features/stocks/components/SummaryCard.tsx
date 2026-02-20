@@ -130,7 +130,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
               letterSpacing: '-0.02em'
             }}
           >
-            {isPositive ? '+' : ''}{averageReturn.toFixed(2)}%
+            {isPositive ? '+' : ''}{averageReturn.toFixed(1)}%
           </span>
         </div>
       </div>

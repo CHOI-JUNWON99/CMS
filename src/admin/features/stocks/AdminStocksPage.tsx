@@ -52,7 +52,7 @@ const StockListView: React.FC = () => {
         if (segmentsRes.data) {
           (segmentsRes.data as DbBusinessSegmentRow[]).forEach((s) => {
             if (!segmentsByStock[s.stock_id]) segmentsByStock[s.stock_id] = [];
-            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, iconUrl: s.icon_url ?? undefined });
+            segmentsByStock[s.stock_id].push({ id: s.id, name: s.name, nameKr: s.name_kr, value: s.value, iconUrls: s.icon_urls || [] });
           });
         }
 
@@ -187,6 +187,7 @@ const StockDetailView: React.FC = () => {
             sector: row.sector,
             keywords: row.keywords || [],
             investmentPoints: (pointsRes.data as DbInvestmentPointRow[] || []).map((p) => ({
+              id: p.id,
               title: p.title,
               description: p.description,
             })),
@@ -217,7 +218,7 @@ const StockDetailView: React.FC = () => {
               name: s.name,
               nameKr: s.name_kr,
               value: s.value,
-              iconUrl: s.icon_url ?? undefined,
+              iconUrls: s.icon_urls || [],
             })),
             aiSummary: row.ai_summary || '',
             aiSummaryKeywords: row.ai_summary_keywords || [],
