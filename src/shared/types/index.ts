@@ -208,7 +208,6 @@ export interface DbPortfolioRow {
   is_active: boolean;
   created_at: string;
   client_id: string | null;
-  return_rate: number | null;
 }
 
 export interface DbPortfolioStockRow {

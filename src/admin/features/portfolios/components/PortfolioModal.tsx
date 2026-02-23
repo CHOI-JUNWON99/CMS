@@ -95,18 +95,6 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({
               placeholder="포트폴리오 설명 (선택)"
             />
           </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-200 mb-1">수익률 (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={isEditMode ? (editingPortfolio?.returnRate || '') : (newPortfolio?.returnRate || '')}
-              onChange={(e) => handleChange('returnRate', Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
-              placeholder="예: 12.5"
-            />
-          </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">

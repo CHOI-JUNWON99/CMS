@@ -176,9 +176,6 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
                   }`}>
                     {item.date}
                   </span>
-                  <span className={`text-xs px-3 py-1 rounded-lg font-black uppercase tracking-widest bg-accent text-white shadow-lg shadow-accent/20`}>
-                    News
-                  </span>
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
@@ -240,7 +237,7 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
                 {/* 6. AI 분석 및 상세 보기 링크 */}
                 <div className="mt-6 flex justify-end">
                   <button onClick={() => stock && onStockClick(stock)} className={`text-[13px] font-bold flex items-center gap-1 transition-all hover:gap-2 ${isDarkMode ? 'text-slate-300 hover:text-slate-100' : 'text-accent hover:text-accent-dark'}`}>
-                    AI 분석 및 상세 보기
+                    상세 보기
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>

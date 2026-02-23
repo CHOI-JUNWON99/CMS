@@ -248,9 +248,9 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
             </div>
             {/* 최종 업데이트 날짜 - 박스 밖 오른쪽 하단 */}
             {(stock.lastUpdate || stock.createdAt) && (
-              <div className="flex justify-end mt-1.5 xs:mt-2 pr-1">
+              <div className="flex justify-end mt-1.5 xs:mt-2 pr-7">
                 <span className={`text-[8px] xs:text-[9px] sm:text-[10px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                  업데이트: {(stock.lastUpdate || stock.createdAt)?.slice(0, 10).replace(/-/g, '.')}
+                  업데이트: {(stock.lastUpdate || stock.createdAt)?.slice(0, 10).replace(/-/g, '.')} | 출처: Wind
                 </span>
               </div>
             )}

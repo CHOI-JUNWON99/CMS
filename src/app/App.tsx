@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/shared/components';
-import { ToastContainer, ConfirmDialog } from '@/shared/components/ui';
+import { ToastContainer, ConfirmDialog, SearchInput } from '@/shared/components/ui';
 import { supabase } from '@/shared/lib/supabase';
 import { useAuthStore, useUIStore } from '@/shared/stores';
 import { Stock, SortKey } from '@/shared/types';
@@ -49,6 +49,9 @@ const App: React.FC = () => {
   // 남은 시간 상태 (1초마다 업데이트)
   const [remainingTime, setRemainingTime] = React.useState('60:00');
 
+  // 포트폴리오별 종목 검색 상태
+  const [searchQueries, setSearchQueries] = React.useState<Record<string, string>>({});
+
   // TanStack Query Hooks
   const { data: portfolios = [], isLoading: portfoliosLoading } = usePortfolios();
   const portfolioIds = useMemo(() => portfolios.map(p => p.id), [portfolios]);
@@ -61,15 +64,37 @@ const App: React.FC = () => {
 
   const isLoading = portfoliosLoading || stocksLoading;
 
-  // 포트폴리오 그룹 생성
+  // 포트폴리오별 검색어 업데이트 함수
+  const updateSearchQuery = useCallback((portfolioId: string, query: string) => {
+    setSearchQueries(prev => ({ ...prev, [portfolioId]: query }));
+  }, []);
+
+  // 종목 검색 필터링 함수
+  const filterStocksBySearch = useCallback((stockList: Stock[], portfolioId: string) => {
+    const query = (searchQueries[portfolioId] || '').trim().toLowerCase();
+    if (!query) return stockList;
+    return stockList.filter(stock =>
+      stock.nameKr.toLowerCase().includes(query) ||
+      stock.name.toLowerCase().includes(query) ||
+      stock.ticker.toLowerCase().includes(query) ||
+      stock.sector.toLowerCase().includes(query) ||
+      stock.keywords?.some(k => k.toLowerCase().includes(query))
+    );
+  }, [searchQueries]);
+
+  // 포트폴리오 그룹 생성 (수익률은 종목들의 YTD 합계로 자동 계산)
   const portfolioGroups = useMemo((): PortfolioGroup[] => {
-    return portfolios.map(p => ({
-      id: p.id,
-      name: p.name,
-      stocks: stocks.filter(s => (stockIdsByPortfolio[p.id] || []).includes(s.id)),
-      brandColor: p.brandColor || clientInfo?.brandColor,
-      returnRate: p.returnRate,
-    }));
+    return portfolios.map(p => {
+      const portfolioStocks = stocks.filter(s => (stockIdsByPortfolio[p.id] || []).includes(s.id));
+      const totalReturnRate = portfolioStocks.reduce((sum, stock) => sum + (stock.returnRate || 0), 0);
+      return {
+        id: p.id,
+        name: p.name,
+        stocks: portfolioStocks,
+        brandColor: p.brandColor || clientInfo?.brandColor,
+        returnRate: totalReturnRate,
+      };
+    });
   }, [portfolios, stocks, stockIdsByPortfolio, clientInfo?.brandColor]);
 
   // 선택된 종목
@@ -208,7 +233,10 @@ const App: React.FC = () => {
             {activeTab === 'PORTFOLIO' ? (
               <div className="flex flex-col">
                 {portfolioGroups.map(group => {
+                  const filteredStocks = filterStocksBySearch(group.stocks, group.id);
                   const isExpanded = expandedPortfolios.includes(group.id);
+                  const currentSearchQuery = searchQueries[group.id] || '';
+
                   return (
                     <div key={group.id} className="mb-10">
                       <SummaryCard
@@ -224,8 +252,18 @@ const App: React.FC = () => {
                           ? 'opacity-100 scale-100 translate-y-0 visible'
                           : 'opacity-0 scale-95 -translate-y-10 invisible h-0 overflow-hidden'
                       }`}>
+                        {/* 포트폴리오별 검색창 */}
+                        <div className="mt-4 mb-2">
+                          <SearchInput
+                            value={currentSearchQuery}
+                            onChange={(value) => updateSearchQuery(group.id, value)}
+                            placeholder="종목명, 티커, 섹터, 키워드로 검색..."
+                            isDarkMode={isDarkMode}
+                            className="w-full"
+                          />
+                        </div>
                         <StockList
-                          stocks={sortStocks(group.stocks)}
+                          stocks={sortStocks(filteredStocks)}
                           onStockSelect={handleStockSelect}
                           isDarkMode={isDarkMode}
                           sortKey={sortKey}

@@ -40,13 +40,13 @@ const StockList: React.FC<StockListProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header - 너비: 7% / 15% / 8% / flex-1 / 13% / 8% */}
+      {/* Header - 너비: 7% / 14% / 12% / flex-1 / 12% / 8% */}
       <div className={`hidden lg:flex px-6 py-2 items-center text-[11px] uppercase tracking-widest`}>
         <div className="w-[7%] shrink-0 flex items-center pl-2"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>TICKER</span></div>
-        <div className="w-[15%] shrink-0 flex items-center pl-10"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
-        <div className="w-[8%] shrink-0 flex items-center pl-6"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
-        <div className="flex-1 px-4 flex justify-center"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
-        <div className="w-[13%] shrink-0 flex justify-center"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-center" /></div>
+        <div className="w-[14%] shrink-0 flex items-center pl-10"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
+        <div className="w-[12%] shrink-0 flex items-center pl-6"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
+        <div className="flex-1 pl-6 flex justify-center"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
+        <div className="w-[12%] shrink-0 flex justify-center"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-center" /></div>
         <div className="w-[8%] shrink-0 flex justify-end pr-2"><HeaderButton label="YTD" targetKey="returnRate" className="justify-end" /></div>
       </div>
 
@@ -70,7 +70,7 @@ const StockList: React.FC<StockListProps> = ({
               )}
               <div
                 onClick={() => onStockSelect(stock)}
-                className={`group relative flex flex-col lg:flex-row lg:items-center px-6 py-6 lg:px-6 lg:py-5 rounded-[20px] transition-all duration-500 cursor-pointer transform hover:-translate-y-1 ${
+                className={`group relative flex flex-col lg:flex-row lg:items-center px-6 py-4 lg:px-6 lg:py-3 rounded-[16px] transition-all duration-500 cursor-pointer transform hover:-translate-y-1 ${
                   isDarkMode
                     ? 'bg-[#112240] border border-slate-600 hover:border-primary-light shadow-xl'
                     : 'bg-white border border-gray-300 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)] hover:border-primary/40'
@@ -83,11 +83,11 @@ const StockList: React.FC<StockListProps> = ({
                   ))}
                 </div>
 
-                {/* NAME 영역 - 15% */}
-                <div className="flex justify-between items-start lg:items-center lg:w-[15%] lg:shrink-0 lg:pl-6">
+                {/* NAME 영역 - 14% */}
+                <div className="flex justify-between items-start lg:items-center lg:w-[14%] lg:shrink-0 lg:pl-6">
                   <div className="flex flex-col">
-                    <span className={`font-black text-2xl lg:text-[22px] leading-tight mb-1 transition-colors whitespace-pre-line ${isDarkMode ? 'text-white' : 'text-gray-900 group-hover:text-primary'}`}>{stock.nameKr}</span>
-                    <span className={`text-[12px] lg:text-[13px] font-bold line-clamp-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</span>
+                    <span className={`font-black text-xl lg:text-[18px] leading-tight mb-1 transition-colors whitespace-pre-line ${isDarkMode ? 'text-white' : 'text-gray-900 group-hover:text-primary'}`}>{stock.nameKr}</span>
+                    <span className={`text-[11px] lg:text-[12px] font-bold line-clamp-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</span>
                     {/* 모바일에서만 티커 표시 */}
                     <div className="lg:hidden flex flex-wrap gap-1 mt-1">
                       {(stock.tickers && stock.tickers.length > 1 ? stock.tickers : [stock.ticker]).map((ticker, idx) => (
@@ -104,19 +104,19 @@ const StockList: React.FC<StockListProps> = ({
                   </div>
                 </div>
 
-                {/* SECTOR 영역 - 8% */}
-                <div className="hidden lg:flex lg:w-[8%] lg:shrink-0 justify-start pl-6">
-                  <span className={`inline-block text-[11px] font-black px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${isDarkMode ? 'bg-slate-800 text-blue-200 border-slate-600' : 'bg-white text-gray-700 border-gray-200 shadow-sm group-hover:border-primary/30 group-hover:text-primary'}`}>
+                {/* SECTOR 영역 - 12% */}
+                <div className="hidden lg:flex lg:w-[12%] lg:shrink-0 justify-start pl-6">
+                  <span className={`inline-block text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 text-blue-200 border-slate-600' : 'bg-white text-gray-700 border-gray-200 shadow-sm group-hover:border-primary/30 group-hover:text-primary'}`}>
                     {stock.sector}
                   </span>
                 </div>
 
-                {/* INVESTMENT POINTS 영역 - flex-1 (가운데 정렬) */}
-                <div className="mt-6 lg:mt-0 flex-1 lg:px-4 flex lg:justify-center">
-                  <div className="flex flex-col gap-1.5">
+                {/* INVESTMENT POINTS 영역 - flex-1 (왼쪽 정렬) */}
+                <div className="mt-4 lg:mt-0 flex-1 lg:pl-6 lg:pr-4 flex lg:justify-start">
+                  <div className="flex flex-col gap-1">
                     {stock.investmentPoints?.slice(0, 3).map((point, idx) => (
                       <div key={idx} className="flex items-start">
-                        <span className={`text-[13px] font-bold tracking-tight transition-all ${isDarkMode ? 'text-slate-300' : 'text-gray-800'}`}>
+                        <span className={`text-[12px] font-bold tracking-tight transition-all ${isDarkMode ? 'text-slate-300' : 'text-gray-800'}`}>
                           # {point.title}
                         </span>
                       </div>
@@ -124,13 +124,13 @@ const StockList: React.FC<StockListProps> = ({
                   </div>
                 </div>
 
-                {/* MARKET CAP 영역 - 13% (가운데 정렬) */}
-                <div className={`hidden lg:flex lg:w-[13%] lg:shrink-0 justify-center text-[17px] font-black whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {/* MARKET CAP 영역 - 12% (가운데 정렬) */}
+                <div className={`hidden lg:flex lg:w-[12%] lg:shrink-0 justify-center text-[15px] font-medium whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {formatMarketCapShort(stock.marketCap)}
                 </div>
 
                 {/* RETURN 영역 - 8% (오른쪽 정렬) */}
-                <div className={`hidden lg:flex lg:w-[8%] lg:shrink-0 justify-end pr-2 font-black text-[17px] ${
+                <div className={`hidden lg:flex lg:w-[8%] lg:shrink-0 justify-end pr-2 font-bold text-[15px] ${
                   (stock.returnRate || 0) >= 0
                     ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
                     : (isDarkMode ? 'text-blue-400' : 'text-blue-600')

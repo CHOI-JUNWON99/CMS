@@ -63,7 +63,6 @@ const AdminPortfolioPage: React.FC = () => {
     name: '',
     description: '',
     clientId: '',
-    returnRate: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -113,7 +112,6 @@ const AdminPortfolioPage: React.FC = () => {
             isActive: row.is_active ?? false,
             createdAt: row.created_at,
             clientId: row.client_id ?? undefined,
-            returnRate: row.return_rate || 0,
           }));
           setPortfolios(mapped);
 
@@ -237,7 +235,6 @@ const AdminPortfolioPage: React.FC = () => {
           description: newPortfolio.description.trim(),
           is_active: false,
           client_id: newPortfolio.clientId || null,
-          return_rate: newPortfolio.returnRate || 0,
         })
         .select('id')
         .single();
@@ -251,13 +248,12 @@ const AdminPortfolioPage: React.FC = () => {
         isActive: false,
         createdAt: new Date().toISOString(),
         clientId: newPortfolio.clientId || null,
-        returnRate: newPortfolio.returnRate || 0,
       };
 
       setPortfolios([newP, ...portfolios]);
       setSelectedPortfolioId(data.id);
       setShowAddModal(false);
-      setNewPortfolio({ name: '', description: '', clientId: '', returnRate: 0 });
+      setNewPortfolio({ name: '', description: '', clientId: '' });
       toast.success('포트폴리오가 추가되었습니다.');
     } catch (err) {
       console.error('포트폴리오 추가 실패:', err);
@@ -281,7 +277,6 @@ const AdminPortfolioPage: React.FC = () => {
           name: editingPortfolio.name.trim(),
           description: editingPortfolio.description.trim(),
           client_id: editingPortfolio.clientId || null,
-          return_rate: editingPortfolio.returnRate || 0,
         })
         .eq('id', editingPortfolio.id);
 
@@ -289,7 +284,7 @@ const AdminPortfolioPage: React.FC = () => {
 
       setPortfolios(portfolios.map(p =>
         p.id === editingPortfolio.id
-          ? { ...p, name: editingPortfolio.name.trim(), description: editingPortfolio.description.trim(), clientId: editingPortfolio.clientId, returnRate: editingPortfolio.returnRate }
+          ? { ...p, name: editingPortfolio.name.trim(), description: editingPortfolio.description.trim(), clientId: editingPortfolio.clientId }
           : p
       ));
       setShowEditModal(false);
@@ -454,6 +449,7 @@ const AdminPortfolioPage: React.FC = () => {
           <PortfolioSummaryCard
             portfolio={selectedPortfolio}
             stockCount={includedStocks.length}
+            totalReturnRate={includedStocks.reduce((sum, s) => sum + (s.returnRate || 0), 0)}
             onEdit={() => { setEditingPortfolio(selectedPortfolio); setShowEditModal(true); }}
             onDelete={() => handleDeletePortfolio(selectedPortfolio.id)}
             onSetActive={() => handleSetActive(selectedPortfolio.id)}
@@ -487,7 +483,7 @@ const AdminPortfolioPage: React.FC = () => {
       <PortfolioModal
         mode="add"
         isOpen={showAddModal}
-        onClose={() => { setShowAddModal(false); setNewPortfolio({ name: '', description: '', clientId: '', returnRate: 0 }); }}
+        onClose={() => { setShowAddModal(false); setNewPortfolio({ name: '', description: '', clientId: '' }); }}
         onSubmit={handleAddPortfolio}
         clients={clients}
         isSubmitting={isSubmitting}

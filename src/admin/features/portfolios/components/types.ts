@@ -7,7 +7,6 @@ export interface Portfolio {
   isActive: boolean;
   createdAt: string;
   clientId?: string | null;
-  returnRate: number;
 }
 
 export interface StockItem {
@@ -29,7 +28,6 @@ export interface NewPortfolioData {
   name: string;
   description: string;
   clientId: string;
-  returnRate: number;
 }
 
 export type { Client };

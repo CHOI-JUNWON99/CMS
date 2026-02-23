@@ -4,6 +4,7 @@ import { Portfolio } from './types';
 interface PortfolioSummaryCardProps {
   portfolio: Portfolio;
   stockCount: number;
+  totalReturnRate: number;
   onEdit: () => void;
   onDelete: () => void;
   onSetActive: () => void;
@@ -13,6 +14,7 @@ interface PortfolioSummaryCardProps {
 const PortfolioSummaryCard: React.FC<PortfolioSummaryCardProps> = ({
   portfolio,
   stockCount,
+  totalReturnRate,
   onEdit,
   onDelete,
   onSetActive,
@@ -70,8 +72,8 @@ const PortfolioSummaryCard: React.FC<PortfolioSummaryCardProps> = ({
         <div className="w-px h-6 bg-slate-700" />
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-300">수익률</span>
-          <span className={`text-lg font-black ${portfolio.returnRate >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
-            {portfolio.returnRate >= 0 ? '+' : ''}{portfolio.returnRate.toFixed(2)}%
+          <span className={`text-lg font-black ${totalReturnRate >= 0 ? 'text-rose-400' : 'text-blue-400'}`}>
+            {totalReturnRate >= 0 ? '+' : ''}{totalReturnRate.toFixed(2)}%
           </span>
         </div>
       </div>

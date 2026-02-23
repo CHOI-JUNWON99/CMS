@@ -7,7 +7,6 @@ import { DbPortfolioStockRow } from '@/shared/types';
 type RawPortfolioRow = {
   id: string;
   name: string;
-  return_rate: number | null;
   client_id: string | null;
   clients: { brand_color: string | null } | { brand_color: string | null }[] | null;
 };
@@ -25,7 +24,6 @@ export const portfolioKeys = {
 export interface PortfolioData {
   id: string;
   name: string;
-  returnRate: number;
   clientId: string;
   brandColor?: string;
 }
@@ -41,7 +39,7 @@ export function usePortfolios() {
     queryFn: async (): Promise<PortfolioData[]> => {
       let query = supabase
         .from('portfolios')
-        .select('id, name, return_rate, client_id, clients(brand_color)')
+        .select('id, name, client_id, clients(brand_color)')
         .eq('is_active', true);
 
       if (accessType === 'single' && clientInfo?.id) {
@@ -60,7 +58,6 @@ export function usePortfolios() {
         return {
           id: p.id,
           name: p.name,
-          returnRate: p.return_rate || 0,
           clientId: p.client_id || '',
           brandColor: clientData?.brand_color ?? undefined,
         };
