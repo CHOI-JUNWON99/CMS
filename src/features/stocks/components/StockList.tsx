@@ -40,10 +40,10 @@ const StockList: React.FC<StockListProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header - 너비: 7% / 14% / 12% / flex-1 / 12% / 8% */}
+      {/* Header - 너비: 7% / 15% / 12% / flex-1 / 12% / 8% */}
       <div className={`hidden lg:flex px-6 py-2 items-center text-[11px] uppercase tracking-widest`}>
         <div className="w-[7%] shrink-0 flex items-center pl-2"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>TICKER</span></div>
-        <div className="w-[14%] shrink-0 flex items-center pl-10"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
+        <div className="w-[15%] shrink-0 flex items-center pl-10"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
         <div className="w-[12%] shrink-0 flex items-center pl-6"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
         <div className="flex-1 pl-6 flex justify-center"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
         <div className="w-[12%] shrink-0 flex justify-center"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-center" /></div>
@@ -83,11 +83,11 @@ const StockList: React.FC<StockListProps> = ({
                   ))}
                 </div>
 
-                {/* NAME 영역 - 14% */}
+                {/* NAME 영역 - 15% */}
                 <div className="flex justify-between items-start lg:items-center lg:w-[14%] lg:shrink-0 lg:pl-6">
                   <div className="flex flex-col">
-                    <span className={`font-black text-xl lg:text-[18px] leading-tight mb-1 transition-colors whitespace-pre-line ${isDarkMode ? 'text-white' : 'text-gray-900 group-hover:text-primary'}`}>{stock.nameKr}</span>
-                    <span className={`text-[11px] lg:text-[12px] font-bold line-clamp-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</span>
+                    <span className={`font-black text-lg lg:text-[16px] leading-tight mb-1 transition-colors whitespace-pre-line ${isDarkMode ? 'text-white' : 'text-gray-900 group-hover:text-primary'}`}>{stock.nameKr}</span>
+                    <span className={`text-[10px] lg:text-[11px] font-bold line-clamp-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</span>
                     {/* 모바일에서만 티커 표시 */}
                     <div className="lg:hidden flex flex-wrap gap-1 mt-1">
                       {(stock.tickers && stock.tickers.length > 1 ? stock.tickers : [stock.ticker]).map((ticker, idx) => (
