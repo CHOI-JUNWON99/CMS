@@ -237,20 +237,24 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
         ticker?: string;
+        name?: string;
+        date?: string;
         title?: string;
         content?: string;
-        date?: string;
+        source?: string;
         is_cms?: boolean | string | number;
         keywords?: string;
       }>(sheet);
 
       const bulkData = rows
-        .filter((row) => row.ticker && row.title && row.content && row.date)
+        .filter((row) => row.ticker && row.name && row.date && row.title && row.content && row.source)
         .map((row) => ({
           ticker: row.ticker,
+          name: row.name,
+          date: row.date,
           title: row.title,
           content: row.content,
-          date: row.date,
+          source: row.source,
           is_cms: row.is_cms === true || row.is_cms === 'TRUE' || row.is_cms === 1,
           keywords: row.keywords
             ? row.keywords
@@ -268,7 +272,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
             {
               ticker: '-',
               row: 0,
-              reason: '유효한 데이터가 없습니다. ticker, title, content, date는 필수입니다.',
+              reason: '유효한 데이터가 없습니다. ticker, name, date, title, content, source는 필수입니다.',
             },
           ],
         });

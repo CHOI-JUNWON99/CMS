@@ -3,6 +3,8 @@ import React, { useRef } from 'react';
 export interface ExcelUploadResult {
   inserted: number;
   skipped: string[];
+  duplicates?: string[];
+  duplicate_count?: number;
   errors: { ticker: string; row: number; reason: string }[];
 }
 
@@ -64,57 +66,68 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
           </div>
 
           <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-            <p className="text-white text-sm font-bold mb-3">엑셀 양식</p>
+            <p className="text-white text-sm font-bold mb-3">엑셀 양식 (가로 형태)</p>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-xs border border-slate-600">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-2 px-2 text-slate-300 font-bold">컬럼명</th>
-                    <th className="text-left py-2 px-2 text-slate-300 font-bold">필수</th>
-                    <th className="text-left py-2 px-2 text-slate-300 font-bold">설명</th>
-                    <th className="text-left py-2 px-2 text-slate-300 font-bold">예시</th>
+                  <tr className="bg-slate-700/50">
+                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">ticker</th>
+                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">name</th>
+                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">date</th>
+                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">title</th>
+                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">content</th>
+                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">source</th>
+                    <th className="py-2 px-2 text-slate-400 font-mono border-r border-slate-600">keywords</th>
+                    <th className="py-2 px-2 text-slate-400 font-mono">is_cms</th>
                   </tr>
                 </thead>
-                <tbody className="text-slate-400">
-                  <tr className="border-b border-slate-700/50">
-                    <td className="py-2 px-2 font-mono text-emerald-400">ticker</td>
-                    <td className="py-2 px-2 text-red-400">필수</td>
-                    <td className="py-2 px-2">종목 티커</td>
-                    <td className="py-2 px-2 font-mono">9988.HK</td>
+                <tbody className="text-slate-300">
+                  <tr className="border-t border-slate-600">
+                    <td className="py-2 px-2 border-r border-slate-600">9988.HK</td>
+                    <td className="py-2 px-2 border-r border-slate-600">알리바바</td>
+                    <td className="py-2 px-2 border-r border-slate-600">25/01/15</td>
+                    <td className="py-2 px-2 border-r border-slate-600">Qwen App MAU...</td>
+                    <td className="py-2 px-2 border-r border-slate-600">산하 Qwen App...</td>
+                    <td className="py-2 px-2 border-r border-slate-600">로이터</td>
+                    <td className="py-2 px-2 border-r border-slate-600">AI, 클라우드</td>
+                    <td className="py-2 px-2">TRUE</td>
                   </tr>
-                  <tr className="border-b border-slate-700/50">
-                    <td className="py-2 px-2 font-mono text-emerald-400">title</td>
-                    <td className="py-2 px-2 text-red-400">필수</td>
-                    <td className="py-2 px-2">뉴스 제목</td>
-                    <td className="py-2 px-2">Qwen App MAU 돌파</td>
-                  </tr>
-                  <tr className="border-b border-slate-700/50">
-                    <td className="py-2 px-2 font-mono text-emerald-400">content</td>
-                    <td className="py-2 px-2 text-red-400">필수</td>
-                    <td className="py-2 px-2">뉴스 내용</td>
-                    <td className="py-2 px-2">산하 Qwen App이...</td>
-                  </tr>
-                  <tr className="border-b border-slate-700/50">
-                    <td className="py-2 px-2 font-mono text-emerald-400">date</td>
-                    <td className="py-2 px-2 text-red-400">필수</td>
-                    <td className="py-2 px-2">날짜 (YY/MM/DD)</td>
-                    <td className="py-2 px-2 font-mono">25/01/15</td>
-                  </tr>
-                  <tr className="border-b border-slate-700/50">
-                    <td className="py-2 px-2 font-mono text-emerald-400">is_cms</td>
-                    <td className="py-2 px-2 text-slate-500">선택</td>
-                    <td className="py-2 px-2">CMS 코멘트 여부</td>
-                    <td className="py-2 px-2 font-mono">TRUE / FALSE</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-2 font-mono text-emerald-400">keywords</td>
-                    <td className="py-2 px-2 text-slate-500">선택</td>
-                    <td className="py-2 px-2">쉼표 구분 키워드</td>
-                    <td className="py-2 px-2">AI, 클라우드</td>
+                  <tr className="border-t border-slate-600/50">
+                    <td className="py-2 px-2 border-r border-slate-600">AAPL</td>
+                    <td className="py-2 px-2 border-r border-slate-600">애플</td>
+                    <td className="py-2 px-2 border-r border-slate-600">25/01/16</td>
+                    <td className="py-2 px-2 border-r border-slate-600">신제품 발표...</td>
+                    <td className="py-2 px-2 border-r border-slate-600">애플이 새로운...</td>
+                    <td className="py-2 px-2 border-r border-slate-600">블룸버그</td>
+                    <td className="py-2 px-2 border-r border-slate-600">아이폰</td>
+                    <td className="py-2 px-2">FALSE</td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            <div className="mt-3 text-xs text-slate-400">
+              <span className="text-red-400">● 필수:</span> ticker, name, date, title, content, source &nbsp;
+              <span className="text-slate-500">● 선택:</span> keywords, is_cms
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-blue-900/20 border border-blue-700/50">
+            <p className="text-blue-300 text-sm font-bold mb-2">컬럼 설명</p>
+            <ul className="text-slate-300 text-sm space-y-1.5">
+              <li>
+                <span className="text-blue-400 font-mono">is_cms</span>: CMS에서 작성한 주요 코멘트인지 여부입니다.
+                <span className="text-slate-400 ml-1">
+                  TRUE로 설정하면 해당 뉴스가 종목 상세 페이지에서 "CMS 코멘트" 뱃지와 함께 강조 표시됩니다.
+                  일반 뉴스는 FALSE 또는 비워두세요.
+                </span>
+              </li>
+              <li>
+                <span className="text-blue-400 font-mono">keywords</span>: 뉴스와 관련된 키워드입니다.
+                <span className="text-slate-400 ml-1">
+                  쉼표(,)로 구분하여 여러 개 입력 가능 (예: AI, 클라우드, 반도체)
+                </span>
+              </li>
+            </ul>
           </div>
 
           <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-700/50">
@@ -123,6 +136,9 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
               <li>첫 번째 행은 반드시 헤더여야 합니다</li>
               <li>ticker는 DB에 등록된 종목 티커와 정확히 일치해야 합니다</li>
               <li>date는 반드시 YY/MM/DD 형식으로 입력하세요 (예: 25/01/15)</li>
+              <li>
+                <span className="text-emerald-400">중복 체크:</span> 티커 + 날짜 + 제목이 동일하면 자동 스킵됩니다
+              </li>
               <li>이미지는 엑셀로 업로드할 수 없습니다 (개별 편집 사용)</li>
             </ul>
           </div>
@@ -224,6 +240,21 @@ export const ExcelUploadResultModal: React.FC<ExcelUploadResultModalProps> = ({
                 <div className="p-3 rounded-lg bg-amber-900/30">
                   <p className="text-amber-300 text-sm mb-1">스킵된 티커 (존재하지 않는 종목)</p>
                   <p className="text-amber-200 text-xs">{result.skipped.join(', ')}</p>
+                </div>
+              )}
+              {result.duplicates && result.duplicates.length > 0 && (
+                <div className="p-3 rounded-lg bg-slate-700/50">
+                  <p className="text-slate-300 text-sm mb-1">
+                    중복 스킵 ({result.duplicate_count || result.duplicates.length}건)
+                  </p>
+                  <div className="text-slate-400 text-xs max-h-20 overflow-y-auto">
+                    {result.duplicates.slice(0, 5).map((dup, i) => (
+                      <p key={i}>{dup}</p>
+                    ))}
+                    {result.duplicates.length > 5 && (
+                      <p className="text-slate-500">외 {result.duplicates.length - 5}건...</p>
+                    )}
+                  </div>
                 </div>
               )}
               {result.errors.length > 0 && (
