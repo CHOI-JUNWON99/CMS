@@ -16,10 +16,10 @@ const StockList: React.FC<StockListProps> = ({
   onStockSelect,
   isDarkMode,
   sortKey,
-  sortDirection,
+  sortDirection: _sortDirection,
   onSort
 }) => {
-  const SortIndicator = ({ active }: { active: boolean }) => (
+  const SortIndicator = ({ active: _active }: { active: boolean }) => (
     <div className="ml-1.5 flex flex-col items-center justify-center opacity-100 shrink-0">
       <svg className={`w-2 h-2 mb-[-1px] transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" /></svg>
       <svg className={`w-2 h-2 mt-[-1px] transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 01-1.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
