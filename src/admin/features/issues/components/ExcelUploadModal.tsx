@@ -72,11 +72,10 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
                 <thead>
                   <tr className="bg-slate-700/50">
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">ticker</th>
-                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">name</th>
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">date</th>
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">title</th>
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">content</th>
-                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">source</th>
+                    <th className="py-2 px-2 text-slate-400 font-mono border-r border-slate-600">source</th>
                     <th className="py-2 px-2 text-slate-400 font-mono border-r border-slate-600">keywords</th>
                     <th className="py-2 px-2 text-slate-400 font-mono">is_cms</th>
                   </tr>
@@ -84,7 +83,6 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
                 <tbody className="text-slate-300">
                   <tr className="border-t border-slate-600">
                     <td className="py-2 px-2 border-r border-slate-600">9988.HK</td>
-                    <td className="py-2 px-2 border-r border-slate-600">알리바바</td>
                     <td className="py-2 px-2 border-r border-slate-600">25/01/15</td>
                     <td className="py-2 px-2 border-r border-slate-600">Qwen App MAU...</td>
                     <td className="py-2 px-2 border-r border-slate-600">산하 Qwen App...</td>
@@ -94,7 +92,6 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
                   </tr>
                   <tr className="border-t border-slate-600/50">
                     <td className="py-2 px-2 border-r border-slate-600">AAPL</td>
-                    <td className="py-2 px-2 border-r border-slate-600">애플</td>
                     <td className="py-2 px-2 border-r border-slate-600">25/01/16</td>
                     <td className="py-2 px-2 border-r border-slate-600">신제품 발표...</td>
                     <td className="py-2 px-2 border-r border-slate-600">애플이 새로운...</td>
@@ -106,8 +103,8 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
               </table>
             </div>
             <div className="mt-3 text-xs text-slate-400">
-              <span className="text-red-400">● 필수:</span> ticker, name, date, title, content, source &nbsp;
-              <span className="text-slate-500">● 선택:</span> keywords, is_cms
+              <span className="text-red-400">● 필수:</span> ticker, date, title, content &nbsp;
+              <span className="text-slate-500">● 선택:</span> source, keywords, is_cms
             </div>
           </div>
 
@@ -135,7 +132,7 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
             <ul className="text-slate-300 text-sm space-y-1 list-disc list-inside">
               <li>첫 번째 행은 반드시 헤더여야 합니다</li>
               <li>ticker는 DB에 등록된 종목 티커와 정확히 일치해야 합니다</li>
-              <li>date는 반드시 YY/MM/DD 형식으로 입력하세요 (예: 25/01/15)</li>
+              <li>date는 YY/MM/DD 형식 또는 엑셀 날짜 형식 모두 지원합니다</li>
               <li>
                 <span className="text-emerald-400">중복 체크:</span> 티커 + 날짜 + 제목이 동일하면 자동 스킵됩니다
               </li>

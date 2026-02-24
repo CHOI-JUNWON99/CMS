@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Stock, StockIssue } from '@/shared/types';
 
@@ -58,6 +58,16 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
   const [isExcelUploading, setIsExcelUploading] = useState(false);
   const [showExcelUploadGuide, setShowExcelUploadGuide] = useState(false);
   const [excelUploadResult, setExcelUploadResult] = useState<ExcelUploadResult | null>(null);
+
+  // 스크롤 위치 복원용
+  const scrollPositionRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (scrollPositionRef.current !== null) {
+      window.scrollTo(0, scrollPositionRef.current);
+      scrollPositionRef.current = null;
+    }
+  }, [stocks]);
 
   // 피드 아이템 생성
   const feedItems = useMemo(() => {
@@ -213,6 +223,8 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       });
       if (error) throw error;
       toast.success('뉴스가 삭제되었습니다.');
+      // 스크롤 위치 저장 후 새로고침
+      scrollPositionRef.current = window.scrollY;
       onRefresh();
     } catch (err) {
       console.error(err);
@@ -226,6 +238,33 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
     setShowEditModal(true);
   };
 
+  // 엑셀 날짜 변환 함수 (Excel serial number -> YY/MM/DD)
+  const convertExcelDate = (dateValue: unknown): string => {
+    // 이미 문자열인 경우
+    if (typeof dateValue === 'string') {
+      return dateValue;
+    }
+    // 숫자인 경우 (Excel serial number)
+    if (typeof dateValue === 'number') {
+      // Excel 날짜를 JavaScript Date로 변환
+      // Excel은 1900년 1월 1일을 1로 시작 (윤년 버그로 인해 -2 보정)
+      const excelEpoch = new Date(1899, 11, 30);
+      const jsDate = new Date(excelEpoch.getTime() + dateValue * 24 * 60 * 60 * 1000);
+      const yy = String(jsDate.getFullYear()).slice(-2);
+      const mm = String(jsDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(jsDate.getDate()).padStart(2, '0');
+      return `${yy}/${mm}/${dd}`;
+    }
+    // Date 객체인 경우
+    if (dateValue instanceof Date) {
+      const yy = String(dateValue.getFullYear()).slice(-2);
+      const mm = String(dateValue.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateValue.getDate()).padStart(2, '0');
+      return `${yy}/${mm}/${dd}`;
+    }
+    return String(dateValue);
+  };
+
   // 엑셀 업로드 처리
   const handleExcelUpload = async (file: File) => {
     setIsExcelUploading(true);
@@ -237,8 +276,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
         ticker?: string;
-        name?: string;
-        date?: string;
+        date?: string | number | Date;
         title?: string;
         content?: string;
         source?: string;
@@ -247,14 +285,13 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       }>(sheet);
 
       const bulkData = rows
-        .filter((row) => row.ticker && row.name && row.date && row.title && row.content && row.source)
+        .filter((row) => row.ticker && row.date && row.title && row.content)
         .map((row) => ({
           ticker: row.ticker,
-          name: row.name,
-          date: row.date,
+          date: convertExcelDate(row.date),
           title: row.title,
           content: row.content,
-          source: row.source,
+          source: row.source || '',
           is_cms: row.is_cms === true || row.is_cms === 'TRUE' || row.is_cms === 1,
           keywords: row.keywords
             ? row.keywords
@@ -272,7 +309,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
             {
               ticker: '-',
               row: 0,
-              reason: '유효한 데이터가 없습니다. ticker, name, date, title, content, source는 필수입니다.',
+              reason: '유효한 데이터가 없습니다. ticker, date, title, content는 필수입니다.',
             },
           ],
         });
@@ -290,6 +327,8 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       setExcelUploadResult({
         inserted: result?.inserted ?? 0,
         skipped: result?.skipped ?? [],
+        duplicates: result?.duplicates ?? [],
+        duplicate_count: result?.duplicate_count ?? 0,
         errors: result?.errors ?? [],
       });
     } catch (err: unknown) {
