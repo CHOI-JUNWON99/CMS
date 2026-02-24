@@ -287,7 +287,7 @@ const App: React.FC = () => {
       </main>
       <footer className={`py-12 border-t mt-20 ${isDarkMode ? 'bg-[#0a192f] border-slate-800' : 'bg-gray-50 border-gray-100'}`}>
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-400 font-medium">© 2024 CMS Securities. All rights reserved.</p>
+          <p className="text-sm text-gray-400 font-medium">© 2026 CMS Securities. All rights reserved.</p>
         </div>
       </footer>
       <ToastContainer />

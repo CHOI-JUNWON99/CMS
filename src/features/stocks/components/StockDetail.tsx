@@ -349,61 +349,62 @@ const StockDetail: React.FC<StockDetailProps> = ({ stock, onBack, isDarkMode, gl
               </div>
             </div>
 
-            {/* Analysis Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xs:gap-8">
-              {/* AI Briefing */}
-              <div className={`rounded-2xl xs:rounded-[2.5rem] p-5 xs:p-10 lg:p-12 border shadow-xl flex flex-col ${isDarkMode ? 'bg-[#112240] border-slate-600' : 'bg-white border-gray-200 shadow-gray-200/30'}`}>
-                <div className="flex items-center gap-2 xs:gap-3 mb-5 xs:mb-8">
-                  <div className="bg-primary p-1.5 xs:p-2 rounded-lg text-white shadow-lg">
-                     <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L9 9L1 12L9 15L12 23L15 15L23 12L15 9L12 1Z" /></svg>
+            {/* Analysis Grid - 데이터가 있는 경우에만 표시 */}
+            {(aiBriefing || (stock.investmentPoints && stock.investmentPoints.length > 0)) && (
+              <div className={`grid gap-4 xs:gap-8 ${aiBriefing && stock.investmentPoints && stock.investmentPoints.length > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                {/* AI Briefing - 데이터가 있을 때만 표시 */}
+                {aiBriefing && (
+                  <div className={`rounded-2xl xs:rounded-[2.5rem] p-5 xs:p-10 lg:p-12 border shadow-xl flex flex-col ${isDarkMode ? 'bg-[#112240] border-slate-600' : 'bg-white border-gray-200 shadow-gray-200/30'}`}>
+                    <div className="flex items-center gap-2 xs:gap-3 mb-5 xs:mb-8">
+                      <div className="bg-primary p-1.5 xs:p-2 rounded-lg text-white shadow-lg">
+                         <svg className="w-4 h-4 xs:w-5 xs:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L9 9L1 12L9 15L12 23L15 15L23 12L15 9L12 1Z" /></svg>
+                      </div>
+                      <h3 className="text-[15px] xs:text-[18px] font-black tracking-tight text-primary">AI 기업 활동 요약</h3>
+                    </div>
+                    <div className="space-y-4 xs:space-y-8 flex-1">
+                      <div className="flex flex-wrap gap-1.5 xs:gap-2">
+                        {aiBriefing.keywords.map((kw, i) => (
+                          <span key={i} className={`text-[10px] xs:text-[12px] font-bold px-2 xs:px-3 py-1 xs:py-1.5 rounded-full border ${isDarkMode ? 'border-blue-800 text-primary-accent bg-primary/20' : 'border-blue-200 text-primary bg-blue-50/50'}`}>
+                            #{kw.replace('#', '')}
+                          </span>
+                        ))}
+                      </div>
+                      <div className={`relative p-4 xs:p-8 rounded-xl xs:rounded-[2rem] border shadow-sm ${isDarkMode ? 'bg-slate-900/40 border-slate-700' : 'bg-gray-50/30 border-gray-100'}`}>
+                        <p className={`text-[12px] xs:text-[14px] lg:text-[15px] font-bold tracking-tight leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-800'}`}>
+                          " {aiBriefing.summary} "
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-[15px] xs:text-[18px] font-black tracking-tight text-primary">AI 기업 활동 요약</h3>
-                </div>
+                )}
 
-                {aiBriefing ? (
-                  <div className="space-y-4 xs:space-y-8 flex-1">
-                    <div className="flex flex-wrap gap-1.5 xs:gap-2">
-                      {aiBriefing.keywords.map((kw, i) => (
-                        <span key={i} className={`text-[10px] xs:text-[12px] font-bold px-2 xs:px-3 py-1 xs:py-1.5 rounded-full border ${isDarkMode ? 'border-blue-800 text-primary-accent bg-primary/20' : 'border-blue-200 text-primary bg-blue-50/50'}`}>
-                          #{kw.replace('#', '')}
-                        </span>
+                {/* Investment Points - 데이터가 있을 때만 표시 */}
+                {stock.investmentPoints && stock.investmentPoints.length > 0 && (
+                  <div className={`rounded-2xl xs:rounded-[2.5rem] p-5 xs:p-10 lg:p-12 bg-primary text-white shadow-2xl shadow-primary/30 flex flex-col border border-primary-dark`}>
+                    <div className="flex items-center gap-2 xs:gap-3 mb-6 xs:mb-10">
+                      <div className="w-1 xs:w-1.5 h-5 xs:h-6 bg-white/40 rounded-full" />
+                      <h3 className="text-[16px] xs:text-[20px] font-black tracking-tight">핵심 투자 가이드</h3>
+                    </div>
+                    <div className="space-y-6 xs:space-y-10 flex-1 flex flex-col justify-center">
+                      {stock.investmentPoints.map((point, idx) => (
+                        <div key={idx} className="flex items-start gap-3 xs:gap-5 group">
+                          <div className="mt-0.5 xs:mt-1 flex-shrink-0 w-6 h-6 xs:w-8 xs:h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+                            <svg className="w-3.5 h-3.5 xs:w-5 xs:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[14px] xs:text-[17px] lg:text-[19px] font-black tracking-tight leading-tight">{point.title}</span>
+                            <p className="text-[11px] xs:text-[13px] font-bold text-white/70 mt-1 leading-snug max-w-[90%]">
+                              {point.description}
+                            </p>
+                            <div className="h-[1px] w-6 xs:w-8 mt-3 xs:mt-4 bg-white/10 rounded-full group-last:hidden" />
+                          </div>
+                        </div>
                       ))}
                     </div>
-                    <div className={`relative p-4 xs:p-8 rounded-xl xs:rounded-[2rem] border shadow-sm ${isDarkMode ? 'bg-slate-900/40 border-slate-700' : 'bg-gray-50/30 border-gray-100'}`}>
-                      <p className={`text-[12px] xs:text-[14px] lg:text-[15px] font-bold tracking-tight leading-relaxed ${isDarkMode ? 'text-slate-200' : 'text-gray-800'}`}>
-                        " {aiBriefing.summary} "
-                      </p>
-                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-12 xs:py-20 text-gray-300 text-xs xs:text-base font-black uppercase tracking-widest">No Analysis Available</div>
                 )}
               </div>
-
-              {/* Investment Points */}
-              <div className={`rounded-2xl xs:rounded-[2.5rem] p-5 xs:p-10 lg:p-12 bg-primary text-white shadow-2xl shadow-primary/30 flex flex-col border border-primary-dark`}>
-                <div className="flex items-center gap-2 xs:gap-3 mb-6 xs:mb-10">
-                  <div className="w-1 xs:w-1.5 h-5 xs:h-6 bg-white/40 rounded-full" />
-                  <h3 className="text-[16px] xs:text-[20px] font-black tracking-tight">핵심 투자 가이드</h3>
-                </div>
-                <div className="space-y-6 xs:space-y-10 flex-1 flex flex-col justify-center">
-                  {stock.investmentPoints.map((point, idx) => (
-                    <div key={idx} className="flex items-start gap-3 xs:gap-5 group">
-                      <div className="mt-0.5 xs:mt-1 flex-shrink-0 w-6 h-6 xs:w-8 xs:h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                        <svg className="w-3.5 h-3.5 xs:w-5 xs:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[14px] xs:text-[17px] lg:text-[19px] font-black tracking-tight leading-tight">{point.title}</span>
-                        <p className="text-[11px] xs:text-[13px] font-bold text-white/70 mt-1 leading-snug max-w-[90%]">
-                          {point.description}
-                        </p>
-                        <div className="h-[1px] w-6 xs:w-8 mt-3 xs:mt-4 bg-white/10 rounded-full group-last:hidden" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            )}
 
             <div className="flex justify-center pt-8">
               <button

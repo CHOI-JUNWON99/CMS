@@ -21,8 +21,8 @@ const StockList: React.FC<StockListProps> = ({
 }) => {
   const SortIndicator = ({ active }: { active: boolean }) => (
     <div className="ml-1.5 flex flex-col items-center justify-center opacity-100 shrink-0">
-      <svg className={`w-2 h-2 mb-[-1px] transition-colors ${active && sortDirection === 'ASC' ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`} fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" /></svg>
-      <svg className={`w-2 h-2 mt-[-1px] transition-colors ${active && sortDirection === 'DESC' ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 01-1.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+      <svg className={`w-2 h-2 mb-[-1px] transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" /></svg>
+      <svg className={`w-2 h-2 mt-[-1px] transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 01-1.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
     </div>
   );
 
@@ -30,7 +30,7 @@ const StockList: React.FC<StockListProps> = ({
     const active = sortKey === targetKey;
     return (
       <button onClick={() => onSort(targetKey)} className={`${className} flex items-center hover:opacity-70 transition-opacity group py-1 outline-none`}>
-        <span className={`transition-colors font-bold whitespace-nowrap text-[11px] tracking-widest ${active ? (isDarkMode ? 'text-primary-accent' : 'text-primary') : (isDarkMode ? 'text-slate-500' : 'text-gray-500')}`}>{label}</span>
+        <span className={`transition-colors font-bold whitespace-nowrap text-[11px] tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{label}</span>
         <SortIndicator active={active} />
       </button>
     );
@@ -45,7 +45,7 @@ const StockList: React.FC<StockListProps> = ({
         <div className="w-[7%] shrink-0 flex items-center pl-2"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>TICKER</span></div>
         <div className="w-[15%] shrink-0 flex items-center pl-10"><HeaderButton label="NAME" targetKey="name" className="justify-start" /></div>
         <div className="w-[12%] shrink-0 flex items-center pl-6"><HeaderButton label="SECTOR" targetKey="sector" className="justify-start" /></div>
-        <div className="flex-1 pl-6 flex justify-center"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
+        <div className="flex-1 pl-[13%] flex justify-start"><span className={`font-bold transition-colors ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>INVESTMENT POINTS</span></div>
         <div className="w-[12%] shrink-0 flex justify-center"><HeaderButton label="MARKET CAP" targetKey="marketCapValue" className="justify-center" /></div>
         <div className="w-[8%] shrink-0 flex justify-end pr-2"><HeaderButton label="YTD" targetKey="returnRate" className="justify-end" /></div>
       </div>
@@ -111,8 +111,8 @@ const StockList: React.FC<StockListProps> = ({
                   </span>
                 </div>
 
-                {/* INVESTMENT POINTS 영역 - flex-1 (왼쪽 정렬) */}
-                <div className="mt-4 lg:mt-0 flex-1 lg:pl-6 lg:pr-4 flex lg:justify-start">
+                {/* INVESTMENT POINTS 영역 - flex-1 (헤더 아래 정렬) */}
+                <div className="mt-4 lg:mt-0 flex-1 lg:pl-[10%] lg:pr-4 flex lg:justify-start">
                   <div className="flex flex-col gap-1">
                     {stock.investmentPoints?.slice(0, 3).map((point, idx) => (
                       <div key={idx} className="flex items-start">

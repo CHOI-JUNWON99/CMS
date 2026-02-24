@@ -131,20 +131,20 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       const today = new Date();
       const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
 
-      // DB 저장 (직접 insert 사용 - client_id 포함)
-      const { error: dbError } = await supabase
-        .from('resources')
-        .insert({
-          id: `res-${Date.now()}`,
-          title: newResource.title,
-          description: newResource.description || '',
-          file_type: newResource.fileType,
-          category: newResource.category || '기타',
-          date: dateStr,
-          file_size: fileSize,
-          file_url: urlData.publicUrl,
-          client_id: newResource.clientId || null,
-        });
+      // DB 저장 (RPC 사용 - 관리자 인증 포함)
+      const adminCode = getAdminCode();
+      const { error: dbError } = await supabase.rpc('add_resource', {
+        admin_code: adminCode,
+        p_id: `res-${Date.now()}`,
+        p_title: newResource.title,
+        p_description: newResource.description || '',
+        p_file_type: newResource.fileType,
+        p_category: newResource.category || '기타',
+        p_date: dateStr,
+        p_file_size: fileSize,
+        p_file_url: urlData.publicUrl,
+        p_client_id: newResource.clientId ? newResource.clientId : null,
+      });
 
       if (dbError) throw dbError;
 
