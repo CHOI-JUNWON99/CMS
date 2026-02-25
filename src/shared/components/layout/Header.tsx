@@ -127,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, r
           className="flex items-center gap-2 cursor-pointer group"
           onClick={onHomeClick}
         >
-          <div className="bg-primary text-white font-black px-2 py-0.5 rounded text-lg shadow-sm tracking-tighter">
+          <div className="bg-black text-white font-black px-2 py-0.5 rounded text-lg shadow-sm tracking-tighter">
             CMS
           </div>
 

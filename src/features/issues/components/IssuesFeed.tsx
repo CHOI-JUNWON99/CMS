@@ -86,7 +86,7 @@ const TextWithCMS: React.FC<{ text: string; isDarkMode: boolean; isTitle?: boole
         <React.Fragment key={i}>
           {highlightTerms(part)}
           {i < cmsParts.length - 1 && !hideBadge && (
-            <span className={`inline-flex items-center justify-center bg-primary text-white font-black px-1.5 py-0.5 rounded text-[10px] leading-none mx-1 align-baseline shadow-sm tracking-tighter ${isTitle ? 'scale-110' : 'scale-100'}`}>
+            <span className={`inline-flex items-center justify-center bg-black text-white font-black px-1.5 py-0.5 rounded text-[10px] leading-none mx-1 align-baseline shadow-sm tracking-tighter ${isTitle ? 'scale-110' : 'scale-100'}`}>
               CMS
             </span>
           )}

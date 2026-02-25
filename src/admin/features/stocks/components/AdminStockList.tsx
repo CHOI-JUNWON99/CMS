@@ -12,6 +12,7 @@ import {
   NewStockData,
   UploadResult,
 } from '.';
+import { getIdFromTicker, parseStockExcelRows, RawStockRow } from '../utils/stockExcelParser';
 
 interface AdminStockListProps {
   stocks: Stock[];
@@ -57,12 +58,6 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getIdFromTicker = (ticker: string): string => {
-    if (!ticker) return '';
-    const dotIndex = ticker.indexOf('.');
-    return dotIndex > 0 ? ticker.substring(0, dotIndex) : ticker;
-  };
-
   const filteredStocks = useMemo(() => {
     if (!searchQuery.trim()) return stocks;
     const query = searchQuery.toLowerCase();
@@ -88,35 +83,9 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       // 1행은 날짜 행이라 무시, 2행부터 헤더로 사용 (range: 1은 0-indexed로 2행부터 시작)
-      const rows = XLSX.utils.sheet_to_json<{
-        ticker?: string;
-        name?: string;
-        name_kr?: string;
-        sector?: string;
-        marketCap?: string;
-        totalReturn?: number;
-        PER?: number;
-        PBR?: number;
-        PSR?: number;
-        description?: string;
-        keywords?: string;
-      }>(sheet, { range: 1 });
+      const rows = XLSX.utils.sheet_to_json<RawStockRow>(sheet, { range: 1 });
 
-      const bulkData = rows
-        .filter(row => row.ticker)
-        .map(row => ({
-          ticker: row.ticker,
-          name: row.name || null,
-          name_kr: row.name_kr || null,
-          sector: row.sector || null,
-          market_cap: row.marketCap || null,
-          return_rate: row.totalReturn ?? null,
-          per: row.PER ?? null,
-          pbr: row.PBR ?? null,
-          psr: row.PSR ?? null,
-          description: row.description || null,
-          keywords: row.keywords ? row.keywords.split(',').map(k => k.trim()) : null,
-        }));
+      const bulkData = parseStockExcelRows(rows);
 
       if (bulkData.length === 0) {
         setUploadResult({ updated: 0, inserted: 0, error: '유효한 데이터가 없습니다. ticker 컬럼을 확인하세요.' });

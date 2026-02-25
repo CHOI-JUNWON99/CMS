@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Stock, StockIssue } from '@/shared/types';
+import { parseIssueExcelRows, RawIssueRow } from './utils/issueExcelParser';
 
 interface IssueFormData {
   id?: string;
@@ -238,33 +239,6 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
     setShowEditModal(true);
   };
 
-  // 엑셀 날짜 변환 함수 (Excel serial number -> YY/MM/DD)
-  const convertExcelDate = (dateValue: unknown): string => {
-    // 이미 문자열인 경우
-    if (typeof dateValue === 'string') {
-      return dateValue;
-    }
-    // 숫자인 경우 (Excel serial number)
-    if (typeof dateValue === 'number') {
-      // Excel 날짜를 JavaScript Date로 변환
-      // Excel은 1900년 1월 1일을 1로 시작 (윤년 버그로 인해 -2 보정)
-      const excelEpoch = new Date(1899, 11, 30);
-      const jsDate = new Date(excelEpoch.getTime() + dateValue * 24 * 60 * 60 * 1000);
-      const yy = String(jsDate.getFullYear()).slice(-2);
-      const mm = String(jsDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(jsDate.getDate()).padStart(2, '0');
-      return `${yy}/${mm}/${dd}`;
-    }
-    // Date 객체인 경우
-    if (dateValue instanceof Date) {
-      const yy = String(dateValue.getFullYear()).slice(-2);
-      const mm = String(dateValue.getMonth() + 1).padStart(2, '0');
-      const dd = String(dateValue.getDate()).padStart(2, '0');
-      return `${yy}/${mm}/${dd}`;
-    }
-    return String(dateValue);
-  };
-
   // 엑셀 업로드 처리
   const handleExcelUpload = async (file: File) => {
     setIsExcelUploading(true);
@@ -274,32 +248,9 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<{
-        ticker?: string;
-        date?: string | number | Date;
-        title?: string;
-        content?: string;
-        source?: string;
-        is_cms?: boolean | string | number;
-        keywords?: string;
-      }>(sheet);
+      const rows = XLSX.utils.sheet_to_json<RawIssueRow>(sheet);
 
-      const bulkData = rows
-        .filter((row) => row.ticker && row.date && row.title && row.content)
-        .map((row) => ({
-          ticker: row.ticker,
-          date: convertExcelDate(row.date),
-          title: row.title,
-          content: row.content,
-          source: row.source || '',
-          is_cms: row.is_cms === true || row.is_cms === 'TRUE' || row.is_cms === 1,
-          keywords: row.keywords
-            ? row.keywords
-                .split(',')
-                .map((k) => k.trim())
-                .filter((k) => k)
-            : [],
-        }));
+      const bulkData = parseIssueExcelRows(rows);
 
       if (bulkData.length === 0) {
         setExcelUploadResult({
