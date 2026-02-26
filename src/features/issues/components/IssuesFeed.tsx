@@ -1,5 +1,6 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { Stock, FeedItem } from '@/shared/types';
+import { SearchInput } from '@/shared/components/ui';
 // 뉴스 피드 컴포넌트
 interface IssuesFeedProps {
   stocks: Stock[];
@@ -140,31 +141,65 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
         });
       }
     });
-    // updatedAt 또는 createdAt 기준으로 정렬
-    return items.sort((a, b) => {
-      const dateA = a.updatedAt || a.createdAt || a.date;
-      const dateB = b.updatedAt || b.createdAt || b.date;
-      return dateB.localeCompare(dateA);
-    });
+    // date 기준으로 정렬 (최신순)
+    return items.sort((a, b) => b.date.localeCompare(a.date));
   }, [stocks]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return feedItems;
+    return feedItems.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const keywords = (item.keywords || []).join(' ').toLowerCase();
+      const stockName = (item.stockName || '').toLowerCase();
+      const stockTicker = (item.stockTicker || '').toLowerCase();
+      return title.includes(query) || keywords.includes(query) || stockName.includes(query) || stockTicker.includes(query);
+    });
+  }, [feedItems, searchQuery]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto">
-      {feedItems.map((item, index) => {
+      <div className="mb-6">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="제목, 키워드, 종목명, 티커로 검색..."
+          isDarkMode={isDarkMode}
+          className="w-full"
+        />
+      </div>
+
+      {filteredItems.length === 0 && searchQuery.trim() && (
+        <div className={`text-center py-16 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>
+          <svg className="w-12 h-12 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p className="text-sm font-bold">'{searchQuery.trim()}'에 대한 검색 결과가 없습니다</p>
+        </div>
+      )}
+
+      {filteredItems.map((item, index) => {
         const stock = stocks.find(s => s.id === item.stockId);
         const isToday = item.date === todayStr;
-        const isLastToday = isToday && (index === feedItems.length - 1 || feedItems[index + 1].date !== todayStr);
-        const isFirstItem = index === 0;
+        const isLastToday = isToday && (index === filteredItems.length - 1 || filteredItems[index + 1].date !== todayStr);
 
         return (
           <React.Fragment key={`${item.stockId}-${item.type}-${index}`}>
-            {isFirstItem && isToday && (
-              <div className="flex items-center gap-6 mb-10 opacity-100">
-                <div className="flex-1 h-[3px] bg-primary/10" />
-                <span className="text-[12px] font-black text-primary tracking-[0.3em] uppercase px-4 py-1.5 rounded-full border-2 border-primary/20 bg-white">Latest Updates</span>
-                <div className="flex-1 h-[3px] bg-primary/10" />
-              </div>
-            )}
 
             <div className={`relative pl-0 min-[425px]:pl-10 lg:pl-16 pb-5 min-[425px]:pb-8 group border-l-0 min-[425px]:border-l-[3px] transition-all ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
               <div className={`hidden min-[425px]:block absolute -left-[10.5px] top-1.5 w-5 h-5 rounded-full border-4 transition-all group-hover:scale-125 z-10 ${item.isCMS ? 'bg-primary border-white dark:border-primary/40 shadow-xl' : 'bg-slate-500 border-white dark:border-[#0a192f] shadow-lg'}`} />
@@ -249,7 +284,7 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
                 <div className="flex-1 h-[3px] bg-gradient-to-r from-transparent to-primary/40" />
                 <div className="px-6 py-2 rounded-full border-2 border-primary/30 bg-blue-50 dark:bg-primary/10 flex items-center gap-3 shadow-lg">
                   <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-black text-primary tracking-[0.2em] uppercase">Today's Session End</span>
+                  <span className="text-sm font-black text-primary tracking-[0.2em] uppercase">Today</span>
                 </div>
                 <div className="flex-1 h-[3px] bg-gradient-to-l from-transparent to-primary/40" />
               </div>
@@ -257,6 +292,23 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
           </React.Fragment>
         );
       })}
+
+      {/* Scroll to Top */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-8 right-8 z-50 w-11 h-11 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
+          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        } ${
+          isDarkMode
+            ? 'bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600'
+            : 'bg-white hover:bg-gray-50 text-gray-600 border border-gray-200'
+        }`}
+        aria-label="맨 위로 이동"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Stock, StockIssue } from '@/shared/types';
+import { SearchInput } from '@/shared/components/ui';
 import { parseIssueExcelRows, RawIssueRow } from './utils/issueExcelParser';
 
 interface IssueFormData {
@@ -70,6 +71,9 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
     }
   }, [stocks]);
 
+  // 검색 상태
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
   // 피드 아이템 생성
   const feedItems = useMemo(() => {
     const items: FeedItem[] = [];
@@ -93,6 +97,19 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
     });
     return items.sort((a, b) => b.date.localeCompare(a.date));
   }, [stocks]);
+
+  // 검색 필터링
+  const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return feedItems;
+    return feedItems.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const keywords = (item.keywords || []).join(' ').toLowerCase();
+      const stockName = (item.stockName || '').toLowerCase();
+      const stockTicker = (item.stockTicker || '').toLowerCase();
+      return title.includes(query) || keywords.includes(query) || stockName.includes(query) || stockTicker.includes(query);
+    });
+  }, [feedItems, searchQuery]);
 
   // 이슈 추가
   const handleAddIssue = async (data: IssueFormData, imageUploads: ImageUpload[]) => {
@@ -197,6 +214,13 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       });
 
       if (updateError) throw updateError;
+
+      // 이미지 별도 업데이트 (update_issue가 이미지를 제대로 처리하지 못하는 경우 대비)
+      await getAdminSupabase().rpc('update_issue_images', {
+        admin_code: adminCode,
+        p_issue_id: data.id,
+        p_images: allImageUrls,
+      });
 
       setShowEditModal(false);
       setEditingItem(null);
@@ -337,9 +361,20 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
         </div>
       </div>
 
+      {/* 검색 */}
+      <div className="mb-6">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="제목, 키워드, 종목명, 티커로 검색..."
+          isDarkMode={true}
+          className="w-full"
+        />
+      </div>
+
       {/* 피드 리스트 */}
       <div className="max-w-5xl mx-auto">
-        {feedItems.map((item) => (
+        {filteredItems.map((item) => (
           <IssueCard
             key={`${item.stockId}-${item.id}`}
             item={item}
@@ -350,6 +385,15 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
 
         {feedItems.length === 0 && (
           <div className="text-center py-20 text-slate-300 font-bold">등록된 뉴스가 없습니다.</div>
+        )}
+
+        {filteredItems.length === 0 && searchQuery.trim() && feedItems.length > 0 && (
+          <div className="text-center py-16 text-slate-400">
+            <svg className="w-12 h-12 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p className="text-sm font-bold">'{searchQuery.trim()}'에 대한 검색 결과가 없습니다</p>
+          </div>
         )}
       </div>
 

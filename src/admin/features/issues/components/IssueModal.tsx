@@ -30,6 +30,7 @@ interface IssueModalProps {
   stocks: Stock[];
   editItem?: FeedItem;
   isUploading: boolean;
+  defaultStock?: { id: string; nameKr: string; ticker: string };
 }
 
 const getTodayDate = () => {
@@ -48,12 +49,13 @@ const IssueModal: React.FC<IssueModalProps> = ({
   stocks,
   editItem,
   isUploading,
+  defaultStock,
 }) => {
   const [formData, setFormData] = useState<IssueFormData | EditIssueData>(
     mode === 'add'
       ? {
-          stockId: '',
-          stockName: '',
+          stockId: defaultStock?.id || '',
+          stockName: defaultStock ? `${defaultStock.nameKr} (${defaultStock.ticker})` : '',
           title: '',
           content: '',
           keywords: '',
@@ -75,6 +77,22 @@ const IssueModal: React.FC<IssueModalProps> = ({
   const [imageUploads, setImageUploads] = useState<ImageUpload[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [showStockDropdown, setShowStockDropdown] = useState(false);
+
+  // add 모드에서 모달 열릴 때 폼 초기화
+  useEffect(() => {
+    if (mode === 'add' && isOpen) {
+      setFormData({
+        stockId: defaultStock?.id || '',
+        stockName: defaultStock ? `${defaultStock.nameKr} (${defaultStock.ticker})` : '',
+        title: '',
+        content: '',
+        keywords: '',
+        date: getTodayDate(),
+        isCMS: false,
+      });
+      setImageUploads([]);
+    }
+  }, [mode, isOpen, defaultStock]);
 
   // editItem 변경 시 폼 데이터 초기화
   useEffect(() => {
@@ -150,8 +168,8 @@ const IssueModal: React.FC<IssueModalProps> = ({
           </h3>
 
           <div className="space-y-4">
-            {/* 종목 선택 (추가 모드만) */}
-            {isEditMode ? (
+            {/* 종목 선택 (추가 모드 & defaultStock 없을 때만) */}
+            {isEditMode || defaultStock ? (
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">종목</label>
                 <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">

@@ -18,6 +18,9 @@ interface UIState {
   // 선택된 종목
   selectedStockId: string | null;
 
+  // 새 자료 알림
+  lastSeenResourcesAt: string | null;
+
   // 액션
   setViewMode: (mode: ViewMode) => void;
   setActiveTab: (tab: MainTab) => void;
@@ -39,10 +42,17 @@ export const useUIStore = create<UIState>()(
       sortDirection: 'ASC',
       expandedPortfolios: [],
       selectedStockId: null,
+      lastSeenResourcesAt: null,
 
       setViewMode: (mode) => set({ viewMode: mode }),
 
-      setActiveTab: (tab) => set({ activeTab: tab }),
+      setActiveTab: (tab) => {
+        if (tab === 'RESOURCES') {
+          set({ activeTab: tab, lastSeenResourcesAt: new Date().toISOString() });
+        } else {
+          set({ activeTab: tab });
+        }
+      },
 
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
 
@@ -79,7 +89,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'cms-ui-storage',
-      partialize: (state) => ({ isDarkMode: state.isDarkMode }),
+      partialize: (state) => ({ isDarkMode: state.isDarkMode, lastSeenResourcesAt: state.lastSeenResourcesAt }),
     }
   )
 );

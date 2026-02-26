@@ -11,7 +11,7 @@ import { usePortfolios, usePortfolioStockIds, useRecordPortfolioView } from '@/f
 import { useStocksWithRelations } from '@/features/stocks';
 import { IssuesFeed } from '@/features/issues';
 import { useGlossary } from '@/features/glossary';
-import { ResourcesView } from '@/features/resources';
+import { ResourcesView, useHasNewResources } from '@/features/resources';
 
 interface PortfolioGroup {
   id: string;
@@ -61,6 +61,7 @@ const App: React.FC = () => {
   const { data: stocks = [], isLoading: stocksLoading } = useStocksWithRelations(allStockIds);
   const { data: glossary = {} } = useGlossary();
   const recordViewMutation = useRecordPortfolioView();
+  const hasNewResources = useHasNewResources();
 
   const isLoading = portfoliosLoading || stocksLoading;
 
@@ -227,7 +228,13 @@ const App: React.FC = () => {
                 onClick={() => setActiveTab('RESOURCES')}
                 className={`pb-4 text-[13px] font-black tracking-wider transition-all relative ${activeTab === 'RESOURCES' ? (isDarkMode ? 'text-slate-200' : 'text-accent') : (isDarkMode ? 'text-slate-500' : 'text-gray-400')}`}
               >
-                RESOURCES {activeTab === 'RESOURCES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-accent rounded-full" />}
+                <span className="relative">
+                  RESOURCES
+                  {hasNewResources && activeTab !== 'RESOURCES' && (
+                    <span className="absolute -top-1 -right-3 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  )}
+                </span>
+                {activeTab === 'RESOURCES' && <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-accent rounded-full" />}
               </button>
             </nav>
             {activeTab === 'PORTFOLIO' ? (

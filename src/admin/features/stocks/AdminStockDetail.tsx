@@ -61,6 +61,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
       keywords: i.keywords || [],
       date: i.date,
       isCMS: i.isCMS || false,
+      images: i.images || [],
     }));
 
   return (
@@ -85,7 +86,7 @@ const AdminStockDetail: React.FC<AdminStockDetailProps> = ({ stock, onBack, onRe
       <InvestmentPointSection stockId={stock.id} investmentPoints={investmentPoints} onRefresh={onRefresh} />
 
       {/* 뉴스 / 이슈 */}
-      <IssueSection stockId={stock.id} issues={issues} onRefresh={onRefresh} />
+      <IssueSection stock={{ id: stock.id, nameKr: stock.nameKr, ticker: stock.ticker }} issues={issues} onRefresh={onRefresh} />
     </div>
   );
 };
