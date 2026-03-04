@@ -19,19 +19,30 @@ interface ClientRow {
   is_active: boolean;
 }
 
-// 클라이언트(소속) 목록 조회 (RPC 경유, 비밀번호 미포함)
+// 클라이언트(소속) 목록 조회
 export function useClients() {
   return useQuery({
     queryKey: clientKeys.list(),
     queryFn: async (): Promise<Client[]> => {
-      const adminCode = useAdminAuthStore.getState().getAdminCode();
-      const { data, error } = await supabase.rpc('get_clients_admin', {
-        admin_code: adminCode,
-      });
+      let rows: ClientRow[] = [];
 
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        // 프로덕션: 서버 프록시 (httpOnly 쿠키 인증)
+        const res = await fetch('/api/admin/clients', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch clients');
+        const json = await res.json();
+        rows = json.data || [];
+      } else {
+        // 개발: Supabase RPC 직접 호출
+        const adminCode = useAdminAuthStore.getState().getAdminCode();
+        const { data, error } = await supabase.rpc('get_clients_admin', {
+          admin_code: adminCode,
+        });
+        if (error) throw error;
+        rows = (data as ClientRow[]) || [];
+      }
 
-      return ((data as ClientRow[]) || []).map((row): Client => ({
+      return rows.map((row): Client => ({
         id: row.id,
         name: row.name,
         code: row.code,
@@ -44,22 +55,39 @@ export function useClients() {
   });
 }
 
-// Admin: 클라이언트 추가 (RPC 경유, 비밀번호 해싱은 서버에서)
+// Admin: 클라이언트 추가
 export function useAddClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (client: { name: string; password: string; brandColor: string }) => {
-      const adminCode = useAdminAuthStore.getState().getAdminCode();
-      const code = client.name.trim().toLowerCase().replace(/\s+/g, '_');
-      const { error } = await supabase.rpc('add_client_with_password', {
-        admin_code: adminCode,
-        client_name: client.name.trim(),
-        client_code: code,
-        client_password: client.password.trim(),
-        client_brand_color: client.brandColor,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        const res = await fetch('/api/admin/clients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: client.name.trim(),
+            password: client.password.trim(),
+            brandColor: client.brandColor,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(err.error);
+        }
+      } else {
+        const adminCode = useAdminAuthStore.getState().getAdminCode();
+        const code = client.name.trim().toLowerCase().replace(/\s+/g, '_');
+        const { error } = await supabase.rpc('add_client_with_password', {
+          admin_code: adminCode,
+          client_name: client.name.trim(),
+          client_code: code,
+          client_password: client.password.trim(),
+          client_brand_color: client.brandColor,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clientKeys.all });
@@ -67,7 +95,7 @@ export function useAddClient() {
   });
 }
 
-// Admin: 클라이언트 수정 (RPC 경유)
+// Admin: 클라이언트 수정
 export function useUpdateClient() {
   const queryClient = useQueryClient();
 
@@ -79,16 +107,35 @@ export function useUpdateClient() {
       brandColor: string;
       isActive?: boolean;
     }) => {
-      const adminCode = useAdminAuthStore.getState().getAdminCode();
-      const { error } = await supabase.rpc('update_client_password', {
-        admin_code: adminCode,
-        target_client_id: client.id,
-        new_name: client.name.trim(),
-        new_password: client.password.trim(),
-        new_brand_color: client.brandColor,
-        new_is_active: client.isActive ?? true,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        const res = await fetch('/api/admin/clients', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            id: client.id,
+            name: client.name.trim(),
+            password: client.password.trim(),
+            brandColor: client.brandColor,
+            isActive: client.isActive ?? true,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(err.error);
+        }
+      } else {
+        const adminCode = useAdminAuthStore.getState().getAdminCode();
+        const { error } = await supabase.rpc('update_client_password', {
+          admin_code: adminCode,
+          target_client_id: client.id,
+          new_name: client.name.trim(),
+          new_password: client.password.trim(),
+          new_brand_color: client.brandColor,
+          new_is_active: client.isActive ?? true,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clientKeys.all });
@@ -96,18 +143,31 @@ export function useUpdateClient() {
   });
 }
 
-// Admin: 클라이언트 삭제 (RPC 경유)
+// Admin: 클라이언트 삭제
 export function useDeleteClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (clientId: string) => {
-      const adminCode = useAdminAuthStore.getState().getAdminCode();
-      const { error } = await supabase.rpc('delete_client', {
-        admin_code: adminCode,
-        target_client_id: clientId,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        const res = await fetch('/api/admin/clients', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: clientId }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(err.error);
+        }
+      } else {
+        const adminCode = useAdminAuthStore.getState().getAdminCode();
+        const { error } = await supabase.rpc('delete_client', {
+          admin_code: adminCode,
+          target_client_id: clientId,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clientKeys.all });

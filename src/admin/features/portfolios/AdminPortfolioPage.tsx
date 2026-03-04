@@ -303,13 +303,23 @@ const AdminPortfolioPage: React.FC = () => {
     });
     if (!confirmed) return;
 
-    const adminCode = getAdminCode();
     try {
-      const { error } = await supabase.rpc('delete_portfolio', {
-        admin_code: adminCode,
-        p_portfolio_id: portfolioId,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        const res = await fetch('/api/admin/portfolio-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'delete_portfolio', portfolioId }),
+        });
+        if (!res.ok) throw new Error('Failed');
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('delete_portfolio', {
+          admin_code: adminCode,
+          p_portfolio_id: portfolioId,
+        });
+        if (error) throw error;
+      }
 
       const remaining = portfolios.filter(p => p.id !== portfolioId);
       setPortfolios(remaining);
@@ -324,13 +334,23 @@ const AdminPortfolioPage: React.FC = () => {
   };
 
   const handleSetActive = async (portfolioId: string) => {
-    const adminCode = getAdminCode();
     try {
-      const { error } = await supabase.rpc('set_active_portfolio', {
-        admin_code: adminCode,
-        p_portfolio_id: portfolioId,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        const res = await fetch('/api/admin/portfolio-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'set_active_portfolio', portfolioId }),
+        });
+        if (!res.ok) throw new Error('Failed');
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('set_active_portfolio', {
+          admin_code: adminCode,
+          p_portfolio_id: portfolioId,
+        });
+        if (error) throw error;
+      }
       setPortfolios(portfolios.map(p => p.id === portfolioId ? { ...p, isActive: true } : p));
       toast.success('포트폴리오가 활성화되었습니다.');
     } catch (err) {
@@ -348,13 +368,23 @@ const AdminPortfolioPage: React.FC = () => {
     });
     if (!confirmed) return;
 
-    const adminCode = getAdminCode();
     try {
-      const { error } = await supabase.rpc('deactivate_portfolio', {
-        admin_code: adminCode,
-        p_portfolio_id: portfolioId,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        const res = await fetch('/api/admin/portfolio-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'deactivate_portfolio', portfolioId }),
+        });
+        if (!res.ok) throw new Error('Failed');
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('deactivate_portfolio', {
+          admin_code: adminCode,
+          p_portfolio_id: portfolioId,
+        });
+        if (error) throw error;
+      }
       setPortfolios(portfolios.map(p => ({ ...p, isActive: p.id === portfolioId ? false : p.isActive })));
       toast.success('포트폴리오가 비활성화되었습니다.');
     } catch (err) {
@@ -366,26 +396,43 @@ const AdminPortfolioPage: React.FC = () => {
   const toggleStock = async (stockId: string, isIncluded: boolean) => {
     if (!selectedPortfolioId) return;
 
-    const adminCode = getAdminCode();
     setUpdatingIds(prev => new Set(prev).add(stockId));
 
     try {
-      if (isIncluded) {
-        const { error } = await supabase.rpc('remove_stock_from_portfolio', {
-          admin_code: adminCode,
-          p_portfolio_id: selectedPortfolioId,
-          p_stock_id: stockId,
+      if (import.meta.env.PROD) {
+        const action = isIncluded ? 'remove_stock' : 'add_stock';
+        const res = await fetch('/api/admin/portfolio-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action, portfolioId: selectedPortfolioId, stockId }),
         });
-        if (error) throw error;
-        setPortfolioStocks(portfolioStocks.filter(ps => ps.stockId !== stockId));
+        if (!res.ok) throw new Error('Failed');
+
+        if (isIncluded) {
+          setPortfolioStocks(portfolioStocks.filter(ps => ps.stockId !== stockId));
+        } else {
+          setPortfolioStocks([...portfolioStocks, { stockId, addedAt: new Date().toISOString() }]);
+        }
       } else {
-        const { error } = await supabase.rpc('add_stock_to_portfolio', {
-          admin_code: adminCode,
-          p_portfolio_id: selectedPortfolioId,
-          p_stock_id: stockId,
-        });
-        if (error) throw error;
-        setPortfolioStocks([...portfolioStocks, { stockId, addedAt: new Date().toISOString() }]);
+        const adminCode = getAdminCode();
+        if (isIncluded) {
+          const { error } = await supabase.rpc('remove_stock_from_portfolio', {
+            admin_code: adminCode,
+            p_portfolio_id: selectedPortfolioId,
+            p_stock_id: stockId,
+          });
+          if (error) throw error;
+          setPortfolioStocks(portfolioStocks.filter(ps => ps.stockId !== stockId));
+        } else {
+          const { error } = await supabase.rpc('add_stock_to_portfolio', {
+            admin_code: adminCode,
+            p_portfolio_id: selectedPortfolioId,
+            p_stock_id: stockId,
+          });
+          if (error) throw error;
+          setPortfolioStocks([...portfolioStocks, { stockId, addedAt: new Date().toISOString() }]);
+        }
       }
     } catch (err) {
       console.error('종목 업데이트 실패:', err);

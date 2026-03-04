@@ -22,13 +22,14 @@ interface PortfolioGroup {
 
 const App: React.FC = () => {
   // Auth Store
-  const isSessionValid = useAuthStore((state) => state.isSessionValid);
+  const storeIsAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const expiresAt = useAuthStore((state) => state.expiresAt);
   const logout = useAuthStore((state) => state.logout);
   const extendSession = useAuthStore((state) => state.extendSession);
   const clientInfo = useAuthStore((state) => state.clientInfo);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const restoreSession = useAuthStore((state) => state.restoreSession);
-  const isAuthenticated = isSessionValid();
+  const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
 
   // UI Store
   const viewMode = useUIStore((state) => state.viewMode);
@@ -113,17 +114,18 @@ const App: React.FC = () => {
     if (!isAuthenticated) return;
 
     const tick = () => {
-      if (!isSessionValid()) {
+      const state = useAuthStore.getState();
+      if (!state.isSessionValid()) {
         logout();
       } else {
-        setRemainingTime(useAuthStore.getState().formatRemainingTime());
+        setRemainingTime(state.formatRemainingTime());
       }
     };
 
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [isAuthenticated, isSessionValid, logout]);
+  }, [isAuthenticated, logout]);
 
   // 세션 연장 핸들러
   const handleExtendSession = useCallback(async () => {

@@ -13,11 +13,12 @@ import AdminSettingsPage from '@/admin/features/settings/AdminSettingsPage';
 import AdminAnalyticsPage from '@/admin/features/analytics/AdminAnalyticsPage';
 
 const AdminApp: React.FC = () => {
-  const isSessionValid = useAdminAuthStore((state) => state.isSessionValid);
+  const storeIsAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
+  const expiresAt = useAdminAuthStore((state) => state.expiresAt);
   const logout = useAdminAuthStore((state) => state.logout);
   const isLoading = useAdminAuthStore((state) => state.isLoading);
   const restoreSession = useAdminAuthStore((state) => state.restoreSession);
-  const isAuthenticated = isSessionValid();
+  const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
 
   // 세션 복원
   useEffect(() => {
@@ -29,14 +30,15 @@ const AdminApp: React.FC = () => {
     if (!isAuthenticated) return;
 
     const checkSession = () => {
-      if (!isSessionValid()) {
+      const state = useAdminAuthStore.getState();
+      if (!state.isAuthenticated || !state.expiresAt || Date.now() >= state.expiresAt) {
         logout();
       }
     };
 
     const id = setInterval(checkSession, 60 * 1000);
     return () => clearInterval(id);
-  }, [isAuthenticated, isSessionValid, logout]);
+  }, [isAuthenticated, logout]);
 
   const handleAuthenticated = () => {
     // 인메모리 스토어이므로 reload 대신 상태 변경으로 자동 전환
