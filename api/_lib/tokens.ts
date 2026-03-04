@@ -2,7 +2,6 @@ import { SignJWT, jwtVerify } from 'jose';
 import { randomBytes, createHash } from 'crypto';
 
 const ACCESS_SECRET = () => new TextEncoder().encode(process.env.JWT_ACCESS_SECRET || '');
-const REFRESH_SECRET = () => new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
 
 export interface TokenPayload {
   userType: 'user' | 'admin';
