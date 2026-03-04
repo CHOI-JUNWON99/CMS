@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getServiceSupabase } from '../_lib/supabase';
-import { clearAuthCookies, parseCookies, hashToken } from '../_lib/tokens';
+import { getServiceSupabase } from '../_lib/supabase.js';
+import { clearAuthCookies, parseCookies, hashToken } from '../_lib/tokens.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

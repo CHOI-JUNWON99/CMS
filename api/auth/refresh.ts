@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getServiceSupabase } from '../_lib/supabase';
+import { getServiceSupabase } from '../_lib/supabase.js';
 import {
   createAccessToken,
   generateRefreshToken,
@@ -8,7 +8,7 @@ import {
   clearAuthCookies,
   parseCookies,
   getRefreshExpiryMs,
-} from '../_lib/tokens';
+} from '../_lib/tokens.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
