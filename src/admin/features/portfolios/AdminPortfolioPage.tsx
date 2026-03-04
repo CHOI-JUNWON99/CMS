@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
-import { DbClientRow, DbPortfolioRow } from '@/shared/types';
+import { DbPortfolioRow } from '@/shared/types';
 import { formatMarketCapShort } from '@/shared/utils';
 import {
   PortfolioModal,
@@ -66,19 +66,15 @@ const AdminPortfolioPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 클라이언트 목록 로딩
+  // 클라이언트 목록 로딩 (RPC 경유)
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
+        const { data, error } = await supabase.rpc('get_active_clients');
 
         if (error) throw error;
         if (data) {
-          setClients((data as DbClientRow[]).map((row) => ({
+          setClients((data as { id: string; name: string; code: string; description?: string; logo_url?: string; is_active: boolean }[]).map((row) => ({
             id: row.id,
             name: row.name,
             code: row.code,

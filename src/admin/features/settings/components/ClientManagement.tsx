@@ -62,7 +62,7 @@ const ClientManagement: React.FC = () => {
   const openEditModal = (client: Client) => {
     setEditingClient(client);
     setEditClientName(client.name);
-    setEditClientPassword(client.password || '');
+    setEditClientPassword('');
     setEditClientBrandColor(client.brandColor || '#1e3a8a');
     setShowEditModal(true);
   };
@@ -129,7 +129,8 @@ const ClientManagement: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-[11px] text-slate-400">비밀번호:</span>
-            <span className="font-mono text-sm text-blue-400">{client.password || '(없음)'}</span>
+            <span className="font-mono text-sm text-blue-400">••••••</span>
+            <span className="text-[10px] text-emerald-500">설정됨</span>
           </div>
         </div>
       </div>
@@ -246,9 +247,10 @@ const ClientManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">비밀번호 *</label>
                 <input
-                  type="text"
+                  type="password"
                   value={newClientPassword}
                   onChange={(e) => setNewClientPassword(e.target.value)}
+                  maxLength={100}
                   className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
                   placeholder="shinhan2025"
                 />
@@ -308,9 +310,10 @@ const ClientManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">비밀번호 *</label>
                 <input
-                  type="text"
+                  type="password"
                   value={editClientPassword}
                   onChange={(e) => setEditClientPassword(e.target.value)}
+                  maxLength={100}
                   className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
                 />
               </div>

@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
-import { useAdminAuthStore } from '@/shared/stores/useAdminAuthStore';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Zustand store의 getState()를 사용하여 React 외부에서도 adminCode 접근 가능
+/**
+ * @deprecated getAdminSupabase는 더 이상 사용하지 않습니다.
+ * 서버 RPC 함수를 통해 관리자 작업을 수행하세요.
+ * 마이그레이션 기간 동안 하위 호환용으로 유지합니다.
+ */
 export function getAdminSupabase() {
-  const adminCode = useAdminAuthStore.getState().getAdminCode();
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { 'x-admin-code': adminCode } },
-  });
+  return supabase;
 }

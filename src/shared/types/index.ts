@@ -60,7 +60,6 @@ export interface Client {
   id: string;
   name: string;
   code: string;
-  password?: string;  // 소속별 비밀번호 (사용자 로그인용)
   description?: string;
   logoUrl?: string;
   brandColor?: string;  // 브랜드 색상 (헤더, 포트폴리오 카드 등)
@@ -70,7 +69,6 @@ export interface Client {
 export interface SharedPassword {
   id: string;
   name: string;
-  password: string;
   isMaster: boolean;  // true면 모든 소속 접근
   clientIds: string[];  // 선택적 공유 시 접근 가능한 소속 ID 목록
   brandColor?: string;
@@ -172,7 +170,7 @@ export interface DbClientRow {
   id: string;
   name: string;
   code: string;
-  password: string | null;
+  password_hash: string | null;
   description: string | null;
   logo_url: string | null;
   brand_color: string | null;
@@ -182,7 +180,7 @@ export interface DbClientRow {
 export interface DbSharedPasswordRow {
   id: string;
   name: string;
-  password: string;
+  password_hash: string;
   is_master: boolean;
   client_ids: string[] | null;
   brand_color: string | null;

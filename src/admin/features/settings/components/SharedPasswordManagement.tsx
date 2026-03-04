@@ -85,7 +85,7 @@ const SharedPasswordManagement: React.FC = () => {
   const openEditModal = (shared: SharedPassword) => {
     setEditing(shared);
     setEditName(shared.name);
-    setEditPassword(shared.password);
+    setEditPassword('');
     setEditIsMaster(shared.isMaster);
     setEditClientIds(shared.clientIds);
     setEditBrandColor(shared.brandColor || '#1e3a8a');
@@ -177,7 +177,8 @@ const SharedPasswordManagement: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[11px] text-slate-400">비밀번호:</span>
-              <span className="font-mono text-sm text-purple-400">{shared.password}</span>
+              <span className="font-mono text-sm text-purple-400">••••••</span>
+              <span className="text-[10px] text-emerald-500">설정됨</span>
             </div>
             {!shared.isMaster && clientNames && (
               <div className="flex items-center gap-2 mt-1">
@@ -331,9 +332,10 @@ const SharedPasswordManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">비밀번호 *</label>
                 <input
-                  type="text"
+                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  maxLength={100}
                   className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
                   placeholder="master123"
                 />
@@ -413,9 +415,10 @@ const SharedPasswordManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">비밀번호 *</label>
                 <input
-                  type="text"
+                  type="password"
                   value={editPassword}
                   onChange={(e) => setEditPassword(e.target.value)}
+                  maxLength={100}
                   className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
                 />
               </div>

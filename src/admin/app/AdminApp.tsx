@@ -15,7 +15,14 @@ import AdminAnalyticsPage from '@/admin/features/analytics/AdminAnalyticsPage';
 const AdminApp: React.FC = () => {
   const isSessionValid = useAdminAuthStore((state) => state.isSessionValid);
   const logout = useAdminAuthStore((state) => state.logout);
+  const isLoading = useAdminAuthStore((state) => state.isLoading);
+  const restoreSession = useAdminAuthStore((state) => state.restoreSession);
   const isAuthenticated = isSessionValid();
+
+  // 세션 복원
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
 
   // 세션 만료 체크 (1분마다)
   useEffect(() => {
@@ -32,8 +39,17 @@ const AdminApp: React.FC = () => {
   }, [isAuthenticated, isSessionValid, logout]);
 
   const handleAuthenticated = () => {
-    window.location.reload();
+    // 인메모리 스토어이므로 reload 대신 상태 변경으로 자동 전환
   };
+
+  // 세션 복원 중
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a192f] flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <AdminGate onAuthenticated={handleAuthenticated} />;

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
-import { SharedPassword, DbSharedPasswordRow } from '@/shared/types';
+import { supabase } from '@/shared/lib/supabase';
+import { useAdminAuthStore } from '@/shared/stores/useAdminAuthStore';
+import { SharedPassword } from '@/shared/types';
 
 // Query Keys
 export const sharedPasswordKeys = {
@@ -8,22 +9,30 @@ export const sharedPasswordKeys = {
   list: () => [...sharedPasswordKeys.all, 'list'] as const,
 };
 
-// 공유 비밀번호 목록 조회
+interface SharedPasswordRow {
+  id: string;
+  name: string;
+  is_master: boolean;
+  client_ids: string[] | null;
+  brand_color: string | null;
+  is_active: boolean;
+}
+
+// 공유 비밀번호 목록 조회 (RPC 경유, 비밀번호 미포함)
 export function useSharedPasswords() {
   return useQuery({
     queryKey: sharedPasswordKeys.list(),
     queryFn: async (): Promise<SharedPassword[]> => {
-      const { data, error } = await supabase
-        .from('shared_passwords')
-        .select('*')
-        .order('name');
+      const adminCode = useAdminAuthStore.getState().getAdminCode();
+      const { data, error } = await supabase.rpc('get_shared_passwords_admin', {
+        admin_code: adminCode,
+      });
 
       if (error) throw error;
 
-      return (data as DbSharedPasswordRow[] || []).map((row): SharedPassword => ({
+      return ((data as SharedPasswordRow[]) || []).map((row): SharedPassword => ({
         id: row.id,
         name: row.name,
-        password: row.password,
         isMaster: row.is_master,
         clientIds: row.client_ids || [],
         brandColor: row.brand_color ?? undefined,
@@ -33,7 +42,7 @@ export function useSharedPasswords() {
   });
 }
 
-// Admin: 공유 비밀번호 추가
+// Admin: 공유 비밀번호 추가 (RPC 경유)
 export function useAddSharedPassword() {
   const queryClient = useQueryClient();
 
@@ -45,16 +54,15 @@ export function useAddSharedPassword() {
       clientIds: string[];
       brandColor?: string;
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('shared_passwords')
-        .insert({
-          name: data.name.trim(),
-          password: data.password.trim(),
-          is_master: data.isMaster,
-          client_ids: data.clientIds,
-          brand_color: data.brandColor || null,
-          is_active: true,
-        });
+      const adminCode = useAdminAuthStore.getState().getAdminCode();
+      const { error } = await supabase.rpc('add_shared_password', {
+        admin_code: adminCode,
+        sp_name: data.name.trim(),
+        sp_password: data.password.trim(),
+        sp_is_master: data.isMaster,
+        sp_client_ids: data.clientIds,
+        sp_brand_color: data.brandColor || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -63,7 +71,7 @@ export function useAddSharedPassword() {
   });
 }
 
-// Admin: 공유 비밀번호 수정
+// Admin: 공유 비밀번호 수정 (RPC 경유)
 export function useUpdateSharedPassword() {
   const queryClient = useQueryClient();
 
@@ -77,17 +85,17 @@ export function useUpdateSharedPassword() {
       brandColor?: string;
       isActive?: boolean;
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('shared_passwords')
-        .update({
-          name: data.name.trim(),
-          password: data.password.trim(),
-          is_master: data.isMaster,
-          client_ids: data.clientIds,
-          brand_color: data.brandColor || null,
-          is_active: data.isActive ?? true,
-        })
-        .eq('id', data.id);
+      const adminCode = useAdminAuthStore.getState().getAdminCode();
+      const { error } = await supabase.rpc('update_shared_password', {
+        admin_code: adminCode,
+        target_id: data.id,
+        new_name: data.name.trim(),
+        new_password: data.password.trim(),
+        new_is_master: data.isMaster,
+        new_client_ids: data.clientIds,
+        new_brand_color: data.brandColor || null,
+        new_is_active: data.isActive ?? true,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -96,16 +104,17 @@ export function useUpdateSharedPassword() {
   });
 }
 
-// Admin: 공유 비밀번호 삭제
+// Admin: 공유 비밀번호 삭제 (RPC 경유)
 export function useDeleteSharedPassword() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await getAdminSupabase()
-        .from('shared_passwords')
-        .delete()
-        .eq('id', id);
+      const adminCode = useAdminAuthStore.getState().getAdminCode();
+      const { error } = await supabase.rpc('delete_shared_password', {
+        admin_code: adminCode,
+        target_id: id,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

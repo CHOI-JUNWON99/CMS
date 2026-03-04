@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/shared/components';
 import { ToastContainer, ConfirmDialog, SearchInput } from '@/shared/components/ui';
-import { supabase } from '@/shared/lib/supabase';
 import { useAuthStore, useUIStore } from '@/shared/stores';
 import { Stock, SortKey } from '@/shared/types';
 import { getSimplifiedSector } from '@/shared/utils';
@@ -26,8 +25,9 @@ const App: React.FC = () => {
   const isSessionValid = useAuthStore((state) => state.isSessionValid);
   const logout = useAuthStore((state) => state.logout);
   const extendSession = useAuthStore((state) => state.extendSession);
-  const codeVersion = useAuthStore((state) => state.codeVersion);
   const clientInfo = useAuthStore((state) => state.clientInfo);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
+  const restoreSession = useAuthStore((state) => state.restoreSession);
   const isAuthenticated = isSessionValid();
 
   // UI Store
@@ -46,8 +46,13 @@ const App: React.FC = () => {
   const selectedStockId = useUIStore((state) => state.selectedStockId);
   const setSelectedStockId = useUIStore((state) => state.setSelectedStockId);
 
+  // 세션 복원
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
   // 남은 시간 상태 (1초마다 업데이트)
-  const [remainingTime, setRemainingTime] = React.useState('60:00');
+  const [remainingTime, setRemainingTime] = React.useState('30:00');
 
   // 포트폴리오별 종목 검색 상태
   const [searchQueries, setSearchQueries] = React.useState<Record<string, string>>({});
@@ -122,18 +127,24 @@ const App: React.FC = () => {
 
   // 세션 연장 핸들러
   const handleExtendSession = useCallback(async () => {
-    try {
-      const { data } = await supabase.rpc('get_active_code_version');
-      if (data !== null && codeVersion !== null && String(data) !== codeVersion) {
-        logout();
-        return;
+    if (import.meta.env.PROD) {
+      try {
+        const res = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          logout();
+          return;
+        }
+      } catch {
+        // 네트워크 오류 시 그냥 연장 허용
       }
-    } catch {
-      // 네트워크 오류 시 그냥 연장 허용
     }
     extendSession();
     setRemainingTime(useAuthStore.getState().formatRemainingTime());
-  }, [codeVersion, logout, extendSession]);
+  }, [logout, extendSession]);
 
   // 정렬 함수
   const sortStocks = useCallback((list: Stock[]) => {
@@ -183,8 +194,17 @@ const App: React.FC = () => {
   };
 
   const handleAuthenticated = () => {
-    window.location.reload();
+    // 인메모리 스토어이므로 reload 대신 상태 변경으로 자동 전환
   };
+
+  // 세션 복원 중
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a192f] flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // 미인증 → 인증코드 입력 화면
   if (!isAuthenticated) {
