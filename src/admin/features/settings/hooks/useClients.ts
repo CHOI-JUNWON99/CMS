@@ -14,6 +14,7 @@ interface ClientRow {
   name: string;
   code: string;
   description?: string;
+  password?: string;
   logo_url?: string;
   brand_color?: string;
   is_active: boolean;
@@ -47,6 +48,7 @@ export function useClients() {
         name: row.name,
         code: row.code,
         description: row.description ?? undefined,
+        password: row.password ?? undefined,
         logoUrl: row.logo_url ?? undefined,
         brandColor: row.brand_color ?? undefined,
         isActive: row.is_active,

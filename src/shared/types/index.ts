@@ -61,6 +61,7 @@ export interface Client {
   name: string;
   code: string;
   description?: string;
+  password?: string;
   logoUrl?: string;
   brandColor?: string;  // 브랜드 색상 (헤더, 포트폴리오 카드 등)
   isActive: boolean;
@@ -69,6 +70,7 @@ export interface Client {
 export interface SharedPassword {
   id: string;
   name: string;
+  password?: string;
   isMaster: boolean;  // true면 모든 소속 접근
   clientIds: string[];  // 선택적 공유 시 접근 가능한 소속 ID 목록
   brandColor?: string;

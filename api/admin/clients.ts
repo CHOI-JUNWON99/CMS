@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'GET': {
         const { data, error } = await supabase
           .from('clients')
-          .select('id, name, code, description, logo_url, brand_color, is_active')
+          .select('id, name, code, description, password, logo_url, brand_color, is_active')
           .order('created_at', { ascending: false });
 
         if (error) throw error;

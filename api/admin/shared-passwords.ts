@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'GET': {
         const { data, error } = await supabase
           .from('shared_passwords')
-          .select('id, name, is_master, client_ids, brand_color, is_active')
+          .select('id, name, password, is_master, client_ids, brand_color, is_active')
           .order('created_at', { ascending: false });
 
         if (error) throw error;

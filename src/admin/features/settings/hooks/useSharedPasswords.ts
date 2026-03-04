@@ -12,6 +12,7 @@ export const sharedPasswordKeys = {
 interface SharedPasswordRow {
   id: string;
   name: string;
+  password?: string;
   is_master: boolean;
   client_ids: string[] | null;
   brand_color: string | null;
@@ -44,6 +45,7 @@ export function useSharedPasswords() {
       return rows.map((row): SharedPassword => ({
         id: row.id,
         name: row.name,
+        password: row.password ?? undefined,
         isMaster: row.is_master,
         clientIds: row.client_ids || [],
         brandColor: row.brand_color ?? undefined,
