@@ -293,6 +293,9 @@ const SharedPasswordManagement: React.FC = () => {
             공유 비밀번호 추가
           </button>
         </div>
+        <p className="text-[11px] text-slate-500 mb-4">
+          비밀번호는 보안을 위해 암호화되어 저장되며, 한번 설정된 비밀번호는 확인할 수 없습니다. 비밀번호를 잊으셨다면 새로운 비밀번호로 변경해주세요.
+        </p>
 
         <div className="space-y-2">
           {sharedPasswords.length > 0 ? (

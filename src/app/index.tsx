@@ -8,6 +8,16 @@ import App from './App';
 import { AdminApp } from '@/admin/app';
 import '@/index.css';
 
+// 이전 버전에서 localStorage에 저장했던 인증 데이터 정리 (보안)
+const legacyKeys = [
+  'cms-admin-auth-storage',
+  'cms-auth-storage',
+  'cms_admin_authenticated',
+  'cms_admin_code',
+  'cms_admin_expires_at',
+];
+legacyKeys.forEach(key => localStorage.removeItem(key));
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
