@@ -124,3 +124,23 @@ export const adminGlossaryApi = {
   delete: (id: string) =>
     adminData<{ success: boolean }>({ action: 'delete', table: 'glossary', id }),
 };
+
+// --- Admin Action (portfolio-action 통합 엔드포인트) ---
+export async function adminAction<T = { success: boolean }>(
+  action: string,
+  params: Record<string, unknown> = {},
+): Promise<T> {
+  const res = await fetch('/api/admin/portfolio-action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ action, ...params }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new AdminApiError(res.status, err.error || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}

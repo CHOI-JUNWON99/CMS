@@ -15,6 +15,7 @@ interface IssueFormData {
   existingImages?: string[];
 }
 import { supabase } from '@/shared/lib/supabase';
+import { adminAction } from '@/shared/lib/adminApi';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
 import {
   IssueCard,
@@ -114,26 +115,41 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
   // 이슈 추가
   const handleAddIssue = async (data: IssueFormData, imageUploads: ImageUpload[]) => {
     setIsUploading(true);
-    const adminCode = getAdminCode();
 
     try {
-      // 1. 이슈 생성 (RPC)
-      const { data: issueId, error: issueError } = await supabase.rpc('add_issue', {
-        admin_code: adminCode,
-        p_stock_id: data.stockId,
-        p_title: data.title,
-        p_content: data.content,
-        p_keywords: data.keywords
-          .split(',')
-          .map((k: string) => k.trim())
-          .filter((k: string) => k),
-        p_date: data.date,
-        p_is_cms: data.isCMS,
-      });
+      const keywords = data.keywords
+        .split(',')
+        .map((k: string) => k.trim())
+        .filter((k: string) => k);
 
-      if (issueError) throw issueError;
+      let issueId: string | null = null;
 
-      // 2. 이미지 업로드
+      if (import.meta.env.PROD) {
+        const result = await adminAction<{ success: boolean; issueId?: string }>('add_issue', {
+          stockId: data.stockId,
+          title: data.title,
+          content: data.content,
+          keywords,
+          date: data.date,
+          isCMS: data.isCMS,
+        });
+        issueId = result.issueId || null;
+      } else {
+        const adminCode = getAdminCode();
+        const { data: rpcId, error: issueError } = await supabase.rpc('add_issue', {
+          admin_code: adminCode,
+          p_stock_id: data.stockId,
+          p_title: data.title,
+          p_content: data.content,
+          p_keywords: keywords,
+          p_date: data.date,
+          p_is_cms: data.isCMS,
+        });
+        if (issueError) throw issueError;
+        issueId = rpcId;
+      }
+
+      // 이미지 업로드
       if (imageUploads.length > 0 && issueId) {
         const stock = stocks.find((s) => s.id === data.stockId);
         const ticker = stock?.ticker || data.stockId;
@@ -153,11 +169,16 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
 
         // 이미지 URL 업데이트
         if (uploadedUrls.length > 0) {
-          await supabase.rpc('update_issue_images', {
-            admin_code: adminCode,
-            p_issue_id: issueId,
-            p_images: uploadedUrls,
-          });
+          if (import.meta.env.PROD) {
+            await adminAction('update_issue_images', { issueId, images: uploadedUrls });
+          } else {
+            const adminCode = getAdminCode();
+            await supabase.rpc('update_issue_images', {
+              admin_code: adminCode,
+              p_issue_id: issueId,
+              p_images: uploadedUrls,
+            });
+          }
         }
       }
 
@@ -175,7 +196,6 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
   // 이슈 수정
   const handleUpdateIssue = async (data: IssueFormData, imageUploads: ImageUpload[]) => {
     setIsUploading(true);
-    const adminCode = getAdminCode();
 
     try {
       let allImageUrls = [...(data.existingImages || [])];
@@ -198,29 +218,41 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
         }
       }
 
-      // 이슈 업데이트 (RPC)
-      const { error: updateError } = await supabase.rpc('update_issue', {
-        admin_code: adminCode,
-        p_issue_id: data.id,
-        p_title: data.title,
-        p_content: data.content,
-        p_keywords: data.keywords
-          .split(',')
-          .map((k: string) => k.trim())
-          .filter((k: string) => k),
-        p_date: data.date,
-        p_is_cms: data.isCMS,
-        p_images: allImageUrls,
-      });
+      const keywords = data.keywords
+        .split(',')
+        .map((k: string) => k.trim())
+        .filter((k: string) => k);
 
-      if (updateError) throw updateError;
+      if (import.meta.env.PROD) {
+        await adminAction('update_issue', {
+          issueId: data.id,
+          title: data.title,
+          content: data.content,
+          keywords,
+          date: data.date,
+          isCMS: data.isCMS,
+          images: allImageUrls,
+        });
+      } else {
+        const adminCode = getAdminCode();
+        const { error: updateError } = await supabase.rpc('update_issue', {
+          admin_code: adminCode,
+          p_issue_id: data.id,
+          p_title: data.title,
+          p_content: data.content,
+          p_keywords: keywords,
+          p_date: data.date,
+          p_is_cms: data.isCMS,
+          p_images: allImageUrls,
+        });
+        if (updateError) throw updateError;
 
-      // 이미지 별도 업데이트 (update_issue가 이미지를 제대로 처리하지 못하는 경우 대비)
-      await supabase.rpc('update_issue_images', {
-        admin_code: adminCode,
-        p_issue_id: data.id,
-        p_images: allImageUrls,
-      });
+        await supabase.rpc('update_issue_images', {
+          admin_code: adminCode,
+          p_issue_id: data.id,
+          p_images: allImageUrls,
+        });
+      }
 
       setShowEditModal(false);
       setEditingItem(null);
@@ -239,16 +271,18 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
     const confirmed = await confirm.delete();
     if (!confirmed) return;
 
-    const adminCode = getAdminCode();
-
     try {
-      const { error } = await supabase.rpc('delete_issue', {
-        admin_code: adminCode,
-        p_issue_id: issueId,
-      });
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        await adminAction('delete_issue', { issueId });
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('delete_issue', {
+          admin_code: adminCode,
+          p_issue_id: issueId,
+        });
+        if (error) throw error;
+      }
       toast.success('뉴스가 삭제되었습니다.');
-      // 스크롤 위치 저장 후 새로고침
       scrollPositionRef.current = window.scrollY;
       onRefresh();
     } catch (err) {
@@ -291,21 +325,32 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
         return;
       }
 
-      const adminCode = getAdminCode();
-      const { data: result, error } = await supabase.rpc('bulk_insert_issues', {
-        admin_code: adminCode,
-        data: bulkData,
-      });
-
-      if (error) throw error;
-
-      setExcelUploadResult({
-        inserted: result?.inserted ?? 0,
-        skipped: result?.skipped ?? [],
-        duplicates: result?.duplicates ?? [],
-        duplicate_count: result?.duplicate_count ?? 0,
-        errors: result?.errors ?? [],
-      });
+      if (import.meta.env.PROD) {
+        const result = await adminAction<{ success: boolean; inserted: number }>('bulk_insert_issues', {
+          data: bulkData,
+        });
+        setExcelUploadResult({
+          inserted: result.inserted ?? 0,
+          skipped: [],
+          duplicates: [],
+          duplicate_count: 0,
+          errors: [],
+        });
+      } else {
+        const adminCode = getAdminCode();
+        const { data: result, error } = await supabase.rpc('bulk_insert_issues', {
+          admin_code: adminCode,
+          data: bulkData,
+        });
+        if (error) throw error;
+        setExcelUploadResult({
+          inserted: result?.inserted ?? 0,
+          skipped: result?.skipped ?? [],
+          duplicates: result?.duplicates ?? [],
+          duplicate_count: result?.duplicate_count ?? 0,
+          errors: result?.errors ?? [],
+        });
+      }
     } catch (err: unknown) {
       console.error('엑셀 처리 오류:', err);
       const errorMessage = err instanceof Error ? err.message : '엑셀 파일 처리 중 오류가 발생했습니다.';

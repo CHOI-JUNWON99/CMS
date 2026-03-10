@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/shared/lib/supabase';
+import { adminAction } from '@/shared/lib/adminApi';
 import { DbGlossaryRow } from '@/shared/types';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
 
@@ -68,16 +69,22 @@ const AdminGlossary: React.FC<AdminGlossaryProps> = ({ onRefresh }) => {
     }
 
     setIsSubmitting(true);
-    const adminCode = getAdminCode();
 
     try {
-      const { error } = await supabase.rpc('add_glossary_term', {
-        admin_code: adminCode,
-        p_term: newTerm.term.trim(),
-        p_definition: newTerm.definition.trim(),
-      });
-
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        await adminAction('add_glossary_term', {
+          term: newTerm.term.trim(),
+          definition: newTerm.definition.trim(),
+        });
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('add_glossary_term', {
+          admin_code: adminCode,
+          p_term: newTerm.term.trim(),
+          p_definition: newTerm.definition.trim(),
+        });
+        if (error) throw error;
+      }
 
       setItems([...items, { term: newTerm.term.trim(), definition: newTerm.definition.trim() }].sort((a, b) => a.term.localeCompare(b.term)));
       setShowAddModal(false);
@@ -114,16 +121,22 @@ const AdminGlossary: React.FC<AdminGlossaryProps> = ({ onRefresh }) => {
     }
 
     setIsSubmitting(true);
-    const adminCode = getAdminCode();
 
     try {
-      const { error } = await supabase.rpc('update_glossary_term', {
-        admin_code: adminCode,
-        p_term: editingTerm,
-        p_definition: editingItem.definition.trim(),
-      });
-
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        await adminAction('update_glossary_term', {
+          term: editingTerm,
+          definition: editingItem.definition.trim(),
+        });
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('update_glossary_term', {
+          admin_code: adminCode,
+          p_term: editingTerm,
+          p_definition: editingItem.definition.trim(),
+        });
+        if (error) throw error;
+      }
 
       setItems(items.map(item =>
         item.term === editingTerm
@@ -146,15 +159,17 @@ const AdminGlossary: React.FC<AdminGlossaryProps> = ({ onRefresh }) => {
     const confirmed = await confirm.delete(term);
     if (!confirmed) return;
 
-    const adminCode = getAdminCode();
-
     try {
-      const { error } = await supabase.rpc('delete_glossary_term', {
-        admin_code: adminCode,
-        p_term: term,
-      });
-
-      if (error) throw error;
+      if (import.meta.env.PROD) {
+        await adminAction('delete_glossary_term', { term });
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('delete_glossary_term', {
+          admin_code: adminCode,
+          p_term: term,
+        });
+        if (error) throw error;
+      }
 
       setItems(items.filter(item => item.term !== term));
       onRefresh();

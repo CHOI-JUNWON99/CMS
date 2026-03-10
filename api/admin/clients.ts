@@ -46,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .insert({
             name: name.trim(),
             code,
+            password: password.trim(),
             password_hash: passwordHash,
             brand_color: brandColor || '#3B82F6',
           });
@@ -65,6 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (brandColor !== undefined) updates.brand_color = brandColor;
         if (isActive !== undefined) updates.is_active = isActive;
         if (password && password.trim()) {
+          updates.password = password.trim();
           updates.password_hash = await bcrypt.hash(password.trim(), 10);
         }
 

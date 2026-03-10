@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Stock, SortKey, SortDirection } from '@/shared/types';
 import { supabase } from '@/shared/lib/supabase';
-import { adminStocksApi } from '@/shared/lib/adminApi';
+import { adminStocksApi, adminAction } from '@/shared/lib/adminApi';
 import { getSimplifiedSector, parseMarketCapToValue } from '@/shared/utils';
 import { toast, useAdminAuthStore } from '@/shared/stores';
 import * as XLSX from 'xlsx';
@@ -93,18 +93,26 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
         return;
       }
 
-      const adminCode = getAdminCode();
-      const { data: result, error } = await supabase.rpc('bulk_update_stock_metrics', {
-        admin_code: adminCode,
-        data: bulkData,
-      });
-
-      if (error) throw error;
-
-      setUploadResult({
-        updated: result?.updated ?? 0,
-        inserted: result?.inserted ?? 0,
-      });
+      if (import.meta.env.PROD) {
+        const result = await adminAction<{ success: boolean; updated: number; inserted: number }>('bulk_update_stock_metrics', {
+          data: bulkData,
+        });
+        setUploadResult({
+          updated: result.updated ?? 0,
+          inserted: result.inserted ?? 0,
+        });
+      } else {
+        const adminCode = getAdminCode();
+        const { data: result, error } = await supabase.rpc('bulk_update_stock_metrics', {
+          admin_code: adminCode,
+          data: bulkData,
+        });
+        if (error) throw error;
+        setUploadResult({
+          updated: result?.updated ?? 0,
+          inserted: result?.inserted ?? 0,
+        });
+      }
     } catch (err: unknown) {
       console.error('엑셀 처리 오류:', err);
       const errorMessage = err instanceof Error ? err.message : '엑셀 파일 처리 중 오류가 발생했습니다.';

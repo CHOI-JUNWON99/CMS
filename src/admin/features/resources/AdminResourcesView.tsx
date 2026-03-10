@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Resource, Client, DbClientRow, DbResourceRow } from '@/shared/types';
+import { Resource, Client, DbResourceRow } from '@/shared/types';
 import { supabase } from '@/shared/lib/supabase';
+import { adminAction } from '@/shared/lib/adminApi';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
 
 interface AdminResourcesViewProps {
@@ -26,20 +27,15 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 클라이언트 로딩
+  // 클라이언트 로딩 (RLS 우회를 위해 RPC 사용)
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-
+        const { data, error } = await supabase.rpc('get_active_clients');
         if (error) throw error;
 
         if (data) {
-          setClients((data as DbClientRow[]).map((row) => ({
+          setClients((data as { id: string; name: string; code: string; description?: string; logo_url?: string; is_active: boolean }[]).map((row) => ({
             id: row.id,
             name: row.name,
             code: row.code,
@@ -131,22 +127,35 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       const today = new Date();
       const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
 
-      // DB 저장 (RPC 사용 - 관리자 인증 포함)
-      const adminCode = getAdminCode();
-      const { error: dbError } = await supabase.rpc('add_resource', {
-        admin_code: adminCode,
-        p_id: `res-${Date.now()}`,
-        p_title: newResource.title,
-        p_description: newResource.description || '',
-        p_file_type: newResource.fileType,
-        p_category: newResource.category || '기타',
-        p_date: dateStr,
-        p_file_size: fileSize,
-        p_file_url: urlData.publicUrl,
-        p_client_id: newResource.clientId ? newResource.clientId : null,
-      });
-
-      if (dbError) throw dbError;
+      // DB 저장
+      if (import.meta.env.PROD) {
+        await adminAction('add_resource', {
+          id: `res-${Date.now()}`,
+          title: newResource.title,
+          description: newResource.description || '',
+          fileType: newResource.fileType,
+          category: newResource.category || '기타',
+          date: dateStr,
+          fileSize,
+          fileUrl: urlData.publicUrl,
+          clientId: newResource.clientId ? newResource.clientId : null,
+        });
+      } else {
+        const adminCode = getAdminCode();
+        const { error: dbError } = await supabase.rpc('add_resource', {
+          admin_code: adminCode,
+          p_id: `res-${Date.now()}`,
+          p_title: newResource.title,
+          p_description: newResource.description || '',
+          p_file_type: newResource.fileType,
+          p_category: newResource.category || '기타',
+          p_date: dateStr,
+          p_file_size: fileSize,
+          p_file_url: urlData.publicUrl,
+          p_client_id: newResource.clientId ? newResource.clientId : null,
+        });
+        if (dbError) throw dbError;
+      }
 
       // 리셋
       setShowAddModal(false);
@@ -190,13 +199,17 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
         }
       }
 
-      // DB에서 삭제 (RPC 사용 - 관리자 인증 포함)
-      const adminCode = getAdminCode();
-      const { error } = await supabase.rpc('delete_resource', {
-        admin_code: adminCode,
-        p_id: resource.id,
-      });
-      if (error) throw error;
+      // DB에서 삭제
+      if (import.meta.env.PROD) {
+        await adminAction('delete_resource', { resourceId: resource.id });
+      } else {
+        const adminCode = getAdminCode();
+        const { error } = await supabase.rpc('delete_resource', {
+          admin_code: adminCode,
+          p_id: resource.id,
+        });
+        if (error) throw error;
+      }
 
       setResources(resources.filter(r => r.id !== resource.id));
       toast.success('자료가 삭제되었습니다.');

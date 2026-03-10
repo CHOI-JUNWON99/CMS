@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .from('shared_passwords')
           .insert({
             name: name.trim(),
+            password: password.trim(),
             password_hash: passwordHash,
             is_master: isMaster || false,
             client_ids: clientIds || [],
@@ -67,6 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (brandColor !== undefined) updates.brand_color = brandColor || null;
         if (isActive !== undefined) updates.is_active = isActive;
         if (password && password.trim()) {
+          updates.password = password.trim();
           updates.password_hash = await bcrypt.hash(password.trim(), 10);
         }
 
