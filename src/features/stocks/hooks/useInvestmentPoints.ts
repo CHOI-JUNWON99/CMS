@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAdminSupabase } from '@/shared/lib/supabase';
+import { adminInvestmentPointsApi } from '@/shared/lib/adminApi';
 import { stockKeys } from './useStocks';
 
 // Admin: 투자포인트 추가
@@ -13,15 +13,12 @@ export function useAddInvestmentPoint() {
       description: string;
       sortOrder: number;
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('investment_points')
-        .insert({
-          stock_id: data.stockId,
-          title: data.title,
-          description: data.description,
-          sort_order: data.sortOrder,
-        });
-      if (error) throw error;
+      await adminInvestmentPointsApi.create({
+        stock_id: data.stockId,
+        title: data.title,
+        description: data.description,
+        sort_order: data.sortOrder,
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.stockId) });
@@ -41,14 +38,10 @@ export function useUpdateInvestmentPoint() {
       title: string;
       description: string;
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('investment_points')
-        .update({
-          title: data.title,
-          description: data.description,
-        })
-        .eq('id', data.id);
-      if (error) throw error;
+      await adminInvestmentPointsApi.update(data.id, {
+        title: data.title,
+        description: data.description,
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.stockId) });
@@ -63,11 +56,7 @@ export function useDeleteInvestmentPoint() {
 
   return useMutation({
     mutationFn: async (data: { id: string; stockId: string }) => {
-      const { error } = await getAdminSupabase()
-        .from('investment_points')
-        .delete()
-        .eq('id', data.id);
-      if (error) throw error;
+      await adminInvestmentPointsApi.delete(data.id);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.stockId) });

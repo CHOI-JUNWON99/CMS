@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import AdminStockList from './components/AdminStockList';
 import AdminStockDetail from './AdminStockDetail';
@@ -31,7 +31,8 @@ const StockListView: React.FC = () => {
 
   useEffect(() => {
     const fetchStocks = async () => {
-      setIsLoading(true);
+      // 초기 로딩만 스피너 표시, 리프레시 시에는 스크롤 유지
+      if (stocks.length === 0) setIsLoading(true);
       try {
         // 종목 관리에 필요한 데이터만 가져옴
         const [stocksRes, pointsRes, segmentsRes] = await Promise.all([
@@ -159,6 +160,7 @@ const StockDetailView: React.FC = () => {
   const [stock, setStock] = useState<Stock | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const isInitialLoad = useRef(true);
 
   const refreshData = useCallback(() => {
     setRefreshKey(prev => prev + 1);
@@ -167,7 +169,8 @@ const StockDetailView: React.FC = () => {
   useEffect(() => {
     const fetchStock = async () => {
       if (!stockId) return;
-      setIsLoading(true);
+      // 초기 로딩만 스피너 표시, 리프레시 시에는 스크롤 유지를 위해 스피너 안 보여줌
+      if (isInitialLoad.current) setIsLoading(true);
       try {
         const [stockRes, pointsRes, segmentsRes, issuesRes] = await Promise.all([
           supabase.from('stocks').select('*').eq('id', stockId).single(),
@@ -230,6 +233,7 @@ const StockDetailView: React.FC = () => {
       } catch (err) {
         console.error('종목 상세 로딩 실패:', err);
       } finally {
+        isInitialLoad.current = false;
         setIsLoading(false);
       }
     };

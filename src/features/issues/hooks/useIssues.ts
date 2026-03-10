@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
+import { adminIssuesApi } from '@/shared/lib/adminApi';
 import { stockKeys } from '@/features/stocks/hooks/useStocks';
 import { DbIssueRow } from '@/shared/types';
 
@@ -67,18 +68,15 @@ export function useAddIssue() {
       isCMS: boolean;
       images?: string[];
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('issues')
-        .insert({
-          stock_id: data.stockId,
-          title: data.title || null,
-          content: data.content,
-          keywords: data.keywords,
-          date: data.date,
-          is_cms: data.isCMS,
-          images: data.images || [],
-        });
-      if (error) throw error;
+      await adminIssuesApi.create({
+        stock_id: data.stockId,
+        title: data.title || null,
+        content: data.content,
+        keywords: data.keywords,
+        date: data.date,
+        is_cms: data.isCMS,
+        images: data.images || [],
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: issueKeys.byStock(variables.stockId) });
@@ -102,18 +100,14 @@ export function useUpdateIssue() {
       isCMS: boolean;
       images?: string[];
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('issues')
-        .update({
-          title: data.title || null,
-          content: data.content,
-          keywords: data.keywords,
-          date: data.date,
-          is_cms: data.isCMS,
-          images: data.images || [],
-        })
-        .eq('id', data.id);
-      if (error) throw error;
+      await adminIssuesApi.update(data.id, {
+        title: data.title || null,
+        content: data.content,
+        keywords: data.keywords,
+        date: data.date,
+        is_cms: data.isCMS,
+        images: data.images || [],
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: issueKeys.byStock(variables.stockId) });
@@ -128,11 +122,7 @@ export function useDeleteIssue() {
 
   return useMutation({
     mutationFn: async (data: { id: string; stockId: string }) => {
-      const { error } = await getAdminSupabase()
-        .from('issues')
-        .delete()
-        .eq('id', data.id);
-      if (error) throw error;
+      await adminIssuesApi.delete(data.id);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: issueKeys.byStock(variables.stockId) });

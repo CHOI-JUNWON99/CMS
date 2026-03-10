@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
+import { adminSegmentIconsApi } from '@/shared/lib/adminApi';
 import { convertToWebP } from '@/shared/lib/imageUtils';
 import { toast, confirm } from '@/shared/stores';
 
@@ -45,7 +46,7 @@ const IconPickerModal: React.FC<Props> = ({ isOpen, onClose, onSelectIcon }) => 
       const fileName = `segment-${Date.now()}.webp`;
       const filePath = `segments/${fileName}`;
 
-      const { error: uploadError } = await getAdminSupabase().storage
+      const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(filePath, webpBlob, {
           upsert: true,
@@ -56,16 +57,11 @@ const IconPickerModal: React.FC<Props> = ({ isOpen, onClose, onSelectIcon }) => 
 
       const {
         data: { publicUrl },
-      } = getAdminSupabase().storage.from('images').getPublicUrl(filePath);
+      } = supabase.storage.from('images').getPublicUrl(filePath);
 
-      const { data: savedIcon, error: dbError } = await getAdminSupabase()
-        .from('segment_icons')
-        .insert({ name: iconName, icon_url: publicUrl })
-        .select()
-        .single();
-
-      if (!dbError && savedIcon) {
-        setIconLibrary(prev => [...prev, savedIcon].sort((a, b) => a.name.localeCompare(b.name)));
+      const result = await adminSegmentIconsApi.create({ name: iconName, icon_url: publicUrl });
+      if (result.data) {
+        setIconLibrary(prev => [...prev, result.data].sort((a, b) => a.name.localeCompare(b.name)));
       }
 
       setNewIconName('');
@@ -95,15 +91,10 @@ const IconPickerModal: React.FC<Props> = ({ isOpen, onClose, onSelectIcon }) => 
       // Storage에서 이미지 삭제
       const urlParts = icon.icon_url.split('/');
       const filePath = `segments/${urlParts[urlParts.length - 1]}`;
-      await getAdminSupabase().storage.from('images').remove([filePath]);
+      await supabase.storage.from('images').remove([filePath]);
 
       // DB에서 삭제
-      const { error } = await getAdminSupabase()
-        .from('segment_icons')
-        .delete()
-        .eq('id', icon.id);
-
-      if (error) throw error;
+      await adminSegmentIconsApi.delete(icon.id);
 
       setIconLibrary(prev => prev.filter(i => i.id !== icon.id));
       toast.success('아이콘이 삭제되었습니다.');
@@ -126,12 +117,7 @@ const IconPickerModal: React.FC<Props> = ({ isOpen, onClose, onSelectIcon }) => 
     }
 
     try {
-      const { error } = await getAdminSupabase()
-        .from('segment_icons')
-        .update({ name: editingName.trim() })
-        .eq('id', iconId);
-
-      if (error) throw error;
+      await adminSegmentIconsApi.update(iconId, { name: editingName.trim() });
 
       setIconLibrary(prev =>
         prev

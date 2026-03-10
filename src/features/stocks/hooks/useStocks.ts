@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
+import { adminStocksApi } from '@/shared/lib/adminApi';
 import {
   Stock,
   InvestmentPoint,
@@ -157,32 +158,25 @@ export function useUpdateStock() {
 
   return useMutation({
     mutationFn: async (stock: Partial<Stock> & { id: string }) => {
-      const { data, error } = await getAdminSupabase()
-        .from('stocks')
-        .update({
-          name: stock.name,
-          name_kr: stock.nameKr,
-          ticker: stock.tickers?.[0] || stock.ticker,  // 기본 티커는 첫 번째
-          tickers: stock.tickers,  // 복수 티커 저장
-          sector: stock.sector,
-          description: stock.description,
-          market_cap: stock.marketCap,
-          market_cap_value: stock.marketCapValue,
-          return_rate: stock.returnRate,
-          per: stock.per,
-          pbr: stock.pbr,
-          psr: stock.psr,
-          keywords: stock.keywords,
-          ai_summary: stock.aiSummary,
-          ai_summary_keywords: stock.aiSummaryKeywords,
-          last_update: new Date().toISOString(),
-        })
-        .eq('id', stock.id)
-        .select();
-
-      if (error) throw error;
-      if (!data?.length) throw new Error('권한이 없습니다.');
-      return data[0];
+      const result = await adminStocksApi.update(stock.id, {
+        name: stock.name,
+        name_kr: stock.nameKr,
+        ticker: stock.tickers?.[0] || stock.ticker,
+        tickers: stock.tickers,
+        sector: stock.sector,
+        description: stock.description,
+        market_cap: stock.marketCap,
+        market_cap_value: stock.marketCapValue,
+        return_rate: stock.returnRate,
+        per: stock.per,
+        pbr: stock.pbr,
+        psr: stock.psr,
+        keywords: stock.keywords,
+        ai_summary: stock.aiSummary,
+        ai_summary_keywords: stock.aiSummaryKeywords,
+        last_update: new Date().toISOString(),
+      });
+      return result.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.id) });
@@ -197,15 +191,7 @@ export function useDeleteStock() {
 
   return useMutation({
     mutationFn: async (stockId: string) => {
-      const admin = getAdminSupabase();
-
-      // 관련 데이터 삭제
-      await admin.from('investment_points').delete().eq('stock_id', stockId);
-      await admin.from('business_segments').delete().eq('stock_id', stockId);
-      await admin.from('issues').delete().eq('stock_id', stockId);
-
-      const { error } = await admin.from('stocks').delete().eq('id', stockId);
-      if (error) throw error;
+      await adminStocksApi.delete(stockId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stockKeys.lists() });

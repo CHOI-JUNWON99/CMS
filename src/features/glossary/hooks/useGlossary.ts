@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
+import { adminGlossaryApi } from '@/shared/lib/adminApi';
 
 // Query Keys
 export const glossaryKeys = {
@@ -45,10 +46,7 @@ export function useAddGlossaryTerm() {
 
   return useMutation({
     mutationFn: async ({ term, definition }: { term: string; definition: string }) => {
-      const { error } = await getAdminSupabase()
-        .from('glossary')
-        .insert({ term, definition });
-      if (error) throw error;
+      await adminGlossaryApi.create({ term, definition });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: glossaryKeys.all });
@@ -62,11 +60,7 @@ export function useUpdateGlossaryTerm() {
 
   return useMutation({
     mutationFn: async ({ id, term, definition }: { id: string; term: string; definition: string }) => {
-      const { error } = await getAdminSupabase()
-        .from('glossary')
-        .update({ term, definition })
-        .eq('id', id);
-      if (error) throw error;
+      await adminGlossaryApi.update(id, term, definition);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: glossaryKeys.all });
@@ -80,11 +74,7 @@ export function useDeleteGlossaryTerm() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await getAdminSupabase()
-        .from('glossary')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      await adminGlossaryApi.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: glossaryKeys.all });

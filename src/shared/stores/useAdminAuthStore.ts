@@ -9,12 +9,13 @@ interface AdminAuthState {
   isSessionValid: () => boolean;
   login: (adminCode: string) => void;
   logout: () => void;
+  extendSession: () => void;
   setLoading: (loading: boolean) => void;
   restoreSession: () => Promise<void>;
   getAdminCode: () => string;
 }
 
-const ADMIN_SESSION_DURATION_MS = 60 * 60 * 1000; // 1시간
+const ADMIN_SESSION_DURATION_MS = 30 * 60 * 1000; // 30분 (Sliding Session)
 
 export const useAdminAuthStore = create<AdminAuthState>()(
   (set, get) => ({
@@ -46,6 +47,10 @@ export const useAdminAuthStore = create<AdminAuthState>()(
         expiresAt: null,
         adminCode: null,
       });
+    },
+
+    extendSession: () => {
+      set({ expiresAt: Date.now() + ADMIN_SESSION_DURATION_MS });
     },
 
     setLoading: (loading: boolean) => {

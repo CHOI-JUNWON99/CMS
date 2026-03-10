@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/shared/components';
 import { ToastContainer, ConfirmDialog, SearchInput } from '@/shared/components/ui';
 import { useAuthStore, useUIStore } from '@/shared/stores';
+import { useSlidingSession } from '@/shared/hooks/useSlidingSession';
 import { Stock, SortKey } from '@/shared/types';
 import { getSimplifiedSector } from '@/shared/utils';
 import { AccessGate } from '@/features/auth';
@@ -31,6 +32,9 @@ const App: React.FC = () => {
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
 
+  // Sliding Session: 활동 감지 시 자동 갱신
+  useSlidingSession({ isAuthenticated, extendSession, logout });
+
   // UI Store
   const viewMode = useUIStore((state) => state.viewMode);
   const setViewMode = useUIStore((state) => state.setViewMode);
@@ -53,7 +57,7 @@ const App: React.FC = () => {
   }, [restoreSession]);
 
   // 남은 시간 상태 (1초마다 업데이트)
-  const [remainingTime, setRemainingTime] = React.useState('30:00');
+  const [remainingTime, setRemainingTime] = React.useState('15:00');
 
   // 포트폴리오별 종목 검색 상태
   const [searchQueries, setSearchQueries] = React.useState<Record<string, string>>({});
@@ -127,27 +131,6 @@ const App: React.FC = () => {
     return () => clearInterval(id);
   }, [isAuthenticated, logout]);
 
-  // 세션 연장 핸들러
-  const handleExtendSession = useCallback(async () => {
-    if (import.meta.env.PROD) {
-      try {
-        const res = await fetch('/api/auth/refresh', {
-          method: 'POST',
-          credentials: 'include',
-        });
-
-        if (!res.ok) {
-          logout();
-          return;
-        }
-      } catch {
-        // 네트워크 오류 시 그냥 연장 허용
-      }
-    }
-    extendSession();
-    setRemainingTime(useAuthStore.getState().formatRemainingTime());
-  }, [logout, extendSession]);
-
   // 정렬 함수
   const sortStocks = useCallback((list: Stock[]) => {
     return [...list].sort((a, b) => {
@@ -220,7 +203,6 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         toggleTheme={toggleDarkMode}
         remainingTime={remainingTime}
-        onExtendSession={handleExtendSession}
         onLogout={logout}
       />
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Resource, Client, DbClientRow, DbResourceRow } from '@/shared/types';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
 
 interface AdminResourcesViewProps {
@@ -113,14 +113,14 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
       // Storage 업로드 (관리자 클라이언트 사용)
-      const { error: uploadError } = await getAdminSupabase().storage
+      const { error: uploadError } = await supabase.storage
         .from('resources')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       // Public URL 가져오기
-      const { data: urlData } = getAdminSupabase().storage.from('resources').getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from('resources').getPublicUrl(fileName);
 
       // 파일 사이즈 계산
       const fileSize = file.size < 1024 * 1024
@@ -186,7 +186,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
       if (resource.fileUrl) {
         const fileName = resource.fileUrl.split('/').pop();
         if (fileName) {
-          await getAdminSupabase().storage.from('resources').remove([fileName]);
+          await supabase.storage.from('resources').remove([fileName]);
         }
       }
 

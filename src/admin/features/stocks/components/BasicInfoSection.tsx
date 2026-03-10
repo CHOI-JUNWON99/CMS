@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminSupabase } from '@/shared/lib/supabase';
+import { adminStocksApi } from '@/shared/lib/adminApi';
 import { toast, confirm } from '@/shared/stores';
 import { Stock } from '@/shared/types';
 import { parseMarketCapToValue } from '@/shared/utils';
@@ -36,32 +36,23 @@ const BasicInfoSection: React.FC<Props> = ({ stock, onRefresh, onBack }) => {
         ? editingStock.tickers
         : [];
 
-      const { data, error } = await getAdminSupabase()
-        .from('stocks')
-        .update({
-          name: editingStock.name,
-          name_kr: editingStock.nameKr,
-          ticker: editingStock.tickers?.[0] || editingStock.ticker,
-          tickers: tickersToSave,
-          sector: editingStock.sector,
-          description: editingStock.description,
-          market_cap: editingStock.marketCap,
-          market_cap_value: parseMarketCapToValue(editingStock.marketCap),
-          return_rate: editingStock.returnRate,
-          per: editingStock.per,
-          pbr: editingStock.pbr,
-          psr: editingStock.psr,
-          keywords: editingStock.keywords,
-          last_update: new Date().toISOString(),
-        })
-        .eq('id', stock.id)
-        .select();
+      await adminStocksApi.update(stock.id, {
+        name: editingStock.name,
+        name_kr: editingStock.nameKr,
+        ticker: editingStock.tickers?.[0] || editingStock.ticker,
+        tickers: tickersToSave,
+        sector: editingStock.sector,
+        description: editingStock.description,
+        market_cap: editingStock.marketCap,
+        market_cap_value: parseMarketCapToValue(editingStock.marketCap),
+        return_rate: editingStock.returnRate,
+        per: editingStock.per,
+        pbr: editingStock.pbr,
+        psr: editingStock.psr,
+        keywords: editingStock.keywords,
+        last_update: new Date().toISOString(),
+      });
 
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        toast.error('저장 실패: 권한이 없습니다. 관리자 코드를 확인해주세요.');
-        return;
-      }
       onRefresh();
       toast.success('저장되었습니다.');
     } catch (err) {
@@ -82,26 +73,7 @@ const BasicInfoSection: React.FC<Props> = ({ stock, onRefresh, onBack }) => {
     if (!confirmed) return;
 
     try {
-      // 관련 데이터 먼저 삭제
-      await getAdminSupabase().from('investment_points').delete().eq('stock_id', stock.id);
-      await getAdminSupabase().from('business_segments').delete().eq('stock_id', stock.id);
-
-      // issues의 이미지 먼저 삭제
-      const { data: issueIds } = await getAdminSupabase()
-        .from('issues')
-        .select('id')
-        .eq('stock_id', stock.id);
-      if (issueIds) {
-        for (const issue of issueIds) {
-          await getAdminSupabase().from('issue_images').delete().eq('issue_id', issue.id);
-        }
-      }
-      await getAdminSupabase().from('issues').delete().eq('stock_id', stock.id);
-
-      // 종목 삭제
-      const { error } = await getAdminSupabase().from('stocks').delete().eq('id', stock.id);
-      if (error) throw error;
-
+      await adminStocksApi.delete(stock.id);
       toast.success('삭제되었습니다.');
       onBack();
     } catch (err) {

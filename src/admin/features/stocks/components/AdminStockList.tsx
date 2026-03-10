@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Stock, SortKey, SortDirection } from '@/shared/types';
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
+import { adminStocksApi } from '@/shared/lib/adminApi';
 import { getSimplifiedSector, parseMarketCapToValue } from '@/shared/utils';
 import { toast, useAdminAuthStore } from '@/shared/stores';
 import * as XLSX from 'xlsx';
@@ -143,7 +144,7 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
     }
 
     try {
-      const { error } = await getAdminSupabase().from('stocks').insert({
+      await adminStocksApi.create({
         id: stockId,
         ticker: newStock.ticker,
         name: newStock.name,
@@ -156,8 +157,6 @@ const AdminStockList: React.FC<AdminStockListProps> = ({
         keywords: [],
         created_at: new Date().toISOString(),
       });
-
-      if (error) throw error;
 
       setShowAddModal(false);
       setNewStock({ ticker: '', name: '', nameKr: '', sector: '', description: '', marketCap: '', returnRate: 0 });

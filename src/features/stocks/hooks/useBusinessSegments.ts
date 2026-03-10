@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAdminSupabase } from '@/shared/lib/supabase';
+import { adminBusinessSegmentsApi } from '@/shared/lib/adminApi';
 import { stockKeys } from './useStocks';
 
 // Admin: 사업부문 추가
@@ -15,17 +15,14 @@ export function useAddBusinessSegment() {
       iconUrls?: string[];
       sortOrder: number;
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('business_segments')
-        .insert({
-          stock_id: data.stockId,
-          name: data.name,
-          name_kr: data.nameKr,
-          value: data.value,
-          icon_urls: data.iconUrls || [],
-          sort_order: data.sortOrder,
-        });
-      if (error) throw error;
+      await adminBusinessSegmentsApi.create({
+        stock_id: data.stockId,
+        name: data.name,
+        name_kr: data.nameKr,
+        value: data.value,
+        icon_urls: data.iconUrls || [],
+        sort_order: data.sortOrder,
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.stockId) });
@@ -47,16 +44,12 @@ export function useUpdateBusinessSegment() {
       value: number;
       iconUrls?: string[];
     }) => {
-      const { error } = await getAdminSupabase()
-        .from('business_segments')
-        .update({
-          name: data.name,
-          name_kr: data.nameKr,
-          value: data.value,
-          icon_urls: data.iconUrls || [],
-        })
-        .eq('id', data.id);
-      if (error) throw error;
+      await adminBusinessSegmentsApi.update(data.id, {
+        name: data.name,
+        name_kr: data.nameKr,
+        value: data.value,
+        icon_urls: data.iconUrls || [],
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.stockId) });
@@ -71,11 +64,7 @@ export function useDeleteBusinessSegment() {
 
   return useMutation({
     mutationFn: async (data: { id: string; stockId: string }) => {
-      const { error } = await getAdminSupabase()
-        .from('business_segments')
-        .delete()
-        .eq('id', data.id);
-      if (error) throw error;
+      await adminBusinessSegmentsApi.delete(data.id);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: stockKeys.detail(variables.stockId) });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminSupabase } from '@/shared/lib/supabase';
+import { adminStocksApi } from '@/shared/lib/adminApi';
 import { generateAiSummary } from '@/shared/lib/aiSummary';
 import { toast } from '@/shared/stores';
 
@@ -74,23 +74,14 @@ const AiSummarySection: React.FC<Props> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { data, error } = await getAdminSupabase()
-        .from('stocks')
-        .update({
-          ai_summary: summary || null,
-          ai_summary_keywords: keywordsRaw
-            .split(',')
-            .map(k => k.trim())
-            .filter(k => k),
-        })
-        .eq('id', stockId)
-        .select();
+      await adminStocksApi.update(stockId, {
+        ai_summary: summary || null,
+        ai_summary_keywords: keywordsRaw
+          .split(',')
+          .map(k => k.trim())
+          .filter(k => k),
+      });
 
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        toast.error('저장 실패: 권한이 없습니다. 관리자 코드를 확인해주세요.');
-        return;
-      }
       onRefresh();
       toast.success('AI 요약이 저장되었습니다.');
     } catch (err) {

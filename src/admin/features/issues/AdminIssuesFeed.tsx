@@ -14,7 +14,7 @@ interface IssueFormData {
   isCMS: boolean;
   existingImages?: string[];
 }
-import { supabase, getAdminSupabase } from '@/shared/lib/supabase';
+import { supabase } from '@/shared/lib/supabase';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
 import {
   IssueCard,
@@ -118,7 +118,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
 
     try {
       // 1. 이슈 생성 (RPC)
-      const { data: issueId, error: issueError } = await getAdminSupabase().rpc('add_issue', {
+      const { data: issueId, error: issueError } = await supabase.rpc('add_issue', {
         admin_code: adminCode,
         p_stock_id: data.stockId,
         p_title: data.title,
@@ -153,7 +153,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
 
         // 이미지 URL 업데이트
         if (uploadedUrls.length > 0) {
-          await getAdminSupabase().rpc('update_issue_images', {
+          await supabase.rpc('update_issue_images', {
             admin_code: adminCode,
             p_issue_id: issueId,
             p_images: uploadedUrls,
@@ -199,7 +199,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       }
 
       // 이슈 업데이트 (RPC)
-      const { error: updateError } = await getAdminSupabase().rpc('update_issue', {
+      const { error: updateError } = await supabase.rpc('update_issue', {
         admin_code: adminCode,
         p_issue_id: data.id,
         p_title: data.title,
@@ -216,7 +216,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       if (updateError) throw updateError;
 
       // 이미지 별도 업데이트 (update_issue가 이미지를 제대로 처리하지 못하는 경우 대비)
-      await getAdminSupabase().rpc('update_issue_images', {
+      await supabase.rpc('update_issue_images', {
         admin_code: adminCode,
         p_issue_id: data.id,
         p_images: allImageUrls,
@@ -242,7 +242,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
     const adminCode = getAdminCode();
 
     try {
-      const { error } = await getAdminSupabase().rpc('delete_issue', {
+      const { error } = await supabase.rpc('delete_issue', {
         admin_code: adminCode,
         p_issue_id: issueId,
       });

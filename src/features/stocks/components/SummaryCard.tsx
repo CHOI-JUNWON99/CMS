@@ -79,8 +79,8 @@ const Sparkline: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
 );
 */
 
-const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, isExpanded, onToggle, portfolioName, brandColor }) => {
-  const isPositive = averageReturn >= 0;
+const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn: _averageReturn, isDarkMode, isExpanded, onToggle, portfolioName, brandColor }) => {
+  // const isPositive = averageReturn >= 0; // 임시 숨김 처리
   const effectiveBrandColor = brandColor || '#1e3a8a';
 
   return (
@@ -114,8 +114,8 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
             {portfolioName || '포트폴리오 미설정'}
           </h2>
 
-          {/* Right Side: Returns */}
-          <span
+          {/* Right Side: Returns - 임시 숨김 처리 */}
+          {/* <span
             className={`transition-all duration-500 ${
               isExpanded ? 'text-2xl md:text-3xl' : 'text-3xl md:text-4xl'
             } ${
@@ -131,7 +131,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ averageReturn, isDarkMode, is
             }}
           >
             {isPositive ? '+' : ''}{averageReturn.toFixed(1)}%
-          </span>
+          </span> */}
         </div>
       </div>
 

@@ -13,9 +13,9 @@ export interface TokenPayload {
   logoUrl?: string;
 }
 
-// Access Token 만료: 사용자 30분, 관리자 60분
+// Access Token 만료: 사용자 15분, 관리자 30분 (Sliding Session)
 function getAccessExpiry(userType: 'user' | 'admin'): string {
-  return userType === 'admin' ? '60m' : '30m';
+  return userType === 'admin' ? '30m' : '15m';
 }
 
 // Refresh Token 만료: 사용자 7일, 관리자 4시간
@@ -56,7 +56,7 @@ export function setAuthCookies(
 ): string[] {
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
   const refreshMaxAge = Math.floor(getRefreshExpiryMs(userType) / 1000);
-  const accessMaxAge = userType === 'admin' ? 3600 : 1800; // 60m or 30m in seconds
+  const accessMaxAge = userType === 'admin' ? 1800 : 900; // 30m or 15m in seconds
 
   return [
     `cms_access_token=${accessToken}; HttpOnly; SameSite=Strict; Path=/${secure}; Max-Age=${accessMaxAge}`,

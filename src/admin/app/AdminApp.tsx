@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAdminAuthStore } from '@/shared/stores';
+import { useSlidingSession } from '@/shared/hooks/useSlidingSession';
 import { ToastContainer, ConfirmDialog } from '@/shared/components/ui';
 import AdminGate from './AdminGate';
 import { AdminHeader } from '@/admin/shared/components';
@@ -16,9 +17,13 @@ const AdminApp: React.FC = () => {
   const storeIsAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
   const expiresAt = useAdminAuthStore((state) => state.expiresAt);
   const logout = useAdminAuthStore((state) => state.logout);
+  const extendSession = useAdminAuthStore((state) => state.extendSession);
   const isLoading = useAdminAuthStore((state) => state.isLoading);
   const restoreSession = useAdminAuthStore((state) => state.restoreSession);
   const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
+
+  // Sliding Session: 활동 감지 시 자동 갱신
+  useSlidingSession({ isAuthenticated, extendSession, logout });
 
   // 세션 복원
   useEffect(() => {

@@ -36,7 +36,7 @@ interface AuthState {
   restoreSession: () => Promise<void>;
 }
 
-const SESSION_DURATION_MS = 30 * 60 * 1000; // 30분
+const SESSION_DURATION_MS = 15 * 60 * 1000; // 15분 (Sliding Session)
 
 export const useAuthStore = create<AuthState>()(
   (set, get) => ({
