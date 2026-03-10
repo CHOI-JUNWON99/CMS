@@ -1,6 +1,6 @@
 /**
  * 관리자 API 호출 헬퍼
- * httpOnly 쿠키로 인증하며, service role key를 사용하는 서버 엔드포인트를 호출합니다.
+ * 통합 엔드포인트 /api/admin/data를 통해 인증된 DB 작업을 수행합니다.
  */
 
 export class AdminApiError extends Error {
@@ -9,16 +9,23 @@ export class AdminApiError extends Error {
   }
 }
 
-async function adminFetch<T = unknown>(
-  url: string,
-  method: string,
-  body?: unknown
-): Promise<T> {
-  const res = await fetch(url, {
-    method,
+interface AdminDataResponse {
+  data?: unknown;
+  success?: boolean;
+  error?: string;
+}
+
+async function adminData<T = AdminDataResponse>(body: {
+  action: string;
+  table: string;
+  id?: string;
+  data?: unknown;
+}): Promise<T> {
+  const res = await fetch('/api/admin/data', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: body ? JSON.stringify(body) : undefined,
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -32,13 +39,13 @@ async function adminFetch<T = unknown>(
 // --- Stocks ---
 export const adminStocksApi = {
   update: (id: string, updates: Record<string, unknown>) =>
-    adminFetch<{ data: unknown }>('/api/admin/stocks', 'PUT', { id, ...updates }),
+    adminData<{ data: unknown }>({ action: 'update', table: 'stocks', id, data: updates }),
 
   create: (data: Record<string, unknown>) =>
-    adminFetch<{ success: boolean }>('/api/admin/stocks', 'POST', data),
+    adminData<{ success: boolean }>({ action: 'insert', table: 'stocks', data }),
 
   delete: (id: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/stocks', 'DELETE', { id }),
+    adminData<{ success: boolean }>({ action: 'delete-stock', table: 'stocks', id }),
 };
 
 // --- Business Segments ---
@@ -50,13 +57,13 @@ export const adminBusinessSegmentsApi = {
     value: number;
     icon_urls?: string[];
     sort_order: number;
-  }) => adminFetch<{ success: boolean }>('/api/admin/business-segments', 'POST', data),
+  }) => adminData<{ success: boolean }>({ action: 'insert', table: 'business_segments', data }),
 
   update: (id: string, updates: Record<string, unknown>) =>
-    adminFetch<{ success: boolean }>('/api/admin/business-segments', 'PUT', { id, ...updates }),
+    adminData<{ success: boolean }>({ action: 'update', table: 'business_segments', id, data: updates }),
 
   delete: (id: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/business-segments', 'DELETE', { id }),
+    adminData<{ success: boolean }>({ action: 'delete', table: 'business_segments', id }),
 };
 
 // --- Investment Points ---
@@ -66,13 +73,13 @@ export const adminInvestmentPointsApi = {
     title: string;
     description: string;
     sort_order: number;
-  }) => adminFetch<{ success: boolean }>('/api/admin/investment-points', 'POST', data),
+  }) => adminData<{ success: boolean }>({ action: 'insert', table: 'investment_points', data }),
 
   update: (id: string, updates: Record<string, unknown>) =>
-    adminFetch<{ success: boolean }>('/api/admin/investment-points', 'PUT', { id, ...updates }),
+    adminData<{ success: boolean }>({ action: 'update', table: 'investment_points', id, data: updates }),
 
   delete: (id: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/investment-points', 'DELETE', { id }),
+    adminData<{ success: boolean }>({ action: 'delete', table: 'investment_points', id }),
 };
 
 // --- Issues ---
@@ -85,35 +92,35 @@ export const adminIssuesApi = {
     date: string;
     is_cms: boolean;
     images?: string[];
-  }) => adminFetch<{ success: boolean }>('/api/admin/issues', 'POST', data),
+  }) => adminData<{ success: boolean }>({ action: 'insert', table: 'issues', data }),
 
   update: (id: string, updates: Record<string, unknown>) =>
-    adminFetch<{ success: boolean }>('/api/admin/issues', 'PUT', { id, ...updates }),
+    adminData<{ success: boolean }>({ action: 'update', table: 'issues', id, data: updates }),
 
   delete: (id: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/issues', 'DELETE', { id }),
+    adminData<{ success: boolean }>({ action: 'delete', table: 'issues', id }),
 };
 
 // --- Segment Icons ---
 export const adminSegmentIconsApi = {
   create: (data: { name: string; icon_url: string }) =>
-    adminFetch<{ data: { id: string; name: string; icon_url: string } }>('/api/admin/segment-icons', 'POST', data),
+    adminData<{ data: { id: string; name: string; icon_url: string }; success: boolean }>({ action: 'insert', table: 'segment_icons', data }),
 
   update: (id: string, updates: Record<string, unknown>) =>
-    adminFetch<{ success: boolean }>('/api/admin/segment-icons', 'PUT', { id, ...updates }),
+    adminData<{ success: boolean }>({ action: 'update', table: 'segment_icons', id, data: updates }),
 
   delete: (id: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/segment-icons', 'DELETE', { id }),
+    adminData<{ success: boolean }>({ action: 'delete', table: 'segment_icons', id }),
 };
 
 // --- Glossary ---
 export const adminGlossaryApi = {
   create: (data: { term: string; definition: string }) =>
-    adminFetch<{ success: boolean }>('/api/admin/glossary', 'POST', data),
+    adminData<{ success: boolean }>({ action: 'insert', table: 'glossary', data }),
 
   update: (id: string, term: string, definition: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/glossary', 'PUT', { id, term, definition }),
+    adminData<{ success: boolean }>({ action: 'update', table: 'glossary', id, data: { term, definition } }),
 
   delete: (id: string) =>
-    adminFetch<{ success: boolean }>('/api/admin/glossary', 'DELETE', { id }),
+    adminData<{ success: boolean }>({ action: 'delete', table: 'glossary', id }),
 };
