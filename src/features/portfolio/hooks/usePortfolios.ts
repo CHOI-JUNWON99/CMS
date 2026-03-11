@@ -8,6 +8,7 @@ type RawPortfolioRow = {
   id: string;
   name: string;
   client_id: string | null;
+  portfolio_type: string | null;
   clients: { brand_color: string | null } | { brand_color: string | null }[] | null;
 };
 
@@ -26,6 +27,7 @@ export interface PortfolioData {
   name: string;
   clientId: string;
   brandColor?: string;
+  portfolioType: string; // 'standard' | 'ib'
 }
 
 // 포트폴리오 목록 조회
@@ -39,7 +41,7 @@ export function usePortfolios() {
     queryFn: async (): Promise<PortfolioData[]> => {
       let query = supabase
         .from('portfolios')
-        .select('id, name, client_id, clients(brand_color)')
+        .select('id, name, client_id, portfolio_type, clients(brand_color)')
         .eq('is_active', true);
 
       if (accessType === 'single' && clientInfo?.id) {
@@ -60,6 +62,7 @@ export function usePortfolios() {
           name: p.name,
           clientId: p.client_id || '',
           brandColor: clientData?.brand_color ?? undefined,
+          portfolioType: p.portfolio_type || 'standard',
         };
       });
     },

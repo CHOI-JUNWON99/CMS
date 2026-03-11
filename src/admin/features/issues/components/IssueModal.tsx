@@ -92,7 +92,8 @@ const IssueModal: React.FC<IssueModalProps> = ({
       });
       setImageUploads([]);
     }
-  }, [mode, isOpen, defaultStock]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, isOpen, defaultStock?.id]);
 
   // editItem 변경 시 폼 데이터 초기화
   useEffect(() => {

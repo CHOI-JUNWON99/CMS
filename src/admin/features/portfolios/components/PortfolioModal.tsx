@@ -75,6 +75,21 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({
           )}
 
           <div>
+            <label className="block text-xs font-bold text-slate-200 mb-1">포트폴리오 타입</label>
+            <select
+              value={isEditMode ? (editingPortfolio?.portfolioType || 'standard') : (newPortfolio?.portfolioType || 'standard')}
+              onChange={(e) => handleChange('portfolioType', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
+            >
+              <option value="standard">일반 포트폴리오</option>
+              <option value="ib">IB 투자의견</option>
+            </select>
+            <p className="text-[10px] text-slate-400 mt-1">
+              IB 투자의견 타입은 종목 대신 IB 데이터를 표시합니다.
+            </p>
+          </div>
+
+          <div>
             <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
             <input
               type="text"

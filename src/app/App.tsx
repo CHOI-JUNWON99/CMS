@@ -12,6 +12,9 @@ import { useStocksWithRelations } from '@/features/stocks';
 import { IssuesFeed } from '@/features/issues';
 import { useGlossary } from '@/features/glossary';
 import { ResourcesView, useHasNewResources } from '@/features/resources';
+import { useIBStockGroups, IBStockGroup } from '@/features/ib/hooks/useIBOpinions';
+import IBStockList from '@/features/ib/components/IBStockList';
+import IBStockDetail from '@/features/ib/components/IBStockDetail';
 
 interface PortfolioGroup {
   id: string;
@@ -19,6 +22,7 @@ interface PortfolioGroup {
   stocks: Stock[];
   brandColor?: string;
   returnRate: number;
+  portfolioType: string;
 }
 
 const App: React.FC = () => {
@@ -72,6 +76,8 @@ const App: React.FC = () => {
   const { data: glossary = {} } = useGlossary();
   const recordViewMutation = useRecordPortfolioView();
   const hasNewResources = useHasNewResources();
+  const { groups: ibGroups } = useIBStockGroups();
+  const [selectedIBGroup, setSelectedIBGroup] = React.useState<IBStockGroup | null>(null);
 
   const isLoading = portfoliosLoading || stocksLoading;
 
@@ -104,6 +110,7 @@ const App: React.FC = () => {
         stocks: portfolioStocks,
         brandColor: p.brandColor || clientInfo?.brandColor,
         returnRate: totalReturnRate,
+        portfolioType: p.portfolioType,
       };
     });
   }, [portfolios, stocks, stockIdsByPortfolio, clientInfo?.brandColor]);
@@ -164,6 +171,13 @@ const App: React.FC = () => {
   const handleBackToDashboard = () => {
     setViewMode('DASHBOARD');
     setSelectedStockId(null);
+    setSelectedIBGroup(null);
+  };
+
+  const handleIBStockSelect = (group: IBStockGroup) => {
+    setSelectedIBGroup(group);
+    setViewMode('IB_DETAIL');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSort = (key: SortKey) => {
@@ -244,9 +258,8 @@ const App: React.FC = () => {
             {activeTab === 'PORTFOLIO' ? (
               <div className="flex flex-col">
                 {portfolioGroups.map(group => {
-                  const filteredStocks = filterStocksBySearch(group.stocks, group.id);
                   const isExpanded = expandedPortfolios.includes(group.id);
-                  const currentSearchQuery = searchQueries[group.id] || '';
+                  const isIB = group.portfolioType === 'ib';
 
                   return (
                     <div key={group.id} className="mb-10">
@@ -263,24 +276,35 @@ const App: React.FC = () => {
                           ? 'opacity-100 scale-100 translate-y-0 visible'
                           : 'opacity-0 scale-95 -translate-y-10 invisible h-0 overflow-hidden'
                       }`}>
-                        {/* 포트폴리오별 검색창 */}
-                        <div className="mt-4 mb-2">
-                          <SearchInput
-                            value={currentSearchQuery}
-                            onChange={(value) => updateSearchQuery(group.id, value)}
-                            placeholder="종목명, 티커, 섹터, 키워드로 검색..."
-                            isDarkMode={isDarkMode}
-                            className="w-full"
-                          />
-                        </div>
-                        <StockList
-                          stocks={sortStocks(filteredStocks)}
-                          onStockSelect={handleStockSelect}
-                          isDarkMode={isDarkMode}
-                          sortKey={sortKey}
-                          sortDirection={sortDirection}
-                          onSort={handleSort}
-                        />
+                        {isIB ? (
+                          <div className="mt-4">
+                            <IBStockList
+                              groups={ibGroups}
+                              onSelect={handleIBStockSelect}
+                              isDarkMode={isDarkMode}
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <div className="mt-4 mb-2">
+                              <SearchInput
+                                value={searchQueries[group.id] || ''}
+                                onChange={(value) => updateSearchQuery(group.id, value)}
+                                placeholder="종목명, 티커, 섹터, 키워드로 검색..."
+                                isDarkMode={isDarkMode}
+                                className="w-full"
+                              />
+                            </div>
+                            <StockList
+                              stocks={sortStocks(filterStocksBySearch(group.stocks, group.id))}
+                              onStockSelect={handleStockSelect}
+                              isDarkMode={isDarkMode}
+                              sortKey={sortKey}
+                              sortDirection={sortDirection}
+                              onSort={handleSort}
+                            />
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -292,6 +316,8 @@ const App: React.FC = () => {
               <ResourcesView isDarkMode={isDarkMode} />
             )}
           </div>
+        ) : viewMode === 'IB_DETAIL' ? (
+          selectedIBGroup && <IBStockDetail group={selectedIBGroup} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
         ) : (
           selectedStock && <StockDetail stock={selectedStock} onBack={handleBackToDashboard} isDarkMode={isDarkMode} glossary={glossary} />
         )}

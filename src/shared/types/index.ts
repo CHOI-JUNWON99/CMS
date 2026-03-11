@@ -89,7 +89,7 @@ export interface Resource {
   clientId?: string | null;
 }
 
-export type ViewMode = 'DASHBOARD' | 'DETAIL';
+export type ViewMode = 'DASHBOARD' | 'DETAIL' | 'IB_DETAIL';
 export type MainTab = 'PORTFOLIO' | 'ISSUES' | 'RESOURCES';
 
 export type SortKey = 'name' | 'sector' | 'keywords' | 'marketCapValue' | 'returnRate';
@@ -108,6 +108,28 @@ export interface FeedItem {
   createdAt?: string;
   updatedAt?: string;
   images?: IssueImage[];
+}
+
+// ==========================================
+// IB Opinions Types
+// ==========================================
+
+export interface IBOpinion {
+  id: string;
+  date: string;
+  stockName: string;
+  ticker: string;
+  sector: string;
+  ib: string;
+  opinion: string;
+  prevPrice: string;
+  targetPrice: string;
+  targetChange: number | null;
+  currentPrice: string;
+  upside: number | null;
+  eps: number | null;
+  comment: string;
+  analyst: string;
 }
 
 // ==========================================
@@ -214,6 +236,25 @@ export interface DbPortfolioStockRow {
   portfolio_id: string;
   stock_id: string;
   added_at: string;
+}
+
+export interface DbIBOpinionRow {
+  id: string;
+  date: string;
+  stock_name: string;
+  ticker: string;
+  sector: string | null;
+  ib: string;
+  opinion: string | null;
+  prev_price: string | null;
+  target_price: string | null;
+  target_change: number | null;
+  current_price: string | null;
+  upside: number | null;
+  eps: number | null;
+  comment: string | null;
+  analyst: string | null;
+  created_at: string;
 }
 
 export interface DbAccessCodeRow {

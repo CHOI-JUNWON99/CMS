@@ -7,6 +7,7 @@ interface AdminHeaderProps {
 
 const tabs = [
   { path: '/admin/portfolio', label: '포트폴리오', matchPrefix: false },
+  { path: '/admin/ib', label: 'IB 관리', matchPrefix: false },
   { path: '/admin/stocks', label: '종목 관리', matchPrefix: true },
   { path: '/admin/issues', label: '뉴스 관리', matchPrefix: false },
   { path: '/admin/resources', label: '자료실 관리', matchPrefix: false },

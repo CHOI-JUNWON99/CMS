@@ -235,6 +235,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
       }
 
+      // ===== IB 투자의견 관리 =====
+      case 'bulk_insert_ib_opinions': {
+        const { data: bulkData } = params;
+        if (!bulkData || !Array.isArray(bulkData)) return res.status(400).json({ error: 'data array required' });
+
+        const rows = (bulkData as Record<string, unknown>[]).map((item) => ({
+          date: item.date,
+          stock_name: item.stock_name,
+          ticker: item.ticker,
+          sector: item.sector || null,
+          ib: item.ib,
+          opinion: item.opinion || null,
+          prev_price: item.prev_price || null,
+          target_price: item.target_price || null,
+          target_change: item.target_change ?? null,
+          current_price: item.current_price || null,
+          upside: item.upside ?? null,
+          eps: item.eps ?? null,
+          comment: item.comment || null,
+          analyst: item.analyst || null,
+        }));
+
+        const { data: inserted, error } = await supabase.from('ib_opinions').insert(rows).select('id');
+        if (error) throw error;
+        return res.status(200).json({ success: true, inserted: inserted?.length || 0 });
+      }
+
+      case 'delete_ib_opinion': {
+        const { opinionId } = params;
+        if (!opinionId) return res.status(400).json({ error: 'opinionId required' });
+
+        const { error } = await supabase.from('ib_opinions').delete().eq('id', opinionId);
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      case 'delete_ib_opinions_by_date': {
+        const { date } = params;
+        if (!date) return res.status(400).json({ error: 'date required' });
+
+        const { error } = await supabase.from('ib_opinions').delete().eq('date', date);
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
       // ===== 종목 엑셀 벌크 업데이트 =====
       case 'bulk_update_stock_metrics': {
         const { data: bulkData } = params;

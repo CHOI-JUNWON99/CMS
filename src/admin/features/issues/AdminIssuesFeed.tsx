@@ -308,9 +308,9 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<RawIssueRow>(sheet);
 
-      const bulkData = parseIssueExcelRows(rows);
+      const parsedRows = parseIssueExcelRows(rows);
 
-      if (bulkData.length === 0) {
+      if (parsedRows.length === 0) {
         setExcelUploadResult({
           inserted: 0,
           skipped: [],
@@ -325,13 +325,49 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
         return;
       }
 
+      // ticker → stock_id 매핑 (존재하지 않는 ticker는 스킵)
+      const tickerToStockId = new Map<string, string>();
+      for (const stock of stocks) {
+        tickerToStockId.set(stock.ticker.toUpperCase(), stock.id);
+      }
+
+      const skippedTickers: string[] = [];
+      const bulkData = parsedRows
+        .map((row) => {
+          const stockId = tickerToStockId.get(row.ticker.toUpperCase());
+          if (!stockId) {
+            if (!skippedTickers.includes(row.ticker)) skippedTickers.push(row.ticker);
+            return null;
+          }
+          return {
+            stock_id: stockId,
+            title: row.title,
+            content: row.content,
+            keywords: row.keywords,
+            date: row.date,
+            is_cms: row.is_cms,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      if (bulkData.length === 0) {
+        setExcelUploadResult({
+          inserted: 0,
+          skipped: skippedTickers,
+          errors: skippedTickers.length > 0
+            ? [{ ticker: '-', row: 0, reason: '모든 ticker가 DB에 등록되지 않은 종목입니다.' }]
+            : [],
+        });
+        return;
+      }
+
       if (import.meta.env.PROD) {
         const result = await adminAction<{ success: boolean; inserted: number }>('bulk_insert_issues', {
           data: bulkData,
         });
         setExcelUploadResult({
           inserted: result.inserted ?? 0,
-          skipped: [],
+          skipped: skippedTickers,
           duplicates: [],
           duplicate_count: 0,
           errors: [],
@@ -345,7 +381,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
         if (error) throw error;
         setExcelUploadResult({
           inserted: result?.inserted ?? 0,
-          skipped: result?.skipped ?? [],
+          skipped: [...skippedTickers, ...(result?.skipped ?? [])],
           duplicates: result?.duplicates ?? [],
           duplicate_count: result?.duplicate_count ?? 0,
           errors: result?.errors ?? [],
