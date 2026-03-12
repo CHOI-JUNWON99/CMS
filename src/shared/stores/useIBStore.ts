@@ -16,29 +16,13 @@ interface IBState {
   removeByDate: (date: string) => void;
 }
 
-function getDateRange(period: IBPeriod): { from?: string; to?: string } {
+function getDateRange(period: IBPeriod): { from?: string } {
+  if (period === 'all') return {};
   const now = new Date();
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-
-  const m1 = new Date(now);
-  m1.setMonth(m1.getMonth() - 1);
-
-  const m3 = new Date(now);
-  m3.setMonth(m3.getMonth() - 3);
-
-  const m6 = new Date(now);
-  m6.setMonth(m6.getMonth() - 6);
-
-  switch (period) {
-    case '1m':
-      return { from: fmt(m1) };
-    case '3m':
-      return { from: fmt(m3), to: fmt(m1) };
-    case '6m':
-      return { from: fmt(m6), to: fmt(m3) };
-    case 'all':
-      return { to: fmt(m6) };
-  }
+  const months = { '1m': 1, '3m': 3, '6m': 6 } as const;
+  const d = new Date(now);
+  d.setMonth(d.getMonth() - months[period]);
+  return { from: d.toISOString().slice(0, 10) };
 }
 
 async function fetchFromSupabase(period: IBPeriod): Promise<DbIBOpinionRow[]> {
@@ -55,7 +39,6 @@ async function fetchFromSupabase(period: IBPeriod): Promise<DbIBOpinionRow[]> {
       .order('date', { ascending: false });
 
     if (range.from) query = query.gte('date', range.from);
-    if (range.to) query = query.lt('date', range.to);
 
     query = query.range(from, from + pageSize - 1);
 
