@@ -362,15 +362,22 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
       }
 
       if (import.meta.env.PROD) {
-        const result = await adminAction<{ success: boolean; inserted: number }>('bulk_insert_issues', {
+        const result = await adminAction<{
+          success: boolean;
+          inserted: number;
+          skipped: string[];
+          duplicates: string[];
+          duplicate_count: number;
+          errors: Array<{ ticker: string; row: number; reason: string }>;
+        }>('bulk_insert_issues', {
           data: bulkData,
         });
         setExcelUploadResult({
           inserted: result.inserted ?? 0,
-          skipped: skippedTickers,
-          duplicates: [],
-          duplicate_count: 0,
-          errors: [],
+          skipped: [...skippedTickers, ...(result.skipped ?? [])],
+          duplicates: result.duplicates ?? [],
+          duplicate_count: result.duplicate_count ?? 0,
+          errors: result.errors ?? [],
         });
       } else {
         const adminCode = getAdminCode();

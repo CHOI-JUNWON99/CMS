@@ -163,18 +163,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { data: bulkData } = params;
         if (!bulkData || !Array.isArray(bulkData)) return res.status(400).json({ error: 'data array required' });
 
-        const rows = bulkData.map((item: Record<string, unknown>) => ({
-          stock_id: item.stock_id,
-          title: item.title || null,
-          content: item.content,
-          keywords: item.keywords || [],
-          date: item.date,
-          is_cms: item.is_cms ?? false,
-        }));
-
-        const { data: inserted, error } = await supabase.from('issues').insert(rows).select('id');
+        const { data: result, error } = await supabase.rpc('bulk_insert_issues', {
+          admin_code: process.env.ADMIN_CODE || '',
+          data: bulkData,
+        });
         if (error) throw error;
-        return res.status(200).json({ success: true, inserted: inserted?.length || 0 });
+        return res.status(200).json({
+          success: true,
+          inserted: result?.inserted ?? 0,
+          skipped: result?.skipped ?? [],
+          duplicates: result?.duplicates ?? [],
+          duplicate_count: result?.duplicate_count ?? 0,
+          errors: result?.errors ?? [],
+        });
       }
 
       // ===== 용어사전 관리 =====
@@ -240,26 +241,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { data: bulkData } = params;
         if (!bulkData || !Array.isArray(bulkData)) return res.status(400).json({ error: 'data array required' });
 
-        const rows = (bulkData as Record<string, unknown>[]).map((item) => ({
-          date: item.date,
-          stock_name: item.stock_name,
-          ticker: item.ticker,
-          sector: item.sector || null,
-          ib: item.ib,
-          opinion: item.opinion || null,
-          prev_price: item.prev_price || null,
-          target_price: item.target_price || null,
-          target_change: item.target_change ?? null,
-          current_price: item.current_price || null,
-          upside: item.upside ?? null,
-          eps: item.eps ?? null,
-          comment: item.comment || null,
-          analyst: item.analyst || null,
-        }));
-
-        const { data: inserted, error } = await supabase.from('ib_opinions').insert(rows).select('id');
+        const { data: result, error } = await supabase.rpc('bulk_insert_ib_opinions', {
+          admin_code: process.env.ADMIN_CODE || '',
+          data: bulkData,
+        });
         if (error) throw error;
-        return res.status(200).json({ success: true, inserted: inserted?.length || 0 });
+        return res.status(200).json({
+          success: true,
+          inserted: result?.inserted ?? 0,
+          duplicates: result?.duplicates ?? [],
+          duplicate_count: result?.duplicate_count ?? 0,
+          errors: result?.errors ?? [],
+        });
       }
 
       case 'delete_ib_opinion': {

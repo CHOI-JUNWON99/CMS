@@ -1,79 +1,94 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/shared/lib/supabase';
 import { adminAction } from '@/shared/lib/adminApi';
-import { DbIBOpinionRow } from '@/shared/types';
 import { parseIBExcel, IBExcelRow } from './utils/ibExcelParser';
 import IBExcelUploadModal from './components/IBExcelUploadModal';
+import { useIBStore, IBPeriod } from '@/shared/stores';
 
 const isProd = import.meta.env.PROD;
 
+const PERIOD_LABELS: { key: IBPeriod; label: string }[] = [
+  { key: '1m', label: '1개월' },
+  { key: '3m', label: '3개월' },
+  { key: '6m', label: '6개월' },
+  { key: 'all', label: '전체' },
+];
+
 const AdminIBPage: React.FC = () => {
-  const [opinions, setOpinions] = useState<DbIBOpinionRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    activePeriod,
+    cache,
+    loadingPeriod,
+    setActivePeriod,
+    fetchPeriod,
+    invalidateAndRefetch,
+    removeOpinion,
+    removeByDate,
+  } = useIBStore();
+
+  const opinions = cache[activePeriod] ?? [];
+  const isLoading = loadingPeriod === activePeriod;
+
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
     inserted: number;
     errors: { row: number; reason: string }[];
     duplicates: { row: number; firstRow: number; key: string }[];
+    dbDuplicates?: string[];
+    dbDuplicateCount?: number;
   } | null>(null);
 
-  const fetchOpinions = useCallback(async () => {
-    setIsLoading(true);
-    // Supabase 기본 limit은 1000이므로 페이징으로 전체 조회
-    const allData: DbIBOpinionRow[] = [];
-    const pageSize = 1000;
-    let from = 0;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('ib_opinions')
-        .select('*')
-        .order('date', { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error || !data) break;
-      allData.push(...(data as DbIBOpinionRow[]));
-      hasMore = data.length === pageSize;
-      from += pageSize;
-    }
-
-    setOpinions(allData);
-    setIsLoading(false);
-  }, []);
-
+  // 마운트 시 캐시가 비어있으면 기본 기간 fetch
   useEffect(() => {
-    fetchOpinions();
-  }, [fetchOpinions]);
+    if (!cache[activePeriod]) {
+      fetchPeriod(activePeriod);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const bulkInsert = async (rows: IBExcelRow[]): Promise<number> => {
-    if (isProd) {
-      const batchSize = 500;
-      let totalInserted = 0;
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        const result = await adminAction<{ success: boolean; inserted: number }>('bulk_insert_ib_opinions', {
+  const bulkInsert = async (rows: IBExcelRow[]): Promise<{
+    inserted: number;
+    duplicates: string[];
+    duplicate_count: number;
+    errors: { row: number; reason: string }[];
+  }> => {
+    const batchSize = 500;
+    let totalInserted = 0;
+    let allDuplicates: string[] = [];
+    let totalDuplicateCount = 0;
+    let allErrors: { row: number; reason: string }[] = [];
+
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
+
+      if (isProd) {
+        const result = await adminAction<{
+          success: boolean;
+          inserted: number;
+          duplicates: string[];
+          duplicate_count: number;
+          errors: { row: number; reason: string }[];
+        }>('bulk_insert_ib_opinions', {
           data: batch as unknown as Record<string, unknown>[],
         });
         totalInserted += result.inserted;
-      }
-      return totalInserted;
-    } else {
-      // 로컬: Supabase 직접 호출 (배치 처리)
-      const batchSize = 500;
-      let totalInserted = 0;
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        const { data: inserted, error } = await supabase
-          .from('ib_opinions')
-          .insert(batch)
-          .select('id');
+        allDuplicates = [...allDuplicates, ...(result.duplicates ?? [])];
+        totalDuplicateCount += result.duplicate_count ?? 0;
+        allErrors = [...allErrors, ...(result.errors ?? [])];
+      } else {
+        const { data: result, error } = await supabase.rpc('bulk_insert_ib_opinions', {
+          admin_code: '',
+          data: batch,
+        });
         if (error) throw error;
-        totalInserted += inserted?.length || 0;
+        totalInserted += result?.inserted ?? 0;
+        allDuplicates = [...allDuplicates, ...(result?.duplicates ?? [])];
+        totalDuplicateCount += result?.duplicate_count ?? 0;
+        allErrors = [...allErrors, ...(result?.errors ?? [])];
       }
-      return totalInserted;
     }
+
+    return { inserted: totalInserted, duplicates: allDuplicates, duplicate_count: totalDuplicateCount, errors: allErrors };
   };
 
   const handleFileSelect = async (file: File) => {
@@ -90,9 +105,15 @@ const AdminIBPage: React.FC = () => {
         return;
       }
 
-      const totalInserted = await bulkInsert(parsed.rows);
-      setUploadResult({ inserted: totalInserted, errors: parsed.errors, duplicates: parsed.duplicates });
-      fetchOpinions();
+      const result = await bulkInsert(parsed.rows);
+      setUploadResult({
+        inserted: result.inserted,
+        errors: [...parsed.errors, ...result.errors.map(e => ({ row: e.row, reason: e.reason }))],
+        duplicates: parsed.duplicates,
+        dbDuplicates: result.duplicates,
+        dbDuplicateCount: result.duplicate_count,
+      });
+      await invalidateAndRefetch();
     } catch (err) {
       setUploadResult({ inserted: 0, errors: [{ row: 0, reason: String(err) }], duplicates: [] });
     }
@@ -109,7 +130,7 @@ const AdminIBPage: React.FC = () => {
         const { error } = await supabase.from('ib_opinions').delete().eq('date', date);
         if (error) throw error;
       }
-      fetchOpinions();
+      removeByDate(date);
     } catch (err) {
       console.error('날짜별 삭제 실패:', err);
     }
@@ -123,14 +144,14 @@ const AdminIBPage: React.FC = () => {
         const { error } = await supabase.from('ib_opinions').delete().eq('id', id);
         if (error) throw error;
       }
-      setOpinions((prev) => prev.filter((o) => o.id !== id));
+      removeOpinion(id);
     } catch (err) {
       console.error('개별 삭제 실패:', err);
     }
   };
 
   // Group by date
-  const groupedByDate = opinions.reduce<Record<string, DbIBOpinionRow[]>>((acc, op) => {
+  const groupedByDate = opinions.reduce<Record<string, typeof opinions>>((acc, op) => {
     const d = op.date;
     if (!acc[d]) acc[d] = [];
     acc[d].push(op);
@@ -160,8 +181,8 @@ const AdminIBPage: React.FC = () => {
               <span className={`text-sm font-bold ${uploadResult.inserted > 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                 등록: {uploadResult.inserted}건
               </span>
-              {uploadResult.duplicates.length > 0 && (
-                <span className="text-amber-400 text-sm ml-3">중복 스킵: {uploadResult.duplicates.length}건</span>
+              {(uploadResult.duplicates.length > 0 || (uploadResult.dbDuplicateCount ?? 0) > 0) && (
+                <span className="text-amber-400 text-sm ml-3">중복 스킵: {uploadResult.duplicates.length + (uploadResult.dbDuplicateCount ?? 0)}건</span>
               )}
               {uploadResult.errors.length > 0 && (
                 <span className="text-red-400 text-sm ml-3">오류: {uploadResult.errors.length}건</span>
@@ -184,6 +205,16 @@ const AdminIBPage: React.FC = () => {
               </div>
             </div>
           )}
+          {(uploadResult.dbDuplicateCount ?? 0) > 0 && (
+            <div className="mt-2 p-3 rounded-lg bg-amber-900/20 border border-amber-700/30">
+              <p className="text-amber-300 text-xs font-bold mb-1">DB 중복 스킵 (이미 등록된 데이터): {uploadResult.dbDuplicateCount}건</p>
+              <div className="max-h-32 overflow-y-auto text-xs text-amber-200/80 space-y-0.5">
+                {uploadResult.dbDuplicates?.map((d, i) => (
+                  <div key={i}>{d}</div>
+                ))}
+              </div>
+            </div>
+          )}
           {uploadResult.errors.length > 0 && (
             <div className="mt-2 max-h-24 overflow-y-auto text-xs text-red-300">
               {uploadResult.errors.slice(0, 10).map((e, i) => (
@@ -193,6 +224,34 @@ const AdminIBPage: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Period Filter Tabs */}
+      <div className="flex gap-2">
+        {PERIOD_LABELS.map(({ key, label }) => {
+          const isCached = !!cache[key];
+          const isActive = activePeriod === key;
+          const isLoadingThis = loadingPeriod === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setActivePeriod(key)}
+              disabled={isLoadingThis}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                isActive
+                  ? 'bg-red-600 text-white'
+                  : isCached
+                    ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 border border-slate-700'
+              } disabled:opacity-50`}
+            >
+              {isLoadingThis ? `${label}...` : label}
+              {isCached && !isActive && (
+                <span className="ml-1.5 w-1.5 h-1.5 inline-block rounded-full bg-emerald-400" />
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Stats */}
       <div className="flex gap-4">
