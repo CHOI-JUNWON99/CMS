@@ -94,9 +94,10 @@ export function parseIBExcel(file: ArrayBuffer): IBParseResult {
     if (!ticker) { errors.push({ row: i + 1, reason: 'Ticker 없음' }); continue; }
     if (!ib) { errors.push({ row: i + 1, reason: 'IB 없음' }); continue; }
 
-    // Duplicate check: ticker + date + comment
+    // Duplicate check: ticker + date + ib + analyst + comment
     const comment = cleanValue(row[12]);
-    const key = `${ticker}|${date}|${comment || ''}`;
+    const analyst = cleanValue(row[13]);
+    const key = `${ticker}|${date}|${ib}|${analyst || ''}|${comment || ''}`;
     const firstRow = seen.get(key);
     if (firstRow !== undefined) {
       duplicates.push({ row: i + 1, firstRow, key });
