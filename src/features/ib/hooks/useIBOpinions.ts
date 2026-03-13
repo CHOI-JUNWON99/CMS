@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/shared/lib/supabase';
 import { IBOpinion, DbIBOpinionRow } from '@/shared/types';
+import { useMemo } from 'react';
 
 function mapRow(row: DbIBOpinionRow): IBOpinion {
   return {
@@ -22,9 +23,67 @@ function mapRow(row: DbIBOpinionRow): IBOpinion {
   };
 }
 
-export function useIBOpinions() {
+const PAGE_SIZE = 200;
+
+export function useIBOpinionsInfinite() {
+  return useInfiniteQuery({
+    queryKey: ['ibOpinionsInfinite'],
+    queryFn: async ({ pageParam }: { pageParam: string | null }) => {
+      let query = supabase
+        .from('ib_opinions')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('ticker', { ascending: true })
+        .limit(PAGE_SIZE);
+
+      if (pageParam) {
+        query = query.lt('date', pageParam);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const rows = (data || []) as DbIBOpinionRow[];
+      return rows.map(mapRow);
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length < PAGE_SIZE) return undefined;
+      const lastDate = lastPage[lastPage.length - 1]?.date;
+      return lastDate || undefined;
+    },
+  });
+}
+
+export interface IBDateGroup {
+  date: string;
+  opinions: IBOpinion[];
+}
+
+export function useIBDateGroups(query: ReturnType<typeof useIBOpinionsInfinite>) {
+  return useMemo((): IBDateGroup[] => {
+    const allOpinions = query.data?.pages.flat() || [];
+    const byDate = new Map<string, IBOpinion[]>();
+
+    for (const op of allOpinions) {
+      const existing = byDate.get(op.date);
+      if (existing) {
+        existing.push(op);
+      } else {
+        byDate.set(op.date, [op]);
+      }
+    }
+
+    return Array.from(byDate.entries()).map(([date, opinions]) => ({
+      date,
+      opinions,
+    }));
+  }, [query.data]);
+}
+
+export function useIBTickerOpinions(ticker: string) {
   return useQuery({
-    queryKey: ['ibOpinions'],
+    queryKey: ['ibTickerOpinions', ticker],
     queryFn: async (): Promise<IBOpinion[]> => {
       const allData: DbIBOpinionRow[] = [];
       const pageSize = 1000;
@@ -35,6 +94,7 @@ export function useIBOpinions() {
         const { data, error } = await supabase
           .from('ib_opinions')
           .select('*')
+          .eq('ticker', ticker)
           .order('date', { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -47,50 +107,7 @@ export function useIBOpinions() {
 
       return allData.map(mapRow);
     },
+    enabled: !!ticker,
+    staleTime: 5 * 60 * 1000,
   });
-}
-
-export interface IBStockGroup {
-  ticker: string;
-  stockName: string;
-  sector: string;
-  latestDate: string;
-  latestOpinions: IBOpinion[];  // all opinions on the latest date
-  allOpinions: IBOpinion[];     // all opinions for this ticker
-}
-
-export function useIBStockGroups() {
-  const query = useIBOpinions();
-
-  const groups: IBStockGroup[] = [];
-
-  if (query.data) {
-    const byTicker = new Map<string, IBOpinion[]>();
-
-    for (const op of query.data) {
-      const existing = byTicker.get(op.ticker) || [];
-      existing.push(op);
-      byTicker.set(op.ticker, existing);
-    }
-
-    for (const [ticker, opinions] of byTicker) {
-      // Already sorted by date DESC from query
-      const latestDate = opinions[0].date;
-      const latestOpinions = opinions.filter((o) => o.date === latestDate);
-
-      groups.push({
-        ticker,
-        stockName: opinions[0].stockName,
-        sector: opinions[0].sector,
-        latestDate,
-        latestOpinions,
-        allOpinions: opinions,
-      });
-    }
-
-    // Sort groups alphabetically by ticker
-    groups.sort((a, b) => a.ticker.localeCompare(b.ticker));
-  }
-
-  return { ...query, groups };
 }

@@ -1,28 +1,40 @@
 import React, { useState, useMemo } from 'react';
 import { IBOpinion } from '@/shared/types';
-import { IBStockGroup } from '../hooks/useIBOpinions';
+import { useIBTickerOpinions } from '../hooks/useIBOpinions';
 
 interface IBStockDetailProps {
-  group: IBStockGroup;
+  ticker: string;
+  stockName: string;
+  sector: string;
   onBack: () => void;
   isDarkMode: boolean;
 }
 
-const IBStockDetail: React.FC<IBStockDetailProps> = ({ group, onBack, isDarkMode }) => {
+const IBStockDetail: React.FC<IBStockDetailProps> = ({ ticker, stockName, sector, onBack, isDarkMode }) => {
+  const { data: allOpinions = [], isLoading } = useIBTickerOpinions(ticker);
   const [selectedComment, setSelectedComment] = useState<IBOpinion | null>(null);
 
-  // Latest opinion for the stats box
-  const latest = group.latestOpinions[0];
+  const latest = allOpinions[0] || null;
 
-  // All opinions sorted by date DESC for the timeline
   const timelineData = useMemo(() => {
-    return [...group.allOpinions].sort((a, b) => b.date.localeCompare(a.date));
-  }, [group.allOpinions]);
+    return [...allOpinions].sort((a, b) => b.date.localeCompare(a.date));
+  }, [allOpinions]);
 
   const formatPercent = (val: number | null) => {
     if (val === null) return '-';
     return `${(val * 100).toFixed(1)}%`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className={`text-sm font-bold ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>데이터를 불러오는 중...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-7xl mx-auto pb-20 relative px-4 lg:px-0">
@@ -38,90 +50,92 @@ const IBStockDetail: React.FC<IBStockDetailProps> = ({ group, onBack, isDarkMode
       <div className={`mb-10 pb-10 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           {/* Left: Basic Info */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 lg:flex-1">
             <div className="flex items-center gap-2">
-              <div className={`text-[14px] font-mono font-black tracking-wider px-3 py-1.5 rounded-xl border inline-block uppercase ${isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>{group.ticker}</div>
+              <div className={`text-[14px] font-mono font-black tracking-wider px-3 py-1.5 rounded-xl border inline-block uppercase ${isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>{ticker}</div>
             </div>
             <div>
-              <h1 className={`text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{group.stockName}</h1>
+              <h1 className={`text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stockName}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              {group.sector && (
-                <span className="text-sm font-black px-4 py-2 rounded-xl bg-primary text-white shadow-lg shadow-primary/10">{group.sector}</span>
+              {sector && (
+                <span className="text-sm font-black px-4 py-2 rounded-xl bg-primary text-white shadow-lg shadow-primary/10">{sector}</span>
               )}
             </div>
           </div>
 
-          {/* Right: Stats Box (replacing Market Cap/YTD/PER/PBR/PSR) */}
-          <div className="flex flex-col w-full lg:w-auto">
-            <div className={`w-full flex flex-col gap-3 xs:gap-4 sm:gap-6 px-4 xs:px-6 sm:px-10 py-4 xs:py-6 sm:py-8 rounded-2xl sm:rounded-[2rem] border shadow-xl ${isDarkMode ? 'bg-[#112240] border-slate-700 shadow-black/40' : 'bg-white border-gray-200 shadow-gray-200/40'}`}>
-              {/* Row 1: Opinion & Current Price */}
-              <div className={`grid grid-cols-2 gap-x-4 xs:gap-x-6 sm:gap-x-8 border-b pb-3 xs:pb-4 sm:pb-6 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                <div className={`flex flex-col pr-4 xs:pr-6 sm:pr-8 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                  <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>OPINION</span>
-                  <span className={`text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
-                    {latest.opinion || '-'}
-                  </span>
+          {/* Right: Stats Box */}
+          {latest && (
+            <div className="flex flex-col w-full lg:w-auto lg:min-w-[340px] lg:shrink-0">
+              <div className={`w-full flex flex-col gap-3 xs:gap-4 sm:gap-6 px-4 xs:px-6 sm:px-10 py-4 xs:py-6 sm:py-8 rounded-2xl sm:rounded-[2rem] border shadow-xl ${isDarkMode ? 'bg-[#112240] border-slate-700 shadow-black/40' : 'bg-white border-gray-200 shadow-gray-200/40'}`}>
+                {/* Row 1: Opinion & Current Price */}
+                <div className={`grid grid-cols-2 gap-x-4 xs:gap-x-6 sm:gap-x-8 border-b pb-3 xs:pb-4 sm:pb-6 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                  <div className={`flex flex-col pr-4 xs:pr-6 sm:pr-8 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                    <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>OPINION</span>
+                    <span className={`text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
+                      {latest.opinion || '-'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col pl-2 xs:pl-4 sm:pl-4">
+                    <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>CURRENT PRICE</span>
+                    <span className={`text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
+                      {latest.currentPrice || '-'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col pl-2 xs:pl-4 sm:pl-4">
-                  <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>CURRENT PRICE</span>
-                  <span className={`text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
-                    {latest.currentPrice || '-'}
-                  </span>
-                </div>
-              </div>
 
-              {/* Row 2: Prev Price / Target Price / Target Change */}
-              <div className={`grid grid-cols-3 border-b pb-3 xs:pb-4 sm:pb-6 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                <div className={`flex flex-col items-center gap-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-                  <span className={`text-[9px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PREV PRICE</span>
-                  <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{latest.prevPrice || '-'}</span>
+                {/* Row 2: Prev Price / Target Price / Target Change */}
+                <div className={`grid grid-cols-3 border-b pb-3 xs:pb-4 sm:pb-6 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                  <div className={`flex flex-col items-center gap-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <span className={`text-[9px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>PREV PRICE</span>
+                    <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{latest.prevPrice || '-'}</span>
+                  </div>
+                  <div className={`flex flex-col items-center gap-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <span className={`text-[9px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>TARGET</span>
+                    <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{latest.targetPrice || '-'}</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className={`text-[9px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>TGT CHG</span>
+                    <span className={`text-sm xs:text-base sm:text-lg font-black ${
+                      latest.targetChange !== null && latest.targetChange > 0
+                        ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
+                        : latest.targetChange !== null && latest.targetChange < 0
+                        ? (isDarkMode ? 'text-blue-400' : 'text-blue-600')
+                        : (isDarkMode ? 'text-white' : 'text-gray-900')
+                    }`}>
+                      {formatPercent(latest.targetChange)}
+                    </span>
+                  </div>
                 </div>
-                <div className={`flex flex-col items-center gap-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-                  <span className={`text-[9px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>TARGET</span>
-                  <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{latest.targetPrice || '-'}</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className={`text-[9px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>TGT CHG</span>
-                  <span className={`text-sm xs:text-base sm:text-lg font-black ${
-                    latest.targetChange !== null && latest.targetChange > 0
-                      ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
-                      : latest.targetChange !== null && latest.targetChange < 0
-                      ? (isDarkMode ? 'text-blue-400' : 'text-blue-600')
-                      : (isDarkMode ? 'text-white' : 'text-gray-900')
-                  }`}>
-                    {formatPercent(latest.targetChange)}
-                  </span>
-                </div>
-              </div>
 
-              {/* Row 3: Upside / EPS */}
-              <div className="grid grid-cols-2">
-                <div className={`flex items-center justify-center gap-1.5 xs:gap-2 py-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
-                  <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>UPSIDE</span>
-                  <span className={`text-sm xs:text-base sm:text-lg font-black ${
-                    latest.upside !== null && latest.upside > 0
-                      ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
-                      : latest.upside !== null && latest.upside < 0
-                      ? (isDarkMode ? 'text-blue-400' : 'text-blue-600')
-                      : (isDarkMode ? 'text-white' : 'text-gray-900')
-                  }`}>
-                    {formatPercent(latest.upside)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 xs:gap-2 py-1">
-                  <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>EPS(FWD)</span>
-                  <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {latest.eps !== null ? latest.eps.toFixed(2) : '-'}
-                  </span>
+                {/* Row 3: Upside / EPS */}
+                <div className="grid grid-cols-2">
+                  <div className={`flex items-center justify-center gap-1.5 xs:gap-2 py-1 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>UPSIDE</span>
+                    <span className={`text-sm xs:text-base sm:text-lg font-black ${
+                      latest.upside !== null && latest.upside > 0
+                        ? (isDarkMode ? 'text-rose-400' : 'text-rose-600')
+                        : latest.upside !== null && latest.upside < 0
+                        ? (isDarkMode ? 'text-blue-400' : 'text-blue-600')
+                        : (isDarkMode ? 'text-white' : 'text-gray-900')
+                    }`}>
+                      {formatPercent(latest.upside)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 xs:gap-2 py-1">
+                    <span className={`text-[10px] xs:text-xs sm:text-sm font-bold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>EPS(FWD)</span>
+                    <span className={`text-sm xs:text-base sm:text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {latest.eps !== null ? latest.eps.toFixed(2) : '-'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Comment Timeline (replaces News section) */}
+      {/* Comment Timeline */}
       <div className="mt-12 xs:mt-20">
         <div className="flex items-center gap-2 xs:gap-4 mb-6 xs:mb-10">
           <h3 className={`text-lg xs:text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>IB 코멘트 타임라인</h3>
@@ -142,9 +156,9 @@ const IBStockDetail: React.FC<IBStockDetailProps> = ({ group, onBack, isDarkMode
                   <div className="flex flex-col lg:flex-row lg:items-center gap-2 xs:gap-4 mb-3 xs:mb-4">
                     <span className={`text-base xs:text-xl font-black font-mono tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>{item.date}</span>
                     <div className="flex flex-wrap gap-1.5 xs:gap-2">
-                      <span className={`text-[9px] xs:text-[11px] font-bold px-2 xs:px-3 py-0.5 xs:py-1 rounded-full border ${isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-gray-50 text-gray-500 border-gray-300'}`}>{item.ib}</span>
+                      <span className={`text-[9px] xs:text-[11px] font-bold px-2 xs:px-3 py-0.5 xs:py-1 rounded-full border ${isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-gray-50 text-gray-500 border-gray-300'}`}>IB : {item.ib}</span>
                       {item.analyst && (
-                        <span className={`text-[9px] xs:text-[11px] font-bold px-2 xs:px-3 py-0.5 xs:py-1 rounded-full border ${isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-gray-50 text-gray-500 border-gray-300'}`}>{item.analyst}</span>
+                        <span className={`text-[9px] xs:text-[11px] font-bold px-2 xs:px-3 py-0.5 xs:py-1 rounded-full border ${isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-gray-50 text-gray-500 border-gray-300'}`}>Analyst : {item.analyst}</span>
                       )}
                     </div>
                   </div>

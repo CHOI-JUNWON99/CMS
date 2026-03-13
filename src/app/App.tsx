@@ -12,7 +12,7 @@ import { useStocksWithRelations } from '@/features/stocks';
 import { IssuesFeed } from '@/features/issues';
 import { useGlossary } from '@/features/glossary';
 import { ResourcesView, useHasNewResources } from '@/features/resources';
-import { useIBStockGroups, IBStockGroup } from '@/features/ib/hooks/useIBOpinions';
+import { useIBOpinionsInfinite, useIBDateGroups } from '@/features/ib/hooks/useIBOpinions';
 import IBStockList from '@/features/ib/components/IBStockList';
 import IBStockDetail from '@/features/ib/components/IBStockDetail';
 
@@ -76,8 +76,9 @@ const App: React.FC = () => {
   const { data: glossary = {} } = useGlossary();
   const recordViewMutation = useRecordPortfolioView();
   const hasNewResources = useHasNewResources();
-  const { groups: ibGroups } = useIBStockGroups();
-  const [selectedIBGroup, setSelectedIBGroup] = React.useState<IBStockGroup | null>(null);
+  const ibQuery = useIBOpinionsInfinite();
+  const ibDateGroups = useIBDateGroups(ibQuery);
+  const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string } | null>(null);
 
   const isLoading = portfoliosLoading || stocksLoading;
 
@@ -171,11 +172,11 @@ const App: React.FC = () => {
   const handleBackToDashboard = () => {
     setViewMode('DASHBOARD');
     setSelectedStockId(null);
-    setSelectedIBGroup(null);
+    setSelectedIBStock(null);
   };
 
-  const handleIBStockSelect = (group: IBStockGroup) => {
-    setSelectedIBGroup(group);
+  const handleIBStockSelect = (opinion: { ticker: string; stockName: string; sector: string }) => {
+    setSelectedIBStock({ ticker: opinion.ticker, stockName: opinion.stockName, sector: opinion.sector });
     setViewMode('IB_DETAIL');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -279,9 +280,12 @@ const App: React.FC = () => {
                         {isIB ? (
                           <div className="mt-4">
                             <IBStockList
-                              groups={ibGroups}
+                              dateGroups={ibDateGroups}
                               onSelect={handleIBStockSelect}
                               isDarkMode={isDarkMode}
+                              hasNextPage={!!ibQuery.hasNextPage}
+                              isFetchingNextPage={ibQuery.isFetchingNextPage}
+                              fetchNextPage={() => ibQuery.fetchNextPage()}
                             />
                           </div>
                         ) : (
@@ -317,7 +321,7 @@ const App: React.FC = () => {
             )}
           </div>
         ) : viewMode === 'IB_DETAIL' ? (
-          selectedIBGroup && <IBStockDetail group={selectedIBGroup} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
+          selectedIBStock && <IBStockDetail ticker={selectedIBStock.ticker} stockName={selectedIBStock.stockName} sector={selectedIBStock.sector} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
         ) : (
           selectedStock && <StockDetail stock={selectedStock} onBack={handleBackToDashboard} isDarkMode={isDarkMode} glossary={glossary} />
         )}
