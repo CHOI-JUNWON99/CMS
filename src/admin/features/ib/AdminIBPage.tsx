@@ -81,7 +81,6 @@ const AdminIBPage: React.FC = () => {
         const { data: result, error } = await supabase.rpc(
           "bulk_insert_ib_opinions",
           {
-            admin_code: "",
             data: batch,
           },
         );
@@ -286,7 +285,7 @@ const AdminIBPage: React.FC = () => {
 
       {/* Period Filter Tabs */}
       <div className="flex items-center gap-3">
-        <span className="text-slate-400 text-sm">
+        <span className="text-slate-400 text-sm min-w-[130px]">
           {PERIOD_LABELS.find((p) => p.key === activePeriod)!.label} 간 총{" "}
           <span className="text-white font-black">{opinions.length}건</span>
         </span>

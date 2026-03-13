@@ -242,7 +242,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!bulkData || !Array.isArray(bulkData)) return res.status(400).json({ error: 'data array required' });
 
         const { data: result, error } = await supabase.rpc('bulk_insert_ib_opinions', {
-          admin_code: process.env.ADMIN_CODE || '',
           data: bulkData,
         });
         if (error) throw error;

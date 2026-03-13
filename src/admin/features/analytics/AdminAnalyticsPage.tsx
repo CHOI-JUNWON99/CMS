@@ -149,20 +149,42 @@ const AdminAnalyticsPage: React.FC = () => {
         </h2>
 
         {/* 바 차트 */}
-        <div className="flex items-end gap-2 h-48">
-          {data.chart_data.map((d, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2">
-              <div className="text-xs font-bold text-slate-400">{d.count}</div>
+        <div className="flex h-52">
+          {/* Y축 라벨 */}
+          <div className="flex flex-col justify-between pr-3 py-0 text-right shrink-0" style={{ width: '48px' }}>
+            {[maxCount, Math.round(maxCount * 0.75), Math.round(maxCount * 0.5), Math.round(maxCount * 0.25), 0].map((v, i) => (
+              <span key={i} className="text-[10px] font-bold text-slate-500 leading-none">{v.toLocaleString()}</span>
+            ))}
+          </div>
+
+          {/* 차트 영역 */}
+          <div className="flex-1 relative">
+            {/* 그리드 라인 */}
+            {[0, 25, 50, 75, 100].map(pct => (
               <div
-                className="w-full bg-red-500/80 rounded-t transition-all hover:bg-red-500"
-                style={{
-                  height: `${(d.count / maxCount) * 100}%`,
-                  minHeight: d.count > 0 ? '4px' : '0',
-                }}
+                key={pct}
+                className="absolute left-0 right-0 border-t border-slate-700/50"
+                style={{ bottom: `${pct}%` }}
               />
-              <div className="text-[10px] text-slate-500 text-center truncate w-full">{d.label}</div>
+            ))}
+
+            {/* 바 */}
+            <div className="flex items-end gap-2 h-full relative z-10">
+              {data.chart_data.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                  <div className="text-[10px] font-bold text-slate-400">{d.count > 0 ? d.count.toLocaleString() : ''}</div>
+                  <div
+                    className="w-full bg-red-500/80 rounded-t transition-all hover:bg-red-500"
+                    style={{
+                      height: `${(d.count / maxCount) * 100}%`,
+                      minHeight: d.count > 0 ? '4px' : '0',
+                    }}
+                  />
+                  <div className="text-[10px] text-slate-500 text-center truncate w-full">{d.label}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
