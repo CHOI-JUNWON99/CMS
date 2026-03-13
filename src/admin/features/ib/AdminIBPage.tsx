@@ -54,7 +54,7 @@ const AdminIBPage: React.FC = () => {
     duplicate_count: number;
     errors: { row: number; reason: string }[];
   }> => {
-    const batchSize = 500;
+    const batchSize = 3000;
     let totalInserted = 0;
     let allDuplicates: string[] = [];
     let totalDuplicateCount = 0;
