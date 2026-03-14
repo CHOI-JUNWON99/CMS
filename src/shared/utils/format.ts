@@ -10,12 +10,36 @@
  */
 export function formatMarketCapShort(capStr: string): string {
   if (!capStr) return '-';
-  const parts = capStr.split(' ');
-  if (parts.length < 2) return capStr;
-  const joPart = parts[0].replace('조', '');
-  const okPart = parts[1].replace('억원', '').replace(',', '');
-  const okFirstDigit = okPart.charAt(0) || '0';
-  return `${joPart}.${okFirstDigit}조`;
+
+  // 이미 한국어 포맷이면 그대로 반환
+  if (/[조억만원]/.test(capStr)) return capStr;
+
+  // 숫자 문자열이면 한국어 포맷으로 변환 (조 단위 추정)
+  const num = parseFloat(capStr);
+  if (!isNaN(num)) {
+    return numberToKoreanMarketCap(num);
+  }
+
+  return capStr;
+}
+
+/**
+ * 숫자(조 단위)를 한국어 시가총액 포맷으로 변환
+ * 예: 33.12877 → "33조 1,288억원"
+ *     0.75    → "7,500억원"
+ */
+export function numberToKoreanMarketCap(value: number): string {
+  if (value >= 1) {
+    const jo = Math.floor(value);
+    const ok = Math.round((value - jo) * 10000);
+    if (ok > 0) {
+      return `${jo}조 ${ok.toLocaleString()}억원`;
+    }
+    return `${jo}조 0억원`;
+  }
+  // 1조 미만
+  const ok = Math.round(value * 10000);
+  return `${ok.toLocaleString()}억원`;
 }
 
 /**
@@ -25,9 +49,18 @@ export function formatMarketCapShort(capStr: string): string {
 export function parseMarketCap(capStr: string): { jo: string; ok: string } | null {
   if (!capStr) return null;
 
+  // 숫자 문자열이면 한국어 포맷으로 변환 후 파싱
+  let str = capStr;
+  if (!/[조억만원]/.test(str)) {
+    const num = parseFloat(str);
+    if (!isNaN(num)) {
+      str = numberToKoreanMarketCap(num);
+    }
+  }
+
   // 정규식으로 조/억 추출 (공백 유무 상관없이)
-  const joMatch = capStr.match(/(\d+(?:,\d+)*)\s*조/);
-  const okMatch = capStr.match(/조\s*(\d+(?:,\d+)*)\s*억/);
+  const joMatch = str.match(/(\d+(?:,\d+)*)\s*조/);
+  const okMatch = str.match(/조\s*(\d+(?:,\d+)*)\s*억/);
 
   if (!joMatch || !okMatch) return null;
 

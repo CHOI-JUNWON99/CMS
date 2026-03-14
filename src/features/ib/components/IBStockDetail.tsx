@@ -6,15 +6,16 @@ interface IBStockDetailProps {
   ticker: string;
   stockName: string;
   sector: string;
+  opinionId?: string;
   onBack: () => void;
   isDarkMode: boolean;
 }
 
-const IBStockDetail: React.FC<IBStockDetailProps> = ({ ticker, stockName, sector, onBack, isDarkMode }) => {
+const IBStockDetail: React.FC<IBStockDetailProps> = ({ ticker, stockName, sector, opinionId, onBack, isDarkMode }) => {
   const { data: allOpinions = [], isLoading } = useIBTickerOpinions(ticker);
   const [selectedComment, setSelectedComment] = useState<IBOpinion | null>(null);
 
-  const latest = allOpinions[0] || null;
+  const latest = (opinionId ? allOpinions.find(o => o.id === opinionId) : null) || allOpinions[0] || null;
 
   const timelineData = useMemo(() => {
     return [...allOpinions].sort((a, b) => b.date.localeCompare(a.date));
@@ -70,13 +71,13 @@ const IBStockDetail: React.FC<IBStockDetailProps> = ({ ticker, stockName, sector
               <div className={`w-full flex flex-col gap-3 xs:gap-4 sm:gap-6 px-4 xs:px-6 sm:px-10 py-4 xs:py-6 sm:py-8 rounded-2xl sm:rounded-[2rem] border shadow-xl ${isDarkMode ? 'bg-[#112240] border-slate-700 shadow-black/40' : 'bg-white border-gray-200 shadow-gray-200/40'}`}>
                 {/* Row 1: Opinion & Current Price */}
                 <div className={`grid grid-cols-2 gap-x-4 xs:gap-x-6 sm:gap-x-8 border-b pb-3 xs:pb-4 sm:pb-6 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                  <div className={`flex flex-col pr-4 xs:pr-6 sm:pr-8 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                  <div className={`flex flex-col items-center pr-4 xs:pr-6 sm:pr-8 border-r ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
                     <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>OPINION</span>
                     <span className={`text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
                       {latest.opinion || '-'}
                     </span>
                   </div>
-                  <div className="flex flex-col pl-2 xs:pl-4 sm:pl-4">
+                  <div className="flex flex-col items-center pl-2 xs:pl-4 sm:pl-4">
                     <span className={`text-[8px] xs:text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] xs:tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>CURRENT PRICE</span>
                     <span className={`text-lg xs:text-xl sm:text-2xl lg:text-3xl font-black leading-none ${isDarkMode ? 'text-slate-200' : 'text-gray-900'}`}>
                       {latest.currentPrice || '-'}
@@ -129,6 +130,11 @@ const IBStockDetail: React.FC<IBStockDetailProps> = ({ ticker, stockName, sector
                     </span>
                   </div>
                 </div>
+              </div>
+              <div className="flex justify-end mt-1.5 xs:mt-2 pr-7">
+                <span className={`text-[8px] xs:text-[9px] sm:text-[10px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                  단위: 달러
+                </span>
               </div>
             </div>
           )}

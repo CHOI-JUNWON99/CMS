@@ -1,3 +1,5 @@
+import { numberToKoreanMarketCap } from '@/shared/utils/format';
+
 export interface RawStockRow {
   ticker?: string;
   name?: string;
@@ -45,17 +47,29 @@ export function getIdFromTicker(ticker: string): string {
 export function parseStockExcelRows(rows: RawStockRow[]): ParsedStockRow[] {
   return rows
     .filter((row) => row.ticker)
-    .map((row) => ({
-      ticker: row.ticker!,
-      name: row.name || null,
-      name_kr: row.name_kr || null,
-      sector: row.sector || null,
-      market_cap: row.marketCap || null,
-      return_rate: row.totalReturn ?? null,
-      per: row.PER ?? null,
-      pbr: row.PBR ?? null,
-      psr: row.PSR ?? null,
-      description: row.description || null,
-      keywords: row.keywords ? row.keywords.split(',').map((k) => k.trim()) : null,
-    }));
+    .map((row) => {
+      let marketCap: string | null = row.marketCap || null;
+
+      // 숫자인 경우 한국어 포맷으로 변환 (조 단위 추정)
+      if (marketCap !== null) {
+        const num = parseFloat(marketCap);
+        if (!isNaN(num) && !/[조억만원]/.test(marketCap)) {
+          marketCap = numberToKoreanMarketCap(num);
+        }
+      }
+
+      return {
+        ticker: row.ticker!,
+        name: row.name || null,
+        name_kr: row.name_kr || null,
+        sector: row.sector || null,
+        market_cap: marketCap,
+        return_rate: row.totalReturn ?? null,
+        per: row.PER ?? null,
+        pbr: row.PBR ?? null,
+        psr: row.PSR ?? null,
+        description: row.description || null,
+        keywords: row.keywords ? row.keywords.split(',').map((k) => k.trim()) : null,
+      };
+    });
 }

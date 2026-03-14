@@ -2,6 +2,18 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyAccessToken, parseCookies } from '../_lib/tokens.js';
 import { getServiceSupabase } from '../_lib/supabase.js';
 
+function parseMarketCapToValue(capStr: string): number {
+  if (!capStr) return 0;
+  let total = 0;
+  const joMatch = capStr.match(/(\d+(?:,\d+)*)\s*조/);
+  if (joMatch) total += parseInt(joMatch[1].replace(/,/g, ''), 10) * 1_0000_0000_0000;
+  const okMatch = capStr.match(/(\d+(?:,\d+)*)\s*억/);
+  if (okMatch) total += parseInt(okMatch[1].replace(/,/g, ''), 10) * 1_0000_0000;
+  const manMatch = capStr.match(/(\d+(?:,\d+)*)\s*만/);
+  if (manMatch) total += parseInt(manMatch[1].replace(/,/g, ''), 10) * 1_0000;
+  return total;
+}
+
 async function verifyAdmin(req: VercelRequest): Promise<boolean> {
   const cookies = parseCookies(req.headers.cookie || null);
   const accessToken = cookies['cms_access_token'];
@@ -296,7 +308,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const updates: Record<string, unknown> = {};
             if (item.price !== undefined) updates.price = item.price;
             if (item.change !== undefined) updates.change = item.change;
-            if (item.market_cap !== undefined) updates.market_cap = item.market_cap;
+            if (item.market_cap !== undefined) {
+              updates.market_cap = item.market_cap;
+              // market_cap_value도 함께 계산하여 정렬 정합성 유지
+              updates.market_cap_value = parseMarketCapToValue(String(item.market_cap));
+            }
             if (item.return_rate !== undefined) updates.return_rate = item.return_rate;
 
             if (Object.keys(updates).length > 0) {
@@ -305,6 +321,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           } else {
             // 신규 삽입
+            const mcStr = item.market_cap ? String(item.market_cap) : null;
             const { error } = await supabase.from('stocks').insert({
               ticker,
               name: item.name || ticker,
@@ -312,7 +329,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               sector: item.sector || '',
               price: item.price || 0,
               change: item.change || 0,
-              market_cap: item.market_cap || null,
+              market_cap: mcStr,
+              market_cap_value: mcStr ? parseMarketCapToValue(mcStr) : 0,
               return_rate: item.return_rate || 0,
             });
             if (!error) inserted++;

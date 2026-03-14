@@ -345,6 +345,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
             content: row.content,
             keywords: row.keywords,
             date: row.date,
+            source: row.source || '',
             is_cms: row.is_cms,
           };
         })

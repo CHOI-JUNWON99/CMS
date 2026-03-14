@@ -78,7 +78,7 @@ const App: React.FC = () => {
   const hasNewResources = useHasNewResources();
   const ibQuery = useIBOpinionsInfinite();
   const ibDateGroups = useIBDateGroups(ibQuery);
-  const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string } | null>(null);
+  const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string; opinionId: string } | null>(null);
 
   const isLoading = portfoliosLoading || stocksLoading;
 
@@ -175,8 +175,8 @@ const App: React.FC = () => {
     setSelectedIBStock(null);
   };
 
-  const handleIBStockSelect = (opinion: { ticker: string; stockName: string; sector: string }) => {
-    setSelectedIBStock({ ticker: opinion.ticker, stockName: opinion.stockName, sector: opinion.sector });
+  const handleIBStockSelect = (opinion: { id: string; ticker: string; stockName: string; sector: string }) => {
+    setSelectedIBStock({ ticker: opinion.ticker, stockName: opinion.stockName, sector: opinion.sector, opinionId: opinion.id });
     setViewMode('IB_DETAIL');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -321,7 +321,7 @@ const App: React.FC = () => {
             )}
           </div>
         ) : viewMode === 'IB_DETAIL' ? (
-          selectedIBStock && <IBStockDetail ticker={selectedIBStock.ticker} stockName={selectedIBStock.stockName} sector={selectedIBStock.sector} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
+          selectedIBStock && <IBStockDetail ticker={selectedIBStock.ticker} stockName={selectedIBStock.stockName} sector={selectedIBStock.sector} opinionId={selectedIBStock.opinionId} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
         ) : (
           selectedStock && <StockDetail stock={selectedStock} onBack={handleBackToDashboard} isDarkMode={isDarkMode} glossary={glossary} />
         )}
