@@ -340,6 +340,7 @@ const AdminIssuesFeed: React.FC<AdminIssuesFeedProps> = ({
             return null;
           }
           return {
+            ticker: row.ticker,
             stock_id: stockId,
             title: row.title,
             content: row.content,
