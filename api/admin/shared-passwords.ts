@@ -1,24 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyAccessToken, parseCookies } from '../_lib/tokens.js';
+import { verifyAdminWithRefresh } from '../_lib/tokens.js';
 import { getServiceSupabase } from '../_lib/supabase.js';
 import bcrypt from 'bcryptjs';
 
-async function verifyAdmin(req: VercelRequest): Promise<boolean> {
-  const cookies = parseCookies(req.headers.cookie || null);
-  const accessToken = cookies['cms_access_token'];
-  if (!accessToken) return false;
-
-  const payload = await verifyAccessToken(accessToken);
-  return payload?.userType === 'admin';
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const isAdmin = await verifyAdmin(req);
+  const supabase = getServiceSupabase();
+  const isAdmin = await verifyAdminWithRefresh(req, res, supabase);
   if (!isAdmin) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  const supabase = getServiceSupabase();
 
   try {
     switch (req.method) {
