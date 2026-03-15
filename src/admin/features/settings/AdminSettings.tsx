@@ -1,9 +1,9 @@
-import React from 'react';
+import React from "react";
 import {
   ClientManagement,
   SharedPasswordManagement,
   AdminCodeManagement,
-} from './components';
+} from "./components";
 
 /**
  * AdminSettings 컴포넌트
@@ -34,7 +34,9 @@ const AdminSettings: React.FC = () => {
 
       {/* 시스템 정보 */}
       <section className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
-        <h3 className="text-sm font-black text-slate-200 tracking-wider mb-4">시스템 정보</h3>
+        <h3 className="text-sm font-black text-slate-200 tracking-wider mb-4">
+          시스템 정보
+        </h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-slate-300">버전</span>
@@ -42,11 +44,11 @@ const AdminSettings: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span className="text-slate-300">사용자 세션 시간</span>
-            <span className="text-white">1시간</span>
+            <span className="text-white">15분</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-300">관리자 세션 시간</span>
-            <span className="text-white">2시간</span>
+            <span className="text-white">15분</span>
           </div>
         </div>
       </section>

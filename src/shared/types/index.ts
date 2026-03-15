@@ -87,6 +87,7 @@ export interface Resource {
   fileSize: string;
   fileUrl?: string;
   clientId?: string | null;
+  originalFilename?: string;
 }
 
 export type ViewMode = 'DASHBOARD' | 'DETAIL' | 'IB_DETAIL';
@@ -221,6 +222,7 @@ export interface DbResourceRow {
   file_size: string | null;
   file_url: string | null;
   client_id: string | null;
+  original_filename: string | null;
 }
 
 export interface DbPortfolioRow {

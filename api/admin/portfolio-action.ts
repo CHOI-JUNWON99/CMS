@@ -211,7 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // ===== 자료실 관리 =====
       case 'add_resource': {
-        const { id, title, description, fileType, category, date, fileSize, fileUrl, clientId } = params;
+        const { id, title, description, fileType, category, date, fileSize, fileUrl, clientId, originalFilename } = params;
         if (!title) return res.status(400).json({ error: 'title required' });
 
         const { error } = await supabase.from('resources').insert({
@@ -224,6 +224,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           file_size: fileSize || '',
           file_url: fileUrl || null,
           client_id: clientId || null,
+          original_filename: originalFilename || null,
         });
 
         if (error) throw error;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Resource, DbResourceRow } from '@/shared/types';
 import { supabase } from '@/shared/lib/supabase';
 import { useAuthStore } from '@/shared/stores';
@@ -45,6 +45,7 @@ const ResourcesView: React.FC<ResourcesViewProps> = ({ isDarkMode }) => {
             date: r.date,
             fileSize: r.file_size ?? '',
             fileUrl: r.file_url ?? undefined,
+            originalFilename: r.original_filename ?? undefined,
           })));
         }
       } catch (err) {
@@ -74,6 +75,32 @@ const ResourcesView: React.FC<ResourcesViewProps> = ({ isDarkMode }) => {
       default: return 'bg-gray-50 text-gray-600 border-gray-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
     }
   };
+
+  const getDownloadFilename = useCallback((res: Resource) => {
+    if (res.originalFilename) return res.originalFilename;
+    const extMap: Record<string, string> = { PDF: '.pdf', EXCEL: '.xlsx', WORD: '.docx', PPT: '.pptx' };
+    return `${res.title}${extMap[res.fileType] || ''}`;
+  }, []);
+
+  const handleDownload = useCallback(async (res: Resource) => {
+    if (!res.fileUrl) return;
+    try {
+      const response = await fetch(res.fileUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = getDownloadFilename(res);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('다운로드 실패:', err);
+      // fallback: 새 탭으로 열기
+      window.open(res.fileUrl, '_blank');
+    }
+  }, [getDownloadFilename]);
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -143,10 +170,10 @@ const ResourcesView: React.FC<ResourcesViewProps> = ({ isDarkMode }) => {
                 <p className={`text-[12px] font-medium truncate ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{res.description}</p>
               </div>
               {res.fileUrl ? (
-                <a href={res.fileUrl} target="_blank" rel="noopener noreferrer" download className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white font-black text-[11px] shadow-sm hover:bg-primary/90 transition-all transform active:scale-95 shrink-0">
+                <button onClick={() => handleDownload(res)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white font-black text-[11px] shadow-sm hover:bg-primary/90 transition-all transform active:scale-95 shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                   다운로드
-                </a>
+                </button>
               ) : (
                 <button disabled className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-300 text-gray-500 font-black text-[11px] shrink-0 cursor-not-allowed">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>

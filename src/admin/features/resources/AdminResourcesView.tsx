@@ -69,6 +69,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
             fileSize: r.file_size ?? '',
             fileUrl: r.file_url ?? undefined,
             clientId: r.client_id ?? undefined,
+            originalFilename: r.original_filename ?? undefined,
           })));
         }
       } catch (err) {
@@ -139,6 +140,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
           fileSize,
           fileUrl: urlData.publicUrl,
           clientId: newResource.clientId ? newResource.clientId : null,
+          originalFilename: file.name,
         });
       } else {
         const adminCode = getAdminCode();
@@ -153,6 +155,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
           p_file_size: fileSize,
           p_file_url: urlData.publicUrl,
           p_client_id: newResource.clientId ? newResource.clientId : null,
+          p_original_filename: file.name,
         });
         if (dbError) throw dbError;
       }
@@ -174,6 +177,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
           date: r.date,
           fileSize: r.file_size ?? '',
           fileUrl: r.file_url ?? undefined,
+          originalFilename: r.original_filename ?? undefined,
         })));
       }
       toast.success('자료가 추가되었습니다.');
