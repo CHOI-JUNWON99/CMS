@@ -4,6 +4,8 @@ interface SlidingSessionOptions {
   isAuthenticated: boolean;
   extendSession: () => void;
   logout: () => void;
+  /** 서버 refresh 호출 건너뛰기 (verifyAdminWithRefresh가 서버사이드에서 처리하는 경우) */
+  skipServerRefresh?: boolean;
 }
 
 const ACTIVITY_EVENTS = ['click', 'keydown', 'scroll', 'mousemove'] as const;
@@ -14,7 +16,7 @@ const REFRESH_THROTTLE_MS = 5 * 60 * 1000; // 서버 refresh 5분 간격 throttl
  * - 사용자 활동(click, keydown, scroll, mousemove) 감지 시 클라이언트 세션 타이머 자동 리셋
  * - 서버 토큰 갱신은 5분 간격으로 throttle하여 과도한 요청 방지
  */
-export function useSlidingSession({ isAuthenticated, extendSession, logout }: SlidingSessionOptions) {
+export function useSlidingSession({ isAuthenticated, extendSession, logout, skipServerRefresh }: SlidingSessionOptions) {
   const lastRefreshRef = useRef<number>(0);
 
   useEffect(() => {
@@ -25,6 +27,10 @@ export function useSlidingSession({ isAuthenticated, extendSession, logout }: Sl
       extendSession();
 
       // 서버 refresh는 5분 간격으로 throttle
+      // 관리자 세션: verifyAdminWithRefresh가 서버사이드에서 토큰을 자동 갱신하므로
+      // 여기서 별도로 /api/auth/refresh를 호출하면 race condition 발생 → skipServerRefresh 사용
+      if (skipServerRefresh) return;
+
       const now = Date.now();
       if (now - lastRefreshRef.current < REFRESH_THROTTLE_MS) return;
       lastRefreshRef.current = now;

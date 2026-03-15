@@ -24,7 +24,7 @@ const AdminApp: React.FC = () => {
   const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
 
   // Sliding Session: 활동 감지 시 자동 갱신
-  useSlidingSession({ isAuthenticated, extendSession, logout });
+  useSlidingSession({ isAuthenticated, extendSession, logout, skipServerRefresh: true });
 
   // 세션 복원
   useEffect(() => {
