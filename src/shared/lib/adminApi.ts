@@ -9,6 +9,27 @@ export class AdminApiError extends Error {
   }
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefreshToken(): Promise<boolean> {
+  if (isRefreshing && refreshPromise) return refreshPromise;
+
+  isRefreshing = true;
+  refreshPromise = fetch('/api/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+  })
+    .then(res => res.ok)
+    .catch(() => false)
+    .finally(() => {
+      isRefreshing = false;
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
+
 interface AdminDataResponse {
   data?: unknown;
   success?: boolean;
@@ -21,12 +42,24 @@ async function adminData<T = AdminDataResponse>(body: {
   id?: string;
   data?: unknown;
 }): Promise<T> {
-  const res = await fetch('/api/admin/data', {
+  let res = await fetch('/api/admin/data', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(body),
   });
+
+  if (res.status === 401) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+    }
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Unknown error' }));
@@ -130,12 +163,24 @@ export async function adminAction<T = { success: boolean }>(
   action: string,
   params: Record<string, unknown> = {},
 ): Promise<T> {
-  const res = await fetch('/api/admin/portfolio-action', {
+  let res = await fetch('/api/admin/portfolio-action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ action, ...params }),
   });
+
+  if (res.status === 401) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      res = await fetch('/api/admin/portfolio-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action, ...params }),
+      });
+    }
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Unknown error' }));
