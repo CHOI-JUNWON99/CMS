@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyAdminWithRefresh } from '../_lib/tokens.js';
 import { getServiceSupabase } from '../_lib/supabase.js';
-import bcrypt from 'bcryptjs';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = getServiceSupabase();
@@ -29,7 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const code = name.trim().toLowerCase().replace(/\s+/g, '_');
-        const passwordHash = await bcrypt.hash(password.trim(), 10);
+        const { data: passwordHash, error: hashError } = await supabase.rpc('hash_password', { plain_password: password.trim() });
+        if (hashError) throw hashError;
 
         const { error } = await supabase
           .from('clients')
@@ -56,8 +56,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (brandColor !== undefined) updates.brand_color = brandColor;
         if (isActive !== undefined) updates.is_active = isActive;
         if (password && password.trim()) {
+          const { data: hash, error: hashError } = await supabase.rpc('hash_password', { plain_password: password.trim() });
+          if (hashError) throw hashError;
           updates.password = password.trim();
-          updates.password_hash = await bcrypt.hash(password.trim(), 10);
+          updates.password_hash = hash;
         }
 
         const { error } = await supabase

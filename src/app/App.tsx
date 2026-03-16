@@ -27,14 +27,12 @@ interface PortfolioGroup {
 
 const App: React.FC = () => {
   // Auth Store
-  const storeIsAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const expiresAt = useAuthStore((state) => state.expiresAt);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
   const extendSession = useAuthStore((state) => state.extendSession);
   const clientInfo = useAuthStore((state) => state.clientInfo);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const restoreSession = useAuthStore((state) => state.restoreSession);
-  const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
 
   // Sliding Session: 활동 감지 시 자동 갱신
   useSlidingSession({ isAuthenticated, extendSession, logout });
@@ -59,9 +57,6 @@ const App: React.FC = () => {
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
-
-  // 남은 시간 상태 (1초마다 업데이트)
-  const [remainingTime, setRemainingTime] = React.useState('15:00');
 
   // 포트폴리오별 종목 검색 상태
   const [searchQueries, setSearchQueries] = React.useState<Record<string, string>>({});
@@ -121,21 +116,18 @@ const App: React.FC = () => {
     return stocks.find(s => s.id === selectedStockId) || null;
   }, [stocks, selectedStockId]);
 
-  // 세션 타이머
+  // 세션 만료 체크 (60초 간격)
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const tick = () => {
+    const checkSession = () => {
       const state = useAuthStore.getState();
       if (!state.isSessionValid()) {
         logout();
-      } else {
-        setRemainingTime(state.formatRemainingTime());
       }
     };
 
-    tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(checkSession, 60 * 1000);
     return () => clearInterval(id);
   }, [isAuthenticated, logout]);
 
@@ -217,7 +209,6 @@ const App: React.FC = () => {
         onHomeClick={handleBackToDashboard}
         isDarkMode={isDarkMode}
         toggleTheme={toggleDarkMode}
-        remainingTime={remainingTime}
         onLogout={logout}
       />
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">

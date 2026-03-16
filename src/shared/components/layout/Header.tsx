@@ -5,11 +5,10 @@ interface HeaderProps {
   onHomeClick: () => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
-  remainingTime?: string;
   onLogout?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, remainingTime, onLogout }) => {
+const Header: React.FC<HeaderProps> = React.memo(({ onHomeClick, isDarkMode, toggleTheme, onLogout }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,28 +40,8 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, r
     return () => document.removeEventListener('mousedown', handleClick);
   }, [isMenuOpen]);
 
-  const isUrgent = remainingTime && (() => {
-    const parts = remainingTime.split(':');
-    return Number(parts[0]) === 0 && Number(parts[1]) < 10;
-  })();
-
   const statusItems = (
     <>
-      {remainingTime && (
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black transition-colors ${
-          isUrgent
-            ? 'bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 animate-pulse'
-            : isDarkMode
-              ? 'bg-slate-800 border-slate-700 text-slate-300'
-              : 'bg-gray-50 border-gray-200 text-gray-600'
-        }`}>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="font-mono tabular-nums">{remainingTime}</span>
-        </div>
-      )}
-
       <button
         onClick={toggleTheme}
         aria-label={isDarkMode ? "라이트 모드로 전환" : "나이트 모드로 전환"}
@@ -176,6 +155,8 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick, isDarkMode, toggleTheme, r
       )}
     </header>
   );
-};
+});
+
+Header.displayName = 'Header';
 
 export default Header;

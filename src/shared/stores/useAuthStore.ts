@@ -19,8 +19,6 @@ interface AuthState {
 
   // 계산된 값
   isSessionValid: () => boolean;
-  getRemainingTime: () => number;
-  formatRemainingTime: () => string;
 
   // 액션
   login: (params: {
@@ -54,21 +52,6 @@ export const useAuthStore = create<AuthState>()(
       const { isAuthenticated, expiresAt } = get();
       if (!isAuthenticated || !expiresAt) return false;
       return Date.now() < expiresAt;
-    },
-
-    getRemainingTime: () => {
-      const { expiresAt } = get();
-      if (!expiresAt) return 0;
-      return Math.max(0, expiresAt - Date.now());
-    },
-
-    formatRemainingTime: () => {
-      const ms = get().getRemainingTime();
-      if (ms <= 0) return '00:00';
-      const totalSec = Math.floor(ms / 1000);
-      const m = Math.floor(totalSec / 60);
-      const s = totalSec % 60;
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     },
 
     // 액션

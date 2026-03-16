@@ -70,7 +70,7 @@ const StockList: React.FC<StockListProps> = ({
               )}
               <div
                 onClick={() => onStockSelect(stock)}
-                className={`group relative flex flex-col lg:flex-row lg:items-center px-6 py-4 lg:px-6 lg:py-3 rounded-[16px] transition-all duration-500 cursor-pointer transform hover:-translate-y-1 ${
+                className={`group relative flex flex-col lg:flex-row lg:items-center px-6 py-4 lg:px-6 lg:py-3 rounded-[16px] transition-[transform,box-shadow,border-color] duration-500 cursor-pointer translate-y-0 backface-hidden hover:-translate-y-1 ${
                   isDarkMode
                     ? 'bg-[#112240] border border-slate-600 hover:border-primary-light shadow-xl'
                     : 'bg-white border border-gray-300 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)] hover:border-primary/40'
