@@ -308,6 +308,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (item.return_rate !== undefined) updates.return_rate = item.return_rate;
 
             if (Object.keys(updates).length > 0) {
+              updates.last_update = new Date().toISOString();
               const { error } = await supabase.from('stocks').update(updates).eq('id', existing.id);
               if (!error) updated++;
             }
@@ -324,6 +325,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               market_cap: mcStr,
               market_cap_value: mcStr ? parseMarketCapToValue(mcStr) : 0,
               return_rate: item.return_rate || 0,
+              last_update: new Date().toISOString(),
             });
             if (!error) inserted++;
           }
