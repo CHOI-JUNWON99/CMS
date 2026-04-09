@@ -10,6 +10,7 @@ const tabs = [
   { path: '/admin/ib', label: 'IB 관리', matchPrefix: false },
   { path: '/admin/stocks', label: '종목 관리', matchPrefix: true },
   { path: '/admin/issues', label: '뉴스 관리', matchPrefix: false },
+  { path: '/admin/policy-news', label: '정책 뉴스', matchPrefix: false },
   { path: '/admin/resources', label: '자료실 관리', matchPrefix: false },
   { path: '/admin/glossary', label: '용어사전', matchPrefix: false },
   { path: '/admin/analytics', label: '조회수 분석', matchPrefix: false },

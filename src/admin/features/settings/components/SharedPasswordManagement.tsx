@@ -34,6 +34,7 @@ const SharedPasswordManagement: React.FC = () => {
   const [newIsMaster, setNewIsMaster] = useState(false);
   const [newClientIds, setNewClientIds] = useState<string[]>([]);
   const [newBrandColor, setNewBrandColor] = useState('#1e3a8a');
+  const [newShowPolicyNews, setNewShowPolicyNews] = useState(false);
 
   // 수정 모달 상태
   const [showEditModal, setShowEditModal] = useState(false);
@@ -43,6 +44,7 @@ const SharedPasswordManagement: React.FC = () => {
   const [editIsMaster, setEditIsMaster] = useState(false);
   const [editClientIds, setEditClientIds] = useState<string[]>([]);
   const [editBrandColor, setEditBrandColor] = useState('#1e3a8a');
+  const [editShowPolicyNews, setEditShowPolicyNews] = useState(false);
 
   const resetAddForm = () => {
     setNewName('');
@@ -50,6 +52,7 @@ const SharedPasswordManagement: React.FC = () => {
     setNewIsMaster(false);
     setNewClientIds([]);
     setNewBrandColor('#1e3a8a');
+    setNewShowPolicyNews(false);
   };
 
   const handleAdd = async () => {
@@ -73,6 +76,7 @@ const SharedPasswordManagement: React.FC = () => {
         isMaster: newIsMaster,
         clientIds: newIsMaster ? [] : newClientIds,
         brandColor: newBrandColor,
+        showPolicyNews: newShowPolicyNews,
       });
       setShowAddModal(false);
       resetAddForm();
@@ -89,6 +93,7 @@ const SharedPasswordManagement: React.FC = () => {
     setEditIsMaster(shared.isMaster);
     setEditClientIds(shared.clientIds);
     setEditBrandColor(shared.brandColor || '#1e3a8a');
+    setEditShowPolicyNews(shared.showPolicyNews ?? false);
     setShowEditModal(true);
   };
 
@@ -115,6 +120,7 @@ const SharedPasswordManagement: React.FC = () => {
         isMaster: editIsMaster,
         clientIds: editIsMaster ? [] : editClientIds,
         brandColor: editBrandColor,
+        showPolicyNews: editShowPolicyNews,
       });
       setShowEditModal(false);
       setEditing(null);
@@ -358,6 +364,19 @@ const SharedPasswordManagement: React.FC = () => {
                 <p className="text-[10px] text-slate-400 mt-1 ml-8">마스터 비밀번호는 모든 포트폴리오에 접근할 수 있습니다.</p>
               </div>
 
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newShowPolicyNews}
+                    onChange={(e) => setNewShowPolicyNews(e.target.checked)}
+                    className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500"
+                  />
+                  <span className="text-sm font-bold text-white">정책 뉴스 표시</span>
+                </label>
+                <p className="text-[10px] text-slate-400 mt-1 ml-8">이 비밀번호로 접근 시 정책 뉴스를 볼 수 있습니다.</p>
+              </div>
+
               {!newIsMaster && (
                 <div>
                   <label className="block text-xs font-bold text-slate-200 mb-2">접근 가능한 소속 선택 *</label>
@@ -436,6 +455,18 @@ const SharedPasswordManagement: React.FC = () => {
                     className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500"
                   />
                   <span className="text-sm font-bold text-white">마스터 (모든 소속 접근)</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editShowPolicyNews}
+                    onChange={(e) => setEditShowPolicyNews(e.target.checked)}
+                    className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500"
+                  />
+                  <span className="text-sm font-bold text-white">정책 뉴스 표시</span>
                 </label>
               </div>
 

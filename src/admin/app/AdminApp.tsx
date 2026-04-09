@@ -13,6 +13,7 @@ import AdminGlossaryPage from '@/admin/features/glossary/AdminGlossaryPage';
 import AdminSettingsPage from '@/admin/features/settings/AdminSettingsPage';
 import AdminAnalyticsPage from '@/admin/features/analytics/AdminAnalyticsPage';
 import AdminIBPage from '@/admin/features/ib/AdminIBPage';
+import AdminPolicyNewsPage from '@/admin/features/policy-news/AdminPolicyNewsPage';
 
 const AdminApp: React.FC = () => {
   const storeIsAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
@@ -73,6 +74,7 @@ const AdminApp: React.FC = () => {
           <Route path="/ib" element={<AdminIBPage />} />
           <Route path="/stocks/*" element={<AdminStocksPage />} />
           <Route path="/issues" element={<AdminIssuesPage />} />
+          <Route path="/policy-news" element={<AdminPolicyNewsPage />} />
           <Route path="/resources" element={<AdminResourcesPage />} />
           <Route path="/glossary" element={<AdminGlossaryPage />} />
           <Route path="/analytics" element={<AdminAnalyticsPage />} />

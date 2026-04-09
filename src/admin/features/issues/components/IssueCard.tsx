@@ -11,15 +11,18 @@ export interface FeedItem {
   keywords: string[];
   date: string;
   images?: { url: string; caption?: string }[];
+  clientName?: string;
+  clientId?: string;
 }
 
 interface IssueCardProps {
   item: FeedItem;
   onEdit: (item: FeedItem) => void;
   onDelete: (issueId: string) => void;
+  isPolicyNews?: boolean;
 }
 
-const IssueCard: React.FC<IssueCardProps> = ({ item, onEdit, onDelete }) => {
+const IssueCard: React.FC<IssueCardProps> = ({ item, onEdit, onDelete, isPolicyNews }) => {
   return (
     <div
       className="relative pl-10 lg:pl-16 pb-20 group border-l-[3px] border-slate-700"
@@ -40,8 +43,8 @@ const IssueCard: React.FC<IssueCardProps> = ({ item, onEdit, onDelete }) => {
             <span className="text-lg lg:text-2xl font-black tracking-tighter text-white">
               {item.date}
             </span>
-            <span className="text-xs px-3 py-1 rounded-lg font-black uppercase tracking-widest bg-red-600 text-white shadow-lg">
-              News
+            <span className={`text-xs px-3 py-1 rounded-lg font-black uppercase tracking-widest text-white shadow-lg ${isPolicyNews ? 'bg-purple-600' : 'bg-red-600'}`}>
+              {isPolicyNews ? 'Policy' : 'News'}
             </span>
             {item.isCMS && (
               <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[10px] font-black">
@@ -65,12 +68,22 @@ const IssueCard: React.FC<IssueCardProps> = ({ item, onEdit, onDelete }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-base lg:text-lg font-black text-white">
-            {item.stockName}
-          </span>
-          <span className="text-[12px] font-mono font-black tracking-widest px-2 py-0.5 rounded border-2 bg-slate-800 text-slate-300 border-slate-600">
-            {item.stockTicker}
-          </span>
+          {isPolicyNews ? (
+            item.clientName && (
+              <span className="text-base lg:text-lg font-black text-purple-300">
+                {item.clientName}
+              </span>
+            )
+          ) : (
+            <>
+              <span className="text-base lg:text-lg font-black text-white">
+                {item.stockName}
+              </span>
+              <span className="text-[12px] font-mono font-black tracking-widest px-2 py-0.5 rounded border-2 bg-slate-800 text-slate-300 border-slate-600">
+                {item.stockTicker}
+              </span>
+            </>
+          )}
         </div>
       </div>
 

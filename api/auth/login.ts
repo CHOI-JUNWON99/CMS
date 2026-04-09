@@ -42,6 +42,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       client_ids?: string[];
     };
 
+    // show_policy_news 플래그 조회
+    let showPolicyNews = false;
+    if (result.type === 'master') {
+      showPolicyNews = true;
+    } else if (result.type === 'shared') {
+      // 공유 비밀번호의 show_policy_news 확인
+      const { data: spRow } = await supabase
+        .from('shared_passwords')
+        .select('show_policy_news')
+        .eq('id', result.id)
+        .single();
+      showPolicyNews = spRow?.show_policy_news ?? false;
+    } else if (result.type === 'single') {
+      // 소속(client)의 show_policy_news 확인
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('show_policy_news')
+        .eq('id', result.id)
+        .single();
+      showPolicyNews = clientRow?.show_policy_news ?? false;
+    }
+
     // Token payload
     const payload = {
       userType: 'user' as const,
@@ -51,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       clientName: result.name,
       brandColor: result.brand_color || undefined,
       logoUrl: result.logo_url || undefined,
+      showPolicyNews,
     };
 
     // Access Token 생성
@@ -87,6 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         brandColor: result.brand_color || undefined,
       },
       clientIds: result.client_ids || [],
+      showPolicyNews,
     });
   } catch (err) {
     console.error('Login error:', err);

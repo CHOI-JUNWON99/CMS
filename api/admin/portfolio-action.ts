@@ -276,6 +276,114 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true });
       }
 
+      // ===== 정책 뉴스 관리 =====
+      case 'add_policy_news': {
+        const { title, content, keywords, date, isCMS, clientId } = params;
+        if (!content) return res.status(400).json({ error: 'content required' });
+
+        const { data: newsId, error } = await supabase
+          .from('policy_news')
+          .insert({
+            title: title || null,
+            content,
+            keywords: keywords || [],
+            date: date || new Date().toISOString().slice(0, 10),
+            is_cms: isCMS ?? false,
+            client_id: clientId || null,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json({ success: true, policyNewsId: newsId?.id });
+      }
+
+      case 'update_policy_news': {
+        const { policyNewsId, title, content, keywords, date, isCMS, images, clientId } = params;
+        if (!policyNewsId) return res.status(400).json({ error: 'policyNewsId required' });
+
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (title !== undefined) updates.title = title;
+        if (content !== undefined) updates.content = content;
+        if (keywords !== undefined) updates.keywords = keywords;
+        if (date !== undefined) updates.date = date;
+        if (isCMS !== undefined) updates.is_cms = isCMS;
+        if (images !== undefined) updates.images = images;
+        if (clientId !== undefined) updates.client_id = clientId;
+
+        const { error } = await supabase.from('policy_news').update(updates).eq('id', policyNewsId);
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      case 'update_policy_news_images': {
+        const { policyNewsId, images } = params;
+        if (!policyNewsId) return res.status(400).json({ error: 'policyNewsId required' });
+
+        const { error } = await supabase.from('policy_news').update({ images: images || [], updated_at: new Date().toISOString() }).eq('id', policyNewsId);
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      case 'delete_policy_news': {
+        const { policyNewsId } = params;
+        if (!policyNewsId) return res.status(400).json({ error: 'policyNewsId required' });
+
+        const { error } = await supabase.from('policy_news').delete().eq('id', policyNewsId);
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      case 'bulk_insert_policy_news': {
+        const { data: bulkData } = params;
+        if (!bulkData || !Array.isArray(bulkData)) return res.status(400).json({ error: 'data array required' });
+
+        let inserted = 0;
+        const errors: Array<{ client_name: string; row: number; reason: string }> = [];
+        const duplicates: string[] = [];
+
+        for (let i = 0; i < bulkData.length; i++) {
+          const item = bulkData[i] as Record<string, unknown>;
+          try {
+            // 중복 체크: client_id + date + title
+            const { data: existing } = await supabase
+              .from('policy_news')
+              .select('id')
+              .eq('client_id', item.client_id as string)
+              .eq('date', item.date as string)
+              .eq('title', item.title as string)
+              .maybeSingle();
+
+            if (existing) {
+              duplicates.push(`${item.client_name || ''} / ${item.date} / ${item.title}`);
+              continue;
+            }
+
+            const { error } = await supabase.from('policy_news').insert({
+              title: item.title || null,
+              content: item.content,
+              keywords: item.keywords || [],
+              date: item.date,
+              is_cms: item.is_cms ?? false,
+              client_id: item.client_id || null,
+            });
+            if (error) throw error;
+            inserted++;
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            errors.push({ client_name: String(item.client_name || ''), row: i + 2, reason: message });
+          }
+        }
+
+        return res.status(200).json({
+          success: true,
+          inserted,
+          duplicates,
+          duplicate_count: duplicates.length,
+          errors,
+        });
+      }
+
       // ===== 종목 엑셀 벌크 업데이트 =====
       case 'bulk_update_stock_metrics': {
         const { data: bulkData } = params;

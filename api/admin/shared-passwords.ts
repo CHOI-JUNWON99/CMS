@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'GET': {
         const { data, error } = await supabase
           .from('shared_passwords')
-          .select('id, name, password, is_master, client_ids, brand_color, is_active')
+          .select('id, name, password, is_master, client_ids, brand_color, is_active, show_policy_news')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       case 'POST': {
-        const { name, password, isMaster, clientIds, brandColor } = req.body || {};
+        const { name, password, isMaster, clientIds, brandColor, showPolicyNews } = req.body || {};
         if (!name || !password) {
           return res.status(400).json({ error: 'Name and password required' });
         }
@@ -39,6 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             is_master: isMaster || false,
             client_ids: clientIds || [],
             brand_color: brandColor || null,
+            show_policy_news: showPolicyNews ?? false,
           });
 
         if (error) throw error;
@@ -46,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       case 'PUT': {
-        const { id, name, password, isMaster, clientIds, brandColor, isActive } = req.body || {};
+        const { id, name, password, isMaster, clientIds, brandColor, isActive, showPolicyNews } = req.body || {};
         if (!id) {
           return res.status(400).json({ error: 'Shared password ID required' });
         }
@@ -57,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (clientIds !== undefined) updates.client_ids = clientIds;
         if (brandColor !== undefined) updates.brand_color = brandColor || null;
         if (isActive !== undefined) updates.is_active = isActive;
+        if (showPolicyNews !== undefined) updates.show_policy_news = showPolicyNews;
         if (password && password.trim()) {
           const { data: hash, error: hashError } = await supabase.rpc('hash_password', { plain_password: password.trim() });
           if (hashError) throw hashError;

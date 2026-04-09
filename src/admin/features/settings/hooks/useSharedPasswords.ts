@@ -17,6 +17,7 @@ interface SharedPasswordRow {
   client_ids: string[] | null;
   brand_color: string | null;
   is_active: boolean;
+  show_policy_news?: boolean;
 }
 
 // 공유 비밀번호 목록 조회
@@ -50,6 +51,7 @@ export function useSharedPasswords() {
         clientIds: row.client_ids || [],
         brandColor: row.brand_color ?? undefined,
         isActive: row.is_active,
+        showPolicyNews: row.show_policy_news ?? false,
       }));
     },
   });
@@ -66,6 +68,7 @@ export function useAddSharedPassword() {
       isMaster: boolean;
       clientIds: string[];
       brandColor?: string;
+      showPolicyNews?: boolean;
     }) => {
       if (import.meta.env.PROD) {
         const res = await fetch('/api/admin/shared-passwords', {
@@ -78,6 +81,7 @@ export function useAddSharedPassword() {
             isMaster: data.isMaster,
             clientIds: data.clientIds,
             brandColor: data.brandColor || null,
+            showPolicyNews: data.showPolicyNews ?? false,
           }),
         });
         if (!res.ok) {
@@ -93,6 +97,7 @@ export function useAddSharedPassword() {
           sp_is_master: data.isMaster,
           sp_client_ids: data.clientIds,
           sp_brand_color: data.brandColor || null,
+          sp_show_policy_news: data.showPolicyNews ?? false,
         });
         if (error) throw error;
       }
@@ -116,6 +121,7 @@ export function useUpdateSharedPassword() {
       clientIds: string[];
       brandColor?: string;
       isActive?: boolean;
+      showPolicyNews?: boolean;
     }) => {
       if (import.meta.env.PROD) {
         const res = await fetch('/api/admin/shared-passwords', {
@@ -130,6 +136,7 @@ export function useUpdateSharedPassword() {
             clientIds: data.clientIds,
             brandColor: data.brandColor || null,
             isActive: data.isActive ?? true,
+            showPolicyNews: data.showPolicyNews ?? false,
           }),
         });
         if (!res.ok) {
@@ -147,6 +154,7 @@ export function useUpdateSharedPassword() {
           new_client_ids: data.clientIds,
           new_brand_color: data.brandColor || null,
           new_is_active: data.isActive ?? true,
+          new_show_policy_news: data.showPolicyNews ?? false,
         });
         if (error) throw error;
       }

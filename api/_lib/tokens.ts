@@ -12,6 +12,7 @@ export interface TokenPayload {
   clientName?: string;
   brandColor?: string;
   logoUrl?: string;
+  showPolicyNews?: boolean;
 }
 
 // Access Token 만료: 사용자 15분, 관리자 30분 (Sliding Session)

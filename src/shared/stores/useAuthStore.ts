@@ -16,6 +16,7 @@ interface AuthState {
   accessType: 'single' | 'shared' | 'master' | null;
   clientInfo: ClientInfo | null;
   clientIds: string[]; // shared 타입용
+  showPolicyNews: boolean;
 
   // 계산된 값
   isSessionValid: () => boolean;
@@ -26,6 +27,7 @@ interface AuthState {
     clientInfo?: ClientInfo;
     clientIds?: string[];
     codeVersion?: string;
+    showPolicyNews?: boolean;
   }) => void;
   logout: () => void;
   extendSession: () => void;
@@ -46,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
     accessType: null,
     clientInfo: null,
     clientIds: [],
+    showPolicyNews: false,
 
     // 계산된 값
     isSessionValid: () => {
@@ -55,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
     },
 
     // 액션
-    login: ({ accessType, clientInfo, clientIds, codeVersion }) => {
+    login: ({ accessType, clientInfo, clientIds, codeVersion, showPolicyNews }) => {
       const expiresAt = Date.now() + SESSION_DURATION_MS;
       set({
         isAuthenticated: true,
@@ -65,6 +68,7 @@ export const useAuthStore = create<AuthState>()(
         clientInfo: clientInfo || null,
         clientIds: clientIds || [],
         codeVersion: codeVersion || '1',
+        showPolicyNews: showPolicyNews ?? false,
       });
     },
 
@@ -79,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
         accessType: null,
         clientInfo: null,
         clientIds: [],
+        showPolicyNews: false,
       });
     },
 
@@ -119,6 +124,7 @@ export const useAuthStore = create<AuthState>()(
             clientInfo: data.clientInfo || null,
             clientIds: data.clientIds || [],
             codeVersion: '1',
+            showPolicyNews: data.showPolicyNews ?? false,
           });
         } else {
           set({ isLoading: false });

@@ -94,6 +94,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
             clientInfo: data.clientInfo,
             clientIds: data.clientIds || [],
             codeVersion: '1',
+            showPolicyNews: data.showPolicyNews ?? false,
           });
           onAuthenticated();
           return;
@@ -109,6 +110,19 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
         if (data) {
           clearLoginAttempts();
           const result = data as { type: string; id: string; name: string; logo_url?: string; brand_color?: string; client_ids?: string[] };
+
+          // DEV: show_policy_news 플래그 조회
+          let showPolicyNews = false;
+          if (result.type === 'master') {
+            showPolicyNews = true;
+          } else if (result.type === 'shared') {
+            const { data: spRow } = await supabase.from('shared_passwords').select('show_policy_news').eq('id', result.id).single();
+            showPolicyNews = spRow?.show_policy_news ?? false;
+          } else if (result.type === 'single') {
+            const { data: clientRow } = await supabase.from('clients').select('show_policy_news').eq('id', result.id).single();
+            showPolicyNews = clientRow?.show_policy_news ?? false;
+          }
+
           login({
             accessType: result.type as 'single' | 'shared' | 'master',
             clientInfo: {
@@ -119,6 +133,7 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
             },
             clientIds: result.client_ids || [],
             codeVersion: '1',
+            showPolicyNews,
           });
           onAuthenticated();
           return;

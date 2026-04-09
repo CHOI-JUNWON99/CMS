@@ -12,12 +12,14 @@ interface ExcelUploadGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
   onFileSelect: (file: File) => void;
+  isPolicyNews?: boolean;
 }
 
 export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
   isOpen,
   onClose,
   onFileSelect,
+  isPolicyNews,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +46,7 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
         />
 
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-black text-white">뉴스 엑셀 일괄 등록</h3>
+          <h3 className="text-lg font-black text-white">{isPolicyNews ? '정책 뉴스' : '뉴스'} 엑셀 일괄 등록</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -71,7 +73,9 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
               <table className="w-full text-xs border border-slate-600">
                 <thead>
                   <tr className="bg-slate-700/50">
-                    <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">ticker</th>
+                    {!isPolicyNews && (
+                      <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">ticker</th>
+                    )}
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">date</th>
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">title</th>
                     <th className="py-2 px-2 text-emerald-400 font-mono border-r border-slate-600">content</th>
@@ -81,29 +85,52 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
-                  <tr className="border-t border-slate-600">
-                    <td className="py-2 px-2 border-r border-slate-600">9988.HK</td>
-                    <td className="py-2 px-2 border-r border-slate-600">25/01/15</td>
-                    <td className="py-2 px-2 border-r border-slate-600">Qwen App MAU...</td>
-                    <td className="py-2 px-2 border-r border-slate-600">산하 Qwen App...</td>
-                    <td className="py-2 px-2 border-r border-slate-600">로이터</td>
-                    <td className="py-2 px-2 border-r border-slate-600">AI, 클라우드</td>
-                    <td className="py-2 px-2">TRUE</td>
-                  </tr>
-                  <tr className="border-t border-slate-600/50">
-                    <td className="py-2 px-2 border-r border-slate-600">AAPL</td>
-                    <td className="py-2 px-2 border-r border-slate-600">25/01/16</td>
-                    <td className="py-2 px-2 border-r border-slate-600">신제품 발표...</td>
-                    <td className="py-2 px-2 border-r border-slate-600">애플이 새로운...</td>
-                    <td className="py-2 px-2 border-r border-slate-600">블룸버그</td>
-                    <td className="py-2 px-2 border-r border-slate-600">아이폰</td>
-                    <td className="py-2 px-2">FALSE</td>
-                  </tr>
+                  {isPolicyNews ? (
+                    <>
+                      <tr className="border-t border-slate-600">
+                        <td className="py-2 px-2 border-r border-slate-600">25/01/15</td>
+                        <td className="py-2 px-2 border-r border-slate-600">중국 AI 정책...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">중국 정부가...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">로이터</td>
+                        <td className="py-2 px-2 border-r border-slate-600">AI, 정책</td>
+                        <td className="py-2 px-2">TRUE</td>
+                      </tr>
+                      <tr className="border-t border-slate-600/50">
+                        <td className="py-2 px-2 border-r border-slate-600">25/01/16</td>
+                        <td className="py-2 px-2 border-r border-slate-600">반도체 규제...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">미국의 새로운...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">블룸버그</td>
+                        <td className="py-2 px-2 border-r border-slate-600">반도체</td>
+                        <td className="py-2 px-2">FALSE</td>
+                      </tr>
+                    </>
+                  ) : (
+                    <>
+                      <tr className="border-t border-slate-600">
+                        <td className="py-2 px-2 border-r border-slate-600">9988.HK</td>
+                        <td className="py-2 px-2 border-r border-slate-600">25/01/15</td>
+                        <td className="py-2 px-2 border-r border-slate-600">Qwen App MAU...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">산하 Qwen App...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">로이터</td>
+                        <td className="py-2 px-2 border-r border-slate-600">AI, 클라우드</td>
+                        <td className="py-2 px-2">TRUE</td>
+                      </tr>
+                      <tr className="border-t border-slate-600/50">
+                        <td className="py-2 px-2 border-r border-slate-600">AAPL</td>
+                        <td className="py-2 px-2 border-r border-slate-600">25/01/16</td>
+                        <td className="py-2 px-2 border-r border-slate-600">신제품 발표...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">애플이 새로운...</td>
+                        <td className="py-2 px-2 border-r border-slate-600">블룸버그</td>
+                        <td className="py-2 px-2 border-r border-slate-600">아이폰</td>
+                        <td className="py-2 px-2">FALSE</td>
+                      </tr>
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="mt-3 text-xs text-slate-400">
-              <span className="text-red-400">● 필수:</span> ticker, date, title, content &nbsp;
+              <span className="text-red-400">● 필수:</span> {isPolicyNews ? '' : 'ticker, '}date, title, content &nbsp;
               <span className="text-slate-500">● 선택:</span> source, keywords, is_cms
             </div>
           </div>
@@ -131,10 +158,10 @@ export const ExcelUploadGuideModal: React.FC<ExcelUploadGuideModalProps> = ({
             <p className="text-amber-300 text-sm font-bold mb-2">주의사항</p>
             <ul className="text-slate-300 text-sm space-y-1 list-disc list-inside">
               <li>첫 번째 행은 반드시 헤더여야 합니다</li>
-              <li>ticker는 DB에 등록된 종목 티커와 정확히 일치해야 합니다</li>
+              {!isPolicyNews && <li>ticker는 DB에 등록된 종목 티커와 정확히 일치해야 합니다</li>}
               <li>date는 YY/MM/DD 형식 또는 엑셀 날짜 형식 모두 지원합니다</li>
               <li>
-                <span className="text-emerald-400">중복 체크:</span> 티커 + 날짜 + 제목이 동일하면 자동 스킵됩니다
+                <span className="text-emerald-400">중복 체크:</span> {isPolicyNews ? '날짜 + 제목이' : '티커 + 날짜 + 제목이'} 동일하면 자동 스킵됩니다
               </li>
               <li>이미지는 엑셀로 업로드할 수 없습니다 (개별 편집 사용)</li>
             </ul>

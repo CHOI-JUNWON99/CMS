@@ -75,6 +75,7 @@ export interface SharedPassword {
   clientIds: string[];  // 선택적 공유 시 접근 가능한 소속 ID 목록
   brandColor?: string;
   isActive: boolean;
+  showPolicyNews?: boolean;  // 정책 뉴스 표시 여부
 }
 
 export interface Resource {
@@ -189,6 +190,32 @@ export interface DbIssueRow {
   created_at: string | null;
   updated_at: string | null;
   images: IssueImage[] | null;
+}
+
+export interface DbPolicyNewsRow {
+  id: string;
+  title: string | null;
+  content: string;
+  keywords: string[] | null;
+  date: string;
+  is_cms: boolean | null;
+  images: IssueImage[] | null;
+  client_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface PolicyNews {
+  id: string;
+  title?: string;
+  content: string;
+  keywords: string[];
+  date: string;
+  isCMS: boolean;
+  images: IssueImage[];
+  clientId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DbClientRow {

@@ -28,5 +28,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       brandColor: payload.brandColor,
     } : undefined,
     clientIds: payload.clientIds || [],
+    showPolicyNews: payload.showPolicyNews ?? false,
   });
 }

@@ -9,7 +9,7 @@ import { AccessGate } from '@/features/auth';
 import { StockList, StockDetail, SummaryCard } from '@/features/stocks';
 import { usePortfolios, usePortfolioStockIds, useRecordPortfolioView } from '@/features/portfolio';
 import { useStocksWithRelations } from '@/features/stocks';
-import { IssuesFeed } from '@/features/issues';
+import { NewsFeedContainer, usePolicyNews, useLatestPolicyNews } from '@/features/issues';
 import { useGlossary } from '@/features/glossary';
 import { ResourcesView, useHasNewResources } from '@/features/resources';
 import { useIBOpinionsInfinite, useIBDateGroups } from '@/features/ib/hooks/useIBOpinions';
@@ -70,7 +70,10 @@ const App: React.FC = () => {
   const { data: stocks = [], isLoading: stocksLoading } = useStocksWithRelations(allStockIds);
   const { data: glossary = {} } = useGlossary();
   const recordViewMutation = useRecordPortfolioView();
+  const { data: policyNewsItems = [] } = usePolicyNews();
+  const { data: latestPolicyNews } = useLatestPolicyNews();
   const hasNewResources = useHasNewResources();
+  const setNewsSubTab = useUIStore((state) => state.setNewsSubTab);
   const ibQuery = useIBOpinionsInfinite();
   const ibDateGroups = useIBDateGroups(ibQuery);
   const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string; opinionId: string } | null>(null);
@@ -110,6 +113,19 @@ const App: React.FC = () => {
       };
     });
   }, [portfolios, stocks, stockIdsByPortfolio, clientInfo?.brandColor]);
+
+  // 최신 종목 뉴스 (포트폴리오 카드용, 최대 2개)
+  const latestStockNews = useMemo((): { stockName: string; title?: string; content: string; date: string }[] => {
+    const all: { stockName: string; title?: string; content: string; date: string }[] = [];
+    for (const stock of stocks) {
+      if (stock.issues && stock.issues.length > 0) {
+        for (const issue of stock.issues) {
+          all.push({ stockName: stock.nameKr, title: issue.title, content: issue.content, date: issue.date });
+        }
+      }
+    }
+    return all.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
+  }, [stocks]);
 
   // 선택된 종목
   const selectedStock = useMemo(() => {
@@ -249,6 +265,59 @@ const App: React.FC = () => {
             </nav>
             {activeTab === 'PORTFOLIO' ? (
               <div className="flex flex-col">
+                {/* 최신 뉴스 미리보기 카드 */}
+                {(latestStockNews.length > 0 || latestPolicyNews) && (() => {
+                  // 정책 뉴스 있으면: 종목 1개 + 정책 1개, 없으면: 종목 2개
+                  const stockCardsToShow = latestPolicyNews ? latestStockNews.slice(0, 1) : latestStockNews.slice(0, 2);
+                  return (
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8`}>
+                      {stockCardsToShow.map((news, idx) => (
+                        <button
+                          key={`stock-news-${idx}`}
+                          onClick={() => { setActiveTab('ISSUES'); setNewsSubTab('individual'); }}
+                          className={`text-left p-4 rounded-xl border transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                            isDarkMode ? 'bg-[#112240] border-slate-700 hover:border-slate-500' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-blue-900/40 text-blue-300 border border-blue-700' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>
+                              종목 뉴스
+                            </span>
+                            <span className={`text-[11px] font-mono ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>{news.date}</span>
+                          </div>
+                          <p className={`text-[11px] font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{news.stockName}</p>
+                          <p className={`text-sm font-black truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {news.title || news.content}
+                          </p>
+                          <p className={`text-xs mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                            {news.title ? news.content : ''}
+                          </p>
+                        </button>
+                      ))}
+                      {latestPolicyNews && (
+                        <button
+                          onClick={() => { setActiveTab('ISSUES'); setNewsSubTab('policy'); }}
+                          className={`text-left p-4 rounded-xl border transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                            isDarkMode ? 'bg-[#112240] border-slate-700 hover:border-slate-500' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-purple-900/40 text-purple-300 border border-purple-700' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
+                              정책 뉴스
+                            </span>
+                            <span className={`text-[11px] font-mono ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>{latestPolicyNews.date}</span>
+                          </div>
+                          <p className={`text-sm font-black truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {latestPolicyNews.title || latestPolicyNews.content}
+                          </p>
+                          <p className={`text-xs mt-1 truncate ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                            {latestPolicyNews.title ? latestPolicyNews.content : ''}
+                          </p>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
                 {portfolioGroups.map(group => {
                   const isExpanded = expandedPortfolios.includes(group.id);
                   const isIB = group.portfolioType === 'ib';
@@ -306,7 +375,7 @@ const App: React.FC = () => {
                 })}
               </div>
             ) : activeTab === 'ISSUES' ? (
-              <IssuesFeed stocks={stocks} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
+              <NewsFeedContainer stocks={stocks} policyNewsItems={policyNewsItems} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
             ) : (
               <ResourcesView isDarkMode={isDarkMode} />
             )}

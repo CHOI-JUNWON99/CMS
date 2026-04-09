@@ -134,6 +134,24 @@ export const adminIssuesApi = {
     adminData<{ success: boolean }>({ action: 'delete', table: 'issues', id }),
 };
 
+// --- Policy News ---
+export const adminPolicyNewsApi = {
+  create: (data: {
+    title?: string | null;
+    content: string;
+    keywords: string[];
+    date: string;
+    is_cms: boolean;
+    client_id?: string | null;
+  }) => adminData<{ success: boolean }>({ action: 'insert', table: 'policy_news', data }),
+
+  update: (id: string, updates: Record<string, unknown>) =>
+    adminData<{ success: boolean }>({ action: 'update', table: 'policy_news', id, data: updates }),
+
+  delete: (id: string) =>
+    adminData<{ success: boolean }>({ action: 'delete', table: 'policy_news', id }),
+};
+
 // --- Segment Icons ---
 export const adminSegmentIconsApi = {
   create: (data: { name: string; icon_url: string }) =>

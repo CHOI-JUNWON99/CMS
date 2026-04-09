@@ -2,11 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ViewMode, MainTab, SortKey, SortDirection } from '@/shared/types';
 
+export type NewsSubTab = 'individual' | 'policy';
+
 interface UIState {
   // 뷰 상태
   viewMode: ViewMode;
   activeTab: MainTab;
   isDarkMode: boolean;
+
+  // 뉴스 서브탭
+  newsSubTab: NewsSubTab;
 
   // 정렬 상태
   sortKey: SortKey;
@@ -24,6 +29,7 @@ interface UIState {
   // 액션
   setViewMode: (mode: ViewMode) => void;
   setActiveTab: (tab: MainTab) => void;
+  setNewsSubTab: (tab: NewsSubTab) => void;
   toggleDarkMode: () => void;
   setSort: (key: SortKey) => void;
   togglePortfolio: (id: string) => void;
@@ -38,6 +44,7 @@ export const useUIStore = create<UIState>()(
       viewMode: 'DASHBOARD',
       activeTab: 'PORTFOLIO',
       isDarkMode: false,
+      newsSubTab: 'individual',
       sortKey: 'name',
       sortDirection: 'ASC',
       expandedPortfolios: [],
@@ -45,6 +52,7 @@ export const useUIStore = create<UIState>()(
       lastSeenResourcesAt: null,
 
       setViewMode: (mode) => set({ viewMode: mode }),
+      setNewsSubTab: (tab) => set({ newsSubTab: tab }),
 
       setActiveTab: (tab) => {
         if (tab === 'RESOURCES') {

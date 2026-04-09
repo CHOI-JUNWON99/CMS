@@ -12,6 +12,7 @@ interface IssueFormData {
   keywords: string;
   date: string;
   isCMS: boolean;
+  clientId?: string;
 }
 
 interface EditIssueData extends IssueFormData {
@@ -31,6 +32,7 @@ interface IssueModalProps {
   editItem?: FeedItem;
   isUploading: boolean;
   defaultStock?: { id: string; nameKr: string; ticker: string };
+  isPolicyNews?: boolean;
 }
 
 const getTodayDate = () => {
@@ -50,6 +52,7 @@ const IssueModal: React.FC<IssueModalProps> = ({
   editItem,
   isUploading,
   defaultStock,
+  isPolicyNews,
 }) => {
   const [formData, setFormData] = useState<IssueFormData | EditIssueData>(
     mode === 'add'
@@ -61,17 +64,19 @@ const IssueModal: React.FC<IssueModalProps> = ({
           keywords: '',
           date: getTodayDate(),
           isCMS: false,
+          clientId: '',
         }
       : {
           id: editItem?.id,
           stockId: editItem?.stockId || '',
-          stockName: `${editItem?.stockName} (${editItem?.stockTicker})`,
+          stockName: isPolicyNews ? '' : `${editItem?.stockName} (${editItem?.stockTicker})`,
           title: editItem?.title || '',
           content: editItem?.content || '',
           keywords: editItem?.keywords.join(', ') || '',
           date: editItem?.date || '',
           isCMS: editItem?.isCMS || false,
           existingImages: editItem?.images?.map((img) => img.url) || [],
+          clientId: editItem?.clientId || '',
         }
   );
   const [imageUploads, setImageUploads] = useState<ImageUpload[]>([]);
@@ -89,6 +94,7 @@ const IssueModal: React.FC<IssueModalProps> = ({
         keywords: '',
         date: getTodayDate(),
         isCMS: false,
+        clientId: '',
       });
       setImageUploads([]);
     }
@@ -101,16 +107,17 @@ const IssueModal: React.FC<IssueModalProps> = ({
       setFormData({
         id: editItem.id,
         stockId: editItem.stockId,
-        stockName: `${editItem.stockName} (${editItem.stockTicker})`,
+        stockName: isPolicyNews ? '' : `${editItem.stockName} (${editItem.stockTicker})`,
         title: editItem.title,
         content: editItem.content,
         keywords: editItem.keywords.join(', '),
         date: editItem.date,
         isCMS: editItem.isCMS,
         existingImages: editItem.images?.map((img) => img.url) || [],
+        clientId: editItem.clientId || '',
       });
     }
-  }, [mode, editItem]);
+  }, [mode, editItem, isPolicyNews]);
 
   const filteredStocks = useMemo(() => {
     if (!stockSearch.trim()) return stocks;
@@ -149,9 +156,16 @@ const IssueModal: React.FC<IssueModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!formData.stockId || !formData.title || !formData.content || !formData.date) {
-      toast.warning('종목, 제목, 내용, 날짜는 필수입니다.');
-      return;
+    if (isPolicyNews) {
+      if (!formData.content || !formData.date) {
+        toast.warning('내용, 날짜는 필수입니다.');
+        return;
+      }
+    } else {
+      if (!formData.stockId || !formData.title || !formData.content || !formData.date) {
+        toast.warning('종목, 제목, 내용, 날짜는 필수입니다.');
+        return;
+      }
     }
     await onSubmit(formData, imageUploads);
   };
@@ -165,12 +179,14 @@ const IssueModal: React.FC<IssueModalProps> = ({
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-lg p-6 my-8">
           <h3 className="text-lg font-black text-white mb-6">
-            {isEditMode ? '뉴스 수정' : '새 뉴스 추가'}
+            {isPolicyNews
+              ? (isEditMode ? '정책 뉴스 수정' : '새 정책 뉴스 추가')
+              : (isEditMode ? '뉴스 수정' : '새 뉴스 추가')}
           </h3>
 
           <div className="space-y-4">
-            {/* 종목 선택 (추가 모드 & defaultStock 없을 때만) */}
-            {isEditMode || defaultStock ? (
+            {/* 정책 뉴스: 소속 불필요 / 일반 뉴스: 종목 선택 */}
+            {isPolicyNews ? null : isEditMode || defaultStock ? (
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">종목</label>
                 <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
