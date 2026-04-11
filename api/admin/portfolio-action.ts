@@ -393,6 +393,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let inserted = 0;
         const errors: string[] = [];
 
+        // 엑셀에서 "#N/A", "-" 등 비정상 값을 안전하게 real로 변환
+        const safeReal = (v: unknown): number | null => {
+          if (v === undefined || v === null) return null;
+          const n = typeof v === 'number' ? v : parseFloat(String(v));
+          return isNaN(n) ? null : n;
+        };
+
         for (const item of bulkData as Record<string, unknown>[]) {
           const ticker = item.ticker as string;
           if (!ticker) continue;
@@ -411,20 +418,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (existing) {
             // 업데이트
             const updates: Record<string, unknown> = {};
-            if (item.price !== undefined) updates.price = item.price;
-            if (item.change !== undefined) updates.change = item.change;
             if (item.market_cap !== undefined) {
               updates.market_cap = item.market_cap;
               updates.market_cap_value = parseMarketCapToValue(String(item.market_cap));
             }
-            if (item.return_rate !== undefined) updates.return_rate = item.return_rate;
-            if (item.per !== undefined) updates.per = item.per;
-            if (item.pbr !== undefined) updates.pbr = item.pbr;
-            if (item.psr !== undefined) updates.psr = item.psr;
+            const rr = safeReal(item.return_rate); if (rr !== null) updates.return_rate = rr;
+            const pe = safeReal(item.per); if (pe !== null) updates.per = pe;
+            const pb = safeReal(item.pbr); if (pb !== null) updates.pbr = pb;
+            const ps = safeReal(item.psr); if (ps !== null) updates.psr = ps;
             if (item.description !== undefined) updates.description = item.description;
             if (item.keywords !== undefined) updates.keywords = item.keywords;
-            if (item.name !== undefined) updates.name = item.name;
-            if (item.name_kr !== undefined) updates.name_kr = item.name_kr;
+            if (item.name !== undefined && item.name !== null) updates.name = item.name;
+            if (item.name_kr !== undefined && item.name_kr !== null) updates.name_kr = item.name_kr;
             if (item.sector !== undefined) updates.sector = item.sector;
 
             if (Object.keys(updates).length > 0) {
@@ -439,17 +444,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const { error } = await supabase.from('stocks').insert({
               id: stockId,
               ticker,
-              name: item.name || ticker,
-              name_kr: item.name_kr || ticker,
-              sector: item.sector || '',
-              price: item.price || 0,
-              change: item.change || 0,
+              name: (item.name as string) || ticker,
+              name_kr: (item.name_kr as string) || ticker,
+              sector: (item.sector as string) || '',
               market_cap: mcStr,
               market_cap_value: mcStr ? parseMarketCapToValue(mcStr) : 0,
-              return_rate: item.return_rate || 0,
-              per: item.per || null,
-              pbr: item.pbr || null,
-              psr: item.psr || null,
+              return_rate: safeReal(item.return_rate) ?? 0,
+              per: safeReal(item.per),
+              pbr: safeReal(item.pbr),
+              psr: safeReal(item.psr),
               description: item.description || null,
               keywords: item.keywords || null,
               last_update: new Date().toISOString(),
