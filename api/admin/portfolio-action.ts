@@ -391,10 +391,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         let updated = 0;
         let inserted = 0;
+        const errors: string[] = [];
 
         for (const item of bulkData as Record<string, unknown>[]) {
           const ticker = item.ticker as string;
           if (!ticker) continue;
+
+          // ticker에서 id 추출 (예: "002050.SZ" → "002050")
+          const dotIndex = ticker.indexOf('.');
+          const stockId = dotIndex > 0 ? ticker.substring(0, dotIndex) : ticker;
 
           // 기존 종목 확인
           const { data: existing } = await supabase
@@ -410,20 +415,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (item.change !== undefined) updates.change = item.change;
             if (item.market_cap !== undefined) {
               updates.market_cap = item.market_cap;
-              // market_cap_value도 함께 계산하여 정렬 정합성 유지
               updates.market_cap_value = parseMarketCapToValue(String(item.market_cap));
             }
             if (item.return_rate !== undefined) updates.return_rate = item.return_rate;
+            if (item.per !== undefined) updates.per = item.per;
+            if (item.pbr !== undefined) updates.pbr = item.pbr;
+            if (item.psr !== undefined) updates.psr = item.psr;
+            if (item.description !== undefined) updates.description = item.description;
+            if (item.keywords !== undefined) updates.keywords = item.keywords;
+            if (item.name !== undefined) updates.name = item.name;
+            if (item.name_kr !== undefined) updates.name_kr = item.name_kr;
+            if (item.sector !== undefined) updates.sector = item.sector;
 
             if (Object.keys(updates).length > 0) {
               updates.last_update = new Date().toISOString();
               const { error } = await supabase.from('stocks').update(updates).eq('id', existing.id);
               if (!error) updated++;
+              else errors.push(`Update failed for ${ticker}: ${error.message}`);
             }
           } else {
-            // 신규 삽입
+            // 신규 삽입 - id 필수
             const mcStr = item.market_cap ? String(item.market_cap) : null;
             const { error } = await supabase.from('stocks').insert({
+              id: stockId,
               ticker,
               name: item.name || ticker,
               name_kr: item.name_kr || ticker,
@@ -433,13 +447,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               market_cap: mcStr,
               market_cap_value: mcStr ? parseMarketCapToValue(mcStr) : 0,
               return_rate: item.return_rate || 0,
+              per: item.per || null,
+              pbr: item.pbr || null,
+              psr: item.psr || null,
+              description: item.description || null,
+              keywords: item.keywords || null,
               last_update: new Date().toISOString(),
             });
             if (!error) inserted++;
+            else errors.push(`Insert failed for ${ticker}: ${error.message}`);
           }
         }
 
-        return res.status(200).json({ success: true, updated, inserted });
+        return res.status(200).json({ success: true, updated, inserted, errors: errors.length > 0 ? errors : undefined });
       }
 
       default:
