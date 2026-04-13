@@ -78,6 +78,35 @@ export interface SharedPassword {
   showPolicyNews?: boolean;  // 정책 뉴스 표시 여부
 }
 
+export interface ETF {
+  id: string;
+  clientId?: string | null;
+  code: string;
+  nameEn: string;
+  closePriceCny: number | null;
+  minimumPurchaseUnit: number | null;
+  minimumPurchaseAmountKrw: number | null;
+  listingDate: string | null;
+  aumCnyMillion: number | null;
+  aumKrwBillion: number | null;
+  benchmarkNameEn: string | null;
+  categoryLarge: string | null;
+  categorySmall: string | null;
+  ter: number | null;
+  dividendYield: number | null;
+  avgTradingValueYtdBillion: number | null;
+  return1M: number | null;
+  return3M: number | null;
+  return6M: number | null;
+  return1Y: number | null;
+  sector: string | null;
+  volume: number | null;
+  summary: string | null;
+  isActive: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 export interface Resource {
   id: string;
   title: string;
@@ -91,7 +120,7 @@ export interface Resource {
   originalFilename?: string;
 }
 
-export type ViewMode = 'DASHBOARD' | 'DETAIL' | 'IB_DETAIL';
+export type ViewMode = 'DASHBOARD' | 'DETAIL' | 'IB_DETAIL' | 'ETF_DETAIL';
 export type MainTab = 'PORTFOLIO' | 'ISSUES' | 'RESOURCES';
 
 export type SortKey = 'name' | 'sector' | 'keywords' | 'marketCapValue' | 'returnRate';
@@ -216,6 +245,35 @@ export interface PolicyNews {
   clientId?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface DbEtfRow {
+  id: string;
+  client_id: string | null;
+  code: string;
+  name_en: string;
+  close_price_cny: number | null;
+  minimum_purchase_unit: number | null;
+  minimum_purchase_amount_krw: number | null;
+  listing_date: string | null;
+  aum_cny_million: number | null;
+  aum_krw_billion: number | null;
+  benchmark_name_en: string | null;
+  category_large: string | null;
+  category_small: string | null;
+  ter: number | null;
+  dividend_yield: number | null;
+  avg_trading_value_ytd_billion: number | null;
+  return_1m: number | null;
+  return_3m: number | null;
+  return_6m: number | null;
+  return_1y: number | null;
+  sector: string | null;
+  volume: number | null;
+  summary: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface DbClientRow {

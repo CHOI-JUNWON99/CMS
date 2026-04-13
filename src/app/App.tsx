@@ -8,6 +8,7 @@ import { getSimplifiedSector } from '@/shared/utils';
 import { AccessGate } from '@/features/auth';
 import { StockList, StockDetail, SummaryCard } from '@/features/stocks';
 import { usePortfolios, usePortfolioStockIds, useRecordPortfolioView } from '@/features/portfolio';
+import { ETFList, ETFDetail, useEtfs } from '@/features/etf';
 import { useStocksWithRelations } from '@/features/stocks';
 import { NewsFeedContainer, usePolicyNews, useLatestPolicyNews } from '@/features/issues';
 import { useGlossary } from '@/features/glossary';
@@ -24,6 +25,8 @@ interface PortfolioGroup {
   returnRate: number;
   portfolioType: string;
 }
+
+const ETF_PORTFOLIO_ID = '__etf_portfolio__';
 
 const App: React.FC = () => {
   // Auth Store
@@ -52,6 +55,8 @@ const App: React.FC = () => {
   const resetExpandedPortfolios = useUIStore((state) => state.resetExpandedPortfolios);
   const selectedStockId = useUIStore((state) => state.selectedStockId);
   const setSelectedStockId = useUIStore((state) => state.setSelectedStockId);
+  const selectedEtfId = useUIStore((state) => state.selectedEtfId);
+  const setSelectedEtfId = useUIStore((state) => state.setSelectedEtfId);
 
   // 세션 복원
   useEffect(() => {
@@ -69,6 +74,7 @@ const App: React.FC = () => {
   const stockIdsByPortfolio = portfolioStockData?.stockIdsByPortfolio || {};
   const { data: stocks = [], isLoading: stocksLoading } = useStocksWithRelations(allStockIds);
   const { data: glossary = {} } = useGlossary();
+  const { data: etfs = [], isLoading: etfsLoading } = useEtfs();
   const recordViewMutation = useRecordPortfolioView();
   const { data: policyNewsItems = [] } = usePolicyNews();
   const { data: latestPolicyNews } = useLatestPolicyNews();
@@ -77,8 +83,9 @@ const App: React.FC = () => {
   const ibQuery = useIBOpinionsInfinite();
   const ibDateGroups = useIBDateGroups(ibQuery);
   const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string; opinionId: string } | null>(null);
+  const [etfSearchQuery, setEtfSearchQuery] = React.useState('');
 
-  const isLoading = portfoliosLoading || stocksLoading;
+  const isLoading = portfoliosLoading || stocksLoading || etfsLoading;
 
   // 포트폴리오별 검색어 업데이트 함수
   const updateSearchQuery = useCallback((portfolioId: string, query: string) => {
@@ -132,6 +139,20 @@ const App: React.FC = () => {
     return stocks.find(s => s.id === selectedStockId) || null;
   }, [stocks, selectedStockId]);
 
+  const selectedEtf = useMemo(() => {
+    return etfs.find(etf => etf.id === selectedEtfId) || null;
+  }, [etfs, selectedEtfId]);
+
+  const filteredEtfs = useMemo(() => {
+    const query = etfSearchQuery.trim().toLowerCase();
+    if (!query) return etfs;
+    return etfs.filter(etf =>
+      [etf.code, etf.nameEn, etf.sector, etf.categoryLarge, etf.categorySmall]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(query))
+    );
+  }, [etfs, etfSearchQuery]);
+
   // 세션 만료 체크 (60초 간격)
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -180,7 +201,14 @@ const App: React.FC = () => {
   const handleBackToDashboard = () => {
     setViewMode('DASHBOARD');
     setSelectedStockId(null);
+    setSelectedEtfId(null);
     setSelectedIBStock(null);
+  };
+
+  const handleEtfSelect = (etfId: string) => {
+    setSelectedEtfId(etfId);
+    setViewMode('ETF_DETAIL');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleIBStockSelect = (opinion: { id: string; ticker: string; stockName: string; sector: string }) => {
@@ -195,7 +223,7 @@ const App: React.FC = () => {
 
   const handleTogglePortfolio = (portfolioId: string) => {
     const isCurrentlyExpanded = expandedPortfolios.includes(portfolioId);
-    if (!isCurrentlyExpanded) {
+    if (!isCurrentlyExpanded && portfolioId !== ETF_PORTFOLIO_ID) {
       recordViewMutation.mutate(portfolioId);
     }
     togglePortfolio(portfolioId);
@@ -373,6 +401,39 @@ const App: React.FC = () => {
                     </div>
                   );
                 })}
+
+                {etfs.length > 0 && (
+                  <div className="mb-10">
+                    <SummaryCard
+                      averageReturn={0}
+                      isDarkMode={isDarkMode}
+                      isExpanded={expandedPortfolios.includes(ETF_PORTFOLIO_ID)}
+                      onToggle={() => handleTogglePortfolio(ETF_PORTFOLIO_ID)}
+                      portfolioName="ETF"
+                      brandColor={clientInfo?.brandColor}
+                    />
+                    <div className={`transition-all duration-700 ease-in-out origin-top ${
+                      expandedPortfolios.includes(ETF_PORTFOLIO_ID)
+                        ? 'opacity-100 scale-100 translate-y-0 visible'
+                        : 'opacity-0 scale-95 -translate-y-10 invisible h-0 overflow-hidden'
+                    }`}>
+                      <div className="mt-4 mb-2">
+                        <SearchInput
+                          value={etfSearchQuery}
+                          onChange={setEtfSearchQuery}
+                          placeholder="ETF 코드, 명칭, 섹터, 카테고리로 검색..."
+                          isDarkMode={isDarkMode}
+                          className="w-full"
+                        />
+                      </div>
+                      <ETFList
+                        etfs={filteredEtfs}
+                        onSelect={(etf) => handleEtfSelect(etf.id)}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : activeTab === 'ISSUES' ? (
               <NewsFeedContainer stocks={stocks} policyNewsItems={policyNewsItems} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
@@ -382,6 +443,8 @@ const App: React.FC = () => {
           </div>
         ) : viewMode === 'IB_DETAIL' ? (
           selectedIBStock && <IBStockDetail ticker={selectedIBStock.ticker} stockName={selectedIBStock.stockName} sector={selectedIBStock.sector} opinionId={selectedIBStock.opinionId} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
+        ) : viewMode === 'ETF_DETAIL' ? (
+          selectedEtf && <ETFDetail etf={selectedEtf} onBack={handleBackToDashboard} isDarkMode={isDarkMode} />
         ) : (
           selectedStock && <StockDetail stock={selectedStock} onBack={handleBackToDashboard} isDarkMode={isDarkMode} glossary={glossary} />
         )}

@@ -281,13 +281,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { title, content, keywords, date, isCMS, clientId } = params;
         if (!content) return res.status(400).json({ error: 'content required' });
 
+        const newsDate = date || new Date().toISOString().slice(0, 10);
+
+        // 중복 체크: date + title
+        if (title) {
+          const { data: existing } = await supabase
+            .from('policy_news')
+            .select('id')
+            .eq('date', newsDate)
+            .eq('title', title)
+            .maybeSingle();
+
+          if (existing) {
+            return res.status(409).json({ error: '이미 동일한 날짜와 제목의 정책 뉴스가 존재합니다.' });
+          }
+        }
+
         const { data: newsId, error } = await supabase
           .from('policy_news')
           .insert({
             title: title || null,
             content,
             keywords: keywords || [],
-            date: date || new Date().toISOString().slice(0, 10),
+            date: newsDate,
             is_cms: isCMS ?? false,
             client_id: clientId || null,
           })
@@ -463,6 +479,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         return res.status(200).json({ success: true, updated, inserted, errors: errors.length > 0 ? errors : undefined });
+      }
+
+      case 'bulk_upsert_etfs': {
+        const { data: bulkData } = params;
+        if (!bulkData || !Array.isArray(bulkData)) return res.status(400).json({ error: 'data array required' });
+
+        const errors: Array<{ row: number; reason: string }> = [];
+        const validItems: Record<string, unknown>[] = [];
+
+        for (let i = 0; i < bulkData.length; i++) {
+          const item = bulkData[i] as Record<string, unknown>;
+          const code = String(item.code || '').trim();
+          const clientId = String(item.client_id || '').trim();
+
+          if (!code || !clientId) {
+            errors.push({ row: i + 2, reason: 'client_id and code required' });
+            continue;
+          }
+          validItems.push({
+            ...item,
+            code,
+            client_id: clientId,
+            updated_at: new Date().toISOString(),
+          });
+        }
+
+        if (validItems.length === 0) {
+          return res.status(200).json({ success: true, inserted: 0, updated: 0, errors });
+        }
+
+        const existingKeys = new Set<string>();
+        const clientIds = [...new Set(validItems.map((item) => String(item.client_id)))];
+        const codes = [...new Set(validItems.map((item) => String(item.code)))];
+
+        const { data: existingRows, error: existingError } = await supabase
+          .from('etfs')
+          .select('client_id, code')
+          .in('client_id', clientIds)
+          .in('code', codes);
+
+        if (existingError) throw existingError;
+
+        for (const row of existingRows || []) {
+          const existing = row as { client_id: string; code: string };
+          existingKeys.add(`${existing.client_id}::${existing.code}`);
+        }
+
+        const { error: upsertError } = await supabase
+          .from('etfs')
+          .upsert(validItems, { onConflict: 'client_id,code' });
+
+        if (upsertError) throw upsertError;
+
+        let updated = 0;
+        let inserted = 0;
+        for (const item of validItems) {
+          const key = `${String(item.client_id)}::${String(item.code)}`;
+          if (existingKeys.has(key)) updated++;
+          else inserted++;
+        }
+
+        return res.status(200).json({ success: true, inserted, updated, errors });
       }
 
       default:

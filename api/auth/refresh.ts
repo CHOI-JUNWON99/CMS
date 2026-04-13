@@ -68,6 +68,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 새 토큰 발급
     const userType = tokenRow.user_type as 'user' | 'admin';
+    let showPolicyNews = false;
+    if (userType === 'user') {
+      if (tokenRow.access_type === 'master') {
+        showPolicyNews = true;
+      } else if (tokenRow.access_type === 'shared') {
+        const { data: spRow } = await supabase
+          .from('shared_passwords')
+          .select('show_policy_news')
+          .eq('id', tokenRow.client_id)
+          .maybeSingle();
+        showPolicyNews = spRow?.show_policy_news ?? false;
+      } else if (tokenRow.access_type === 'single') {
+        const { data: clientRow } = await supabase
+          .from('clients')
+          .select('show_policy_news')
+          .eq('id', tokenRow.client_id)
+          .maybeSingle();
+        showPolicyNews = clientRow?.show_policy_news ?? false;
+      }
+    }
+
     const payload = {
       userType,
       accessType: tokenRow.access_type as 'single' | 'shared' | 'master' | undefined,
@@ -76,6 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       clientName: tokenRow.client_name || undefined,
       brandColor: tokenRow.brand_color || undefined,
       logoUrl: tokenRow.logo_url || undefined,
+      showPolicyNews,
     };
 
     const newAccessToken = await createAccessToken(payload);
@@ -109,6 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         brandColor: tokenRow.brand_color || undefined,
       } : undefined,
       clientIds: tokenRow.client_ids || [],
+      showPolicyNews,
     });
   } catch (err) {
     console.error('Refresh error:', err);

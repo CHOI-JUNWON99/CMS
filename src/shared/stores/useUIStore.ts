@@ -22,6 +22,7 @@ interface UIState {
 
   // 선택된 종목
   selectedStockId: string | null;
+  selectedEtfId: string | null;
 
   // 새 자료 알림
   lastSeenResourcesAt: string | null;
@@ -35,6 +36,7 @@ interface UIState {
   togglePortfolio: (id: string) => void;
   resetExpandedPortfolios: () => void;
   setSelectedStockId: (id: string | null) => void;
+  setSelectedEtfId: (id: string | null) => void;
   resetUIState: () => void;
 }
 
@@ -49,6 +51,7 @@ export const useUIStore = create<UIState>()(
       sortDirection: 'ASC',
       expandedPortfolios: [],
       selectedStockId: null,
+      selectedEtfId: null,
       lastSeenResourcesAt: null,
 
       setViewMode: (mode) => set({ viewMode: mode }),
@@ -87,12 +90,14 @@ export const useUIStore = create<UIState>()(
       resetExpandedPortfolios: () => set({ expandedPortfolios: [] }),
 
       setSelectedStockId: (id) => set({ selectedStockId: id }),
+      setSelectedEtfId: (id) => set({ selectedEtfId: id }),
 
       resetUIState: () => set({
         viewMode: 'DASHBOARD',
         activeTab: 'PORTFOLIO',
         expandedPortfolios: [],
         selectedStockId: null,
+        selectedEtfId: null,
       }),
     }),
     {

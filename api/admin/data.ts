@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action, table, id, data: payload } = req.body || {};
 
   // 허용된 테이블만 접근 가능
-  const allowedTables = ['stocks', 'business_segments', 'investment_points', 'issues', 'segment_icons', 'glossary', 'policy_news'];
+  const allowedTables = ['stocks', 'business_segments', 'investment_points', 'issues', 'segment_icons', 'glossary', 'policy_news', 'etfs'];
   if (!allowedTables.includes(table)) {
     return res.status(400).json({ error: `Table not allowed: ${table}` });
   }

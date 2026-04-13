@@ -163,9 +163,14 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
       setShowAddModal(false);
       toast.success('정책 뉴스가 추가되었습니다.');
       onRefresh();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error('추가 실패');
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('동일한 날짜') || message.includes('409')) {
+        toast.error('이미 동일한 날짜와 제목의 정책 뉴스가 존재합니다.');
+      } else {
+        toast.error('추가 실패');
+      }
     } finally {
       setIsUploading(false);
     }

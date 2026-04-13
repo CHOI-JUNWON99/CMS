@@ -220,3 +220,44 @@ CREATE TABLE public.policy_news (
   CONSTRAINT policy_news_pkey PRIMARY KEY (id),
   CONSTRAINT policy_news_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id)
 );
+
+-- ==========================================
+-- ETF feature migration notes
+-- Run separately in Supabase SQL editor
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS public.etfs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id uuid NOT NULL REFERENCES public.clients(id),
+  code text NOT NULL UNIQUE,
+  name_en text NOT NULL,
+  close_price_cny numeric,
+  minimum_purchase_unit integer,
+  minimum_purchase_amount_krw numeric,
+  listing_date date,
+  aum_cny_million numeric,
+  aum_krw_billion numeric,
+  benchmark_name_en text,
+  category_large text,
+  category_small text,
+  ter numeric,
+  dividend_yield numeric,
+  avg_trading_value_ytd_billion numeric,
+  return_1m numeric,
+  return_3m numeric,
+  return_6m numeric,
+  return_1y numeric,
+  sector text,
+  volume numeric,
+  summary text,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE public.etfs
+ADD COLUMN IF NOT EXISTS client_id uuid;
+
+CREATE INDEX IF NOT EXISTS etfs_is_active_idx ON public.etfs (is_active);
+CREATE INDEX IF NOT EXISTS etfs_code_idx ON public.etfs (code);
+CREATE INDEX IF NOT EXISTS etfs_client_id_idx ON public.etfs (client_id);

@@ -36,7 +36,8 @@ export function usePolicyNews() {
       const { data, error } = await supabase
         .from('policy_news')
         .select('*')
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return ((data || []) as DbPolicyNewsRow[]).map(mapRow);
@@ -57,6 +58,7 @@ export function useLatestPolicyNews() {
         .from('policy_news')
         .select('*')
         .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1);
 
       if (error) throw error;

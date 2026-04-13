@@ -19,7 +19,8 @@ const AdminPolicyNewsPage: React.FC = () => {
         const { data: newsData } = await supabase
           .from('policy_news')
           .select('*')
-          .order('date', { ascending: false });
+          .order('date', { ascending: false })
+          .order('created_at', { ascending: false });
 
         if (newsData) {
           const mapped = (newsData as DbPolicyNewsRow[]).map((row) => ({

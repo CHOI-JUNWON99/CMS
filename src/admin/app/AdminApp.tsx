@@ -14,6 +14,7 @@ import AdminSettingsPage from '@/admin/features/settings/AdminSettingsPage';
 import AdminAnalyticsPage from '@/admin/features/analytics/AdminAnalyticsPage';
 import AdminIBPage from '@/admin/features/ib/AdminIBPage';
 import AdminPolicyNewsPage from '@/admin/features/policy-news/AdminPolicyNewsPage';
+import AdminETFPage from '@/admin/features/etf/AdminETFPage';
 
 const AdminApp: React.FC = () => {
   const storeIsAuthenticated = useAdminAuthStore((state) => state.isAuthenticated);
@@ -71,6 +72,7 @@ const AdminApp: React.FC = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/admin/portfolio" replace />} />
           <Route path="/portfolio" element={<AdminPortfolioPage />} />
+          <Route path="/etf" element={<AdminETFPage />} />
           <Route path="/ib" element={<AdminIBPage />} />
           <Route path="/stocks/*" element={<AdminStocksPage />} />
           <Route path="/issues" element={<AdminIssuesPage />} />

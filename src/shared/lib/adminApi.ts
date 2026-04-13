@@ -152,6 +152,18 @@ export const adminPolicyNewsApi = {
     adminData<{ success: boolean }>({ action: 'delete', table: 'policy_news', id }),
 };
 
+// --- ETFs ---
+export const adminEtfApi = {
+  create: (data: Record<string, unknown>) =>
+    adminData<{ data: unknown; success: boolean }>({ action: 'insert', table: 'etfs', data }),
+
+  update: (id: string, updates: Record<string, unknown>) =>
+    adminData<{ success: boolean }>({ action: 'update', table: 'etfs', id, data: updates }),
+
+  delete: (id: string) =>
+    adminData<{ success: boolean }>({ action: 'delete', table: 'etfs', id }),
+};
+
 // --- Segment Icons ---
 export const adminSegmentIconsApi = {
   create: (data: { name: string; icon_url: string }) =>
