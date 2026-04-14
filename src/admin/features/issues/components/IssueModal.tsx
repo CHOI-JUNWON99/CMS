@@ -3,6 +3,7 @@ import { Stock } from '@/shared/types';
 import { toast } from '@/shared/stores';
 import ImageUploader, { ImageUpload } from './ImageUploader';
 import { FeedItem } from './IssueCard';
+import { normalizeDateInput } from '@/admin/features/issues/utils/issueExcelParser';
 
 interface IssueFormData {
   stockId: string;
@@ -37,10 +38,7 @@ interface IssueModalProps {
 
 const getTodayDate = () => {
   const now = new Date();
-  const yy = String(now.getFullYear()).slice(-2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  return `${yy}/${mm}/${dd}`;
+  return normalizeDateInput(`${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`);
 };
 
 const IssueModal: React.FC<IssueModalProps> = ({
@@ -156,18 +154,23 @@ const IssueModal: React.FC<IssueModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    const normalizedDate = normalizeDateInput(formData.date);
+
     if (isPolicyNews) {
-      if (!formData.content || !formData.date) {
+      if (!formData.content || !normalizedDate) {
         toast.warning('내용, 날짜는 필수입니다.');
         return;
       }
     } else {
-      if (!formData.stockId || !formData.title || !formData.content || !formData.date) {
+      if (!formData.stockId || !formData.title || !formData.content || !normalizedDate) {
         toast.warning('종목, 제목, 내용, 날짜는 필수입니다.');
         return;
       }
     }
-    await onSubmit(formData, imageUploads);
+
+    const nextFormData = { ...formData, date: normalizedDate };
+    setFormData(nextFormData);
+    await onSubmit(nextFormData, imageUploads);
   };
 
   if (!isOpen) return null;
@@ -316,6 +319,7 @@ const IssueModal: React.FC<IssueModalProps> = ({
                   type="text"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onBlur={(e) => setFormData({ ...formData, date: normalizeDateInput(e.target.value) })}
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
                   placeholder="25/01/29"
                 />

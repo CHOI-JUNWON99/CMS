@@ -9,9 +9,10 @@ interface IBStockListProps {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
+  searchQuery?: string;
 }
 
-const IBStockList: React.FC<IBStockListProps> = ({ dateGroups, onSelect, isDarkMode, hasNextPage, isFetchingNextPage, fetchNextPage }) => {
+const IBStockList: React.FC<IBStockListProps> = ({ dateGroups, onSelect, isDarkMode, hasNextPage, isFetchingNextPage, fetchNextPage, searchQuery = '' }) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const handleIntersect = useCallback((entries: IntersectionObserverEntry[]) => {
@@ -30,6 +31,15 @@ const IBStockList: React.FC<IBStockListProps> = ({ dateGroups, onSelect, isDarkM
 
   return (
     <div className="space-y-8">
+      {dateGroups.length === 0 && searchQuery.trim() && (
+        <div className={`text-center py-12 rounded-[20px] border ${isDarkMode ? 'bg-[#112240] border-slate-700 text-slate-400' : 'bg-white border-gray-200 text-gray-500'}`}>
+          <svg className="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p className="text-sm font-bold">'{searchQuery.trim()}'에 대한 검색 결과가 없습니다</p>
+        </div>
+      )}
+
       {dateGroups.map((group) => (
         <div key={group.date}>
           {/* Date Header */}

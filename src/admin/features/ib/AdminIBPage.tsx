@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/shared/lib/supabase";
 import { adminAction } from "@/shared/lib/adminApi";
+import { SearchInput } from "@/shared/components/ui";
 import { parseIBExcel, IBExcelRow } from "./utils/ibExcelParser";
 import IBExcelUploadModal from "./components/IBExcelUploadModal";
 import { useIBStore, IBPeriod } from "@/shared/stores";
+import { filterIBOpinions } from "@/features/ib/utils/filterIBOpinions";
 
 const isProd = import.meta.env.PROD;
 
@@ -31,6 +33,7 @@ const AdminIBPage: React.FC = () => {
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [uploadResult, setUploadResult] = useState<{
     inserted: number;
     errors: { row: number; reason: string }[];
@@ -176,8 +179,13 @@ const AdminIBPage: React.FC = () => {
     }
   };
 
+  const filteredOpinions = useMemo(
+    () => filterIBOpinions(opinions, searchQuery),
+    [opinions, searchQuery],
+  );
+
   // Group by date
-  const groupedByDate = opinions.reduce<Record<string, typeof opinions>>(
+  const groupedByDate = filteredOpinions.reduce<Record<string, typeof filteredOpinions>>(
     (acc, op) => {
       const d = op.date;
       if (!acc[d]) acc[d] = [];
@@ -287,7 +295,10 @@ const AdminIBPage: React.FC = () => {
       <div className="flex items-center gap-3">
         <span className="text-slate-400 text-sm min-w-[130px]">
           {PERIOD_LABELS.find((p) => p.key === activePeriod)!.label} 간 총{" "}
-          <span className="text-white font-black">{opinions.length}건</span>
+          <span className="text-white font-black">
+            {searchQuery.trim() ? `${filteredOpinions.length}/${opinions.length}` : opinions.length}
+          </span>
+          건
         </span>
         <div className="flex gap-2">
           {PERIOD_LABELS.map(({ key, label }) => {
@@ -311,10 +322,25 @@ const AdminIBPage: React.FC = () => {
         </div>
       </div>
 
+      <SearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="종목명, 티커, 섹터, IB, 의견, 애널리스트, 코멘트로 검색..."
+        isDarkMode={true}
+        className="w-full"
+      />
+
       {/* Data Table */}
       {isLoading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : searchQuery.trim() && filteredOpinions.length === 0 ? (
+        <div className="text-center py-16 text-slate-400">
+          <svg className="w-12 h-12 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p className="text-sm font-bold">'{searchQuery.trim()}'에 대한 검색 결과가 없습니다</p>
         </div>
       ) : sortedDates.length === 0 ? (
         <div className="text-center py-16 text-slate-500">

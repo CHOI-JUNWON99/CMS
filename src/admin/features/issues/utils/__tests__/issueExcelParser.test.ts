@@ -1,8 +1,26 @@
-import { convertExcelDate, parseIsCms, parseIssueExcelRows } from '../issueExcelParser';
+import { convertExcelDate, normalizeDateInput, parseIsCms, parseIssueExcelRows } from '../issueExcelParser';
+
+describe('normalizeDateInput', () => {
+  it('한 자리 월/일을 두 자리로 보정', () => {
+    expect(normalizeDateInput('26/4/9')).toBe('26/04/09');
+  });
+
+  it('4자리 연도와 하이픈 구분자도 YY/MM/DD로 변환', () => {
+    expect(normalizeDateInput('2026-04-09')).toBe('26/04/09');
+  });
+
+  it('형식을 해석할 수 없으면 trim 후 그대로 반환', () => {
+    expect(normalizeDateInput('  최근  ')).toBe('최근');
+  });
+});
 
 describe('convertExcelDate', () => {
   it('문자열 "25/01/15" → 그대로 반환', () => {
     expect(convertExcelDate('25/01/15')).toBe('25/01/15');
+  });
+
+  it('문자열 "26/04/9" → "26/04/09"로 정규화', () => {
+    expect(convertExcelDate('26/04/9')).toBe('26/04/09');
   });
 
   it('엑셀 시리얼 넘버 45672 → "25/01/15" 형태로 변환', () => {

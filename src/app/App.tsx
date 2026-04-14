@@ -16,6 +16,7 @@ import { ResourcesView, useHasNewResources } from '@/features/resources';
 import { useIBOpinionsInfinite, useIBDateGroups } from '@/features/ib/hooks/useIBOpinions';
 import IBStockList from '@/features/ib/components/IBStockList';
 import IBStockDetail from '@/features/ib/components/IBStockDetail';
+import { filterIBOpinions } from '@/features/ib/utils/filterIBOpinions';
 
 interface PortfolioGroup {
   id: string;
@@ -69,7 +70,7 @@ const App: React.FC = () => {
   // TanStack Query Hooks
   const { data: portfolios = [], isLoading: portfoliosLoading } = usePortfolios();
   const portfolioIds = useMemo(() => portfolios.map(p => p.id), [portfolios]);
-  const { data: portfolioStockData } = usePortfolioStockIds(portfolioIds);
+  const { data: portfolioStockData, isLoading: portfolioStockIdsLoading } = usePortfolioStockIds(portfolioIds);
   const allStockIds = portfolioStockData?.allStockIds || [];
   const stockIdsByPortfolio = portfolioStockData?.stockIdsByPortfolio || {};
   const { data: stocks = [], isLoading: stocksLoading } = useStocksWithRelations(allStockIds);
@@ -83,9 +84,10 @@ const App: React.FC = () => {
   const ibQuery = useIBOpinionsInfinite();
   const ibDateGroups = useIBDateGroups(ibQuery);
   const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string; opinionId: string } | null>(null);
+  const [ibSearchQuery, setIbSearchQuery] = React.useState('');
   const [etfSearchQuery, setEtfSearchQuery] = React.useState('');
 
-  const isLoading = portfoliosLoading || stocksLoading || etfsLoading;
+  const isLoading = portfoliosLoading || portfolioStockIdsLoading || stocksLoading || etfsLoading;
 
   // 포트폴리오별 검색어 업데이트 함수
   const updateSearchQuery = useCallback((portfolioId: string, query: string) => {
@@ -152,6 +154,18 @@ const App: React.FC = () => {
         .some(value => String(value).toLowerCase().includes(query))
     );
   }, [etfs, etfSearchQuery]);
+
+  const filteredIBDateGroups = useMemo(() => {
+    const query = ibSearchQuery.trim();
+    if (!query) return ibDateGroups;
+
+    return ibDateGroups
+      .map((group) => ({
+        ...group,
+        opinions: filterIBOpinions(group.opinions, query),
+      }))
+      .filter((group) => group.opinions.length > 0);
+  }, [ibDateGroups, ibSearchQuery]);
 
   // 세션 만료 체크 (60초 간격)
   useEffect(() => {
@@ -367,13 +381,23 @@ const App: React.FC = () => {
                       }`}>
                         {isIB ? (
                           <div className="mt-4">
+                            <div className="mb-2">
+                              <SearchInput
+                                value={ibSearchQuery}
+                                onChange={setIbSearchQuery}
+                                placeholder="종목명, 티커, 섹터, IB, 의견, 애널리스트, 코멘트로 검색..."
+                                isDarkMode={isDarkMode}
+                                className="w-full"
+                              />
+                            </div>
                             <IBStockList
-                              dateGroups={ibDateGroups}
+                              dateGroups={filteredIBDateGroups}
                               onSelect={handleIBStockSelect}
                               isDarkMode={isDarkMode}
                               hasNextPage={!!ibQuery.hasNextPage}
                               isFetchingNextPage={ibQuery.isFetchingNextPage}
                               fetchNextPage={() => ibQuery.fetchNextPage()}
+                              searchQuery={ibSearchQuery}
                             />
                           </div>
                         ) : (

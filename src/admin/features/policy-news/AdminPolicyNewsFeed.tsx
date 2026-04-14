@@ -13,6 +13,7 @@ import {
   ImageUpload,
   ExcelUploadResult,
 } from '@/admin/features/issues/components';
+import { convertExcelDate, normalizeDateInput, parseIsCms } from '@/admin/features/issues/utils/issueExcelParser';
 
 interface AdminPolicyNewsFeedProps {
   policyNews: PolicyNews[];
@@ -68,7 +69,7 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
       title: news.title || '',
       content: news.content,
       keywords: news.keywords || [],
-      date: news.date,
+      date: normalizeDateInput(news.date),
       images: news.images?.map(img => ({ url: img.url, caption: img.caption })),
     }));
   }, [policyNews]);
@@ -95,22 +96,24 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
       let newsId: string | null = null;
 
       if (import.meta.env.PROD) {
+        const normalizedDate = normalizeDateInput(data.date);
         const result = await adminAction<{ success: boolean; policyNewsId?: string }>('add_policy_news', {
           title: data.title,
           content: data.content,
           keywords,
-          date: data.date,
+          date: normalizedDate,
           isCMS: data.isCMS,
         });
         newsId = result.policyNewsId || null;
       } else {
+        const normalizedDate = normalizeDateInput(data.date);
         const adminCode = getAdminCode();
         const { data: inserted, error } = await supabase.rpc('admin_insert_policy_news', {
           admin_code: adminCode,
           p_title: data.title,
           p_content: data.content,
           p_keywords: keywords,
-          p_date: data.date,
+          p_date: normalizedDate,
           p_is_cms: data.isCMS,
 
         });
@@ -122,7 +125,7 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
               title: data.title || null,
               content: data.content,
               keywords,
-              date: data.date,
+              date: normalizedDate,
               is_cms: data.isCMS,
 
             })
@@ -199,6 +202,7 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
         .split(',')
         .map((k: string) => k.trim())
         .filter((k: string) => k);
+      const normalizedDate = normalizeDateInput(data.date);
 
       if (import.meta.env.PROD) {
         await adminAction('update_policy_news', {
@@ -206,7 +210,7 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
           title: data.title,
           content: data.content,
           keywords,
-          date: data.date,
+          date: normalizedDate,
           isCMS: data.isCMS,
           images: allImageUrls,
         });
@@ -217,7 +221,7 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
             title: data.title || null,
             content: data.content,
             keywords,
-            date: data.date,
+            date: normalizedDate,
             is_cms: data.isCMS,
             images: allImageUrls,
             client_id: null,
@@ -275,8 +279,6 @@ const AdminPolicyNewsFeed: React.FC<AdminPolicyNewsFeedProps> = ({
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{ date?: string | number | Date; title?: string; content?: string; keywords?: string; is_cms?: boolean | string | number }>(sheet);
-
-      const { convertExcelDate, parseIsCms } = await import('@/admin/features/issues/utils/issueExcelParser');
 
       const parsedRows = rows
         .filter(row => row.date && row.title && row.content)
