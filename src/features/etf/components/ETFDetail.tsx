@@ -70,13 +70,13 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
       <section className="mt-10 grid grid-cols-1 lg:grid-cols-[180px_minmax(0,1fr)] gap-6">
         <div className={`rounded-[24px] border px-5 py-8 text-center flex flex-col justify-between ${isDarkMode ? 'bg-[#112240] border-slate-700' : 'bg-white border-gray-200 shadow-sm'}`}>
           <div className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>종가</div>
-          <div className={`-mt-[20px] text-2xl font-black tracking-tight whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className={`mt-3 text-2xl font-black tracking-tight whitespace-nowrap lg:-mt-[20px] ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {formatNumber(etf.closePriceCny, 4)}
             <span className={`ml-1 text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>원</span>
           </div>
-          <div className={`h-px ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`} />
+          <div className={`my-5 h-px lg:my-0 ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`} />
           <div className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>거래량</div>
-          <div className={`-mt-[20px] text-2xl font-black tracking-tight whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className={`mt-3 text-2xl font-black tracking-tight whitespace-nowrap lg:-mt-[20px] ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {formatNumber(etf.volume, 0)}
             <span className={`ml-1 text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>주</span>
           </div>

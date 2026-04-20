@@ -8,7 +8,7 @@ interface ETFListProps {
 }
 
 const DESKTOP_GRID_TEMPLATE =
-  '100px minmax(150px,1.27  fr) minmax(110px,0fr) minmax(110px,0.16fr) minmax(150px,0fr) minmax(76px,0fr) minmax(76px,0.42fr) minmax(76px,0.42fr) minmax(76px,0.48fr)';
+  '100px minmax(220px,1.3fr) minmax(120px,0.8fr) minmax(110px,0.7fr) minmax(150px,1fr) minmax(76px,0.55fr) minmax(76px,0.55fr) minmax(76px,0.55fr) minmax(76px,0.6fr)';
 
 const HEADER_CELL_CLASS = [
   'pl-4 text-left',
