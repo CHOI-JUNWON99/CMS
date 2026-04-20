@@ -26,6 +26,7 @@ function mapEtfRow(row: DbEtfRow): ETF {
     ter: row.ter,
     dividendYield: row.dividend_yield,
     avgTradingValueYtdBillion: row.avg_trading_value_ytd_billion,
+    nav: row.nav,
     return1M: row.return_1m,
     return3M: row.return_3m,
     return6M: row.return_6m,

@@ -95,6 +95,7 @@ export interface ETF {
   ter: number | null;
   dividendYield: number | null;
   avgTradingValueYtdBillion: number | null;
+  nav: number | null;
   return1M: number | null;
   return3M: number | null;
   return6M: number | null;
@@ -264,6 +265,7 @@ export interface DbEtfRow {
   ter: number | null;
   dividend_yield: number | null;
   avg_trading_value_ytd_billion: number | null;
+  nav: number | null;
   return_1m: number | null;
   return_3m: number | null;
   return_6m: number | null;

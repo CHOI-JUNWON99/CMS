@@ -12,7 +12,7 @@ const ETFExcelUploadModal: React.FC<ETFExcelUploadModalProps> = ({ isOpen, onClo
   const columns = [
     '코드', '명칭(영문)', '종가(위안)', '최소매수단위(주)', '최소매수금액(원)', '상장일',
     'AUM(CNY 백만 위안)', 'AUM(KRW억원)', '벤치마크 명칭(영문)', '대분류', '소분류', 'TER*',
-    '배당률', '일평균 거래대금(YTD,억원)', '1M(%)', '3M(%)', '6M(%)', '1Y(%)', '섹터', '거래량', 'ETF개요',
+    '배당률', '일평균 거래대금(YTD,억원)', 'NAV', '1M(%)', '3M(%)', '6M(%)', '1Y(%)', '섹터', '거래량', 'ETF개요',
   ];
 
   if (!isOpen) return null;
@@ -48,12 +48,12 @@ const ETFExcelUploadModal: React.FC<ETFExcelUploadModalProps> = ({ isOpen, onClo
           <div className="rounded-xl border border-emerald-700/50 bg-emerald-900/20 p-4">
             <p className="mb-2 text-sm font-bold text-emerald-300">업로드 규칙</p>
             <p className="text-sm text-slate-300">
-              첫 번째 시트의 1행을 헤더로 읽고, 2행부터 ETF 데이터를 업서트합니다. 같은 코드가 이미 있으면 업데이트하고, 없으면 신규 생성합니다.
+              첫 번째 시트의 1행을 헤더로 읽고, 2행부터 ETF 데이터를 업서트합니다. 속성명의 순서는 중요하지 않으며, 속성명은 아래 엑셀 예시와 정확히 일치해야 합니다. 같은 코드가 이미 있으면 업데이트하고, 없으면 신규 생성합니다.
             </p>
           </div>
 
           <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
-            <p className="mb-3 text-sm font-bold text-white">엑셀 컬럼 (21개)</p>
+            <p className="mb-3 text-sm font-bold text-white">엑셀 컬럼 (22개)</p>
             <div className="overflow-x-auto">
               <table className="w-full border border-slate-600 text-xs">
                 <thead>
@@ -84,4 +84,3 @@ const ETFExcelUploadModal: React.FC<ETFExcelUploadModalProps> = ({ isOpen, onClo
 };
 
 export default ETFExcelUploadModal;
-

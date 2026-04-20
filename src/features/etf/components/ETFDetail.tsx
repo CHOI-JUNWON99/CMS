@@ -97,6 +97,7 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
               <InfoRow label="TER" value={etf.ter === null || etf.ter === undefined ? '-' : `${etf.ter}%`} isDarkMode={isDarkMode} />
               <InfoRow label="배당률" value={formatPercent(etf.dividendYield)} isDarkMode={isDarkMode} />
               <InfoRow label="일평균 거래대금(YTD)" value={formatNumber(etf.avgTradingValueYtdBillion, 1)} isDarkMode={isDarkMode} />
+              <InfoRow label="NAV" value={formatNumber(etf.nav, 4)} isDarkMode={isDarkMode} />
               <InfoRow label="1M" value={formatPercent(etf.return1M)} isDarkMode={isDarkMode} />
               <InfoRow label="3M" value={formatPercent(etf.return3M)} isDarkMode={isDarkMode} />
               <InfoRow label="6M" value={formatPercent(etf.return6M)} isDarkMode={isDarkMode} />

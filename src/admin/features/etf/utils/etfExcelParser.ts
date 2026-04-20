@@ -15,6 +15,7 @@ export interface EtfExcelRow {
   ter: number | null;
   dividend_yield: number | null;
   avg_trading_value_ytd_billion: number | null;
+  nav: number | null;
   return_1m: number | null;
   return_3m: number | null;
   return_6m: number | null;
@@ -45,6 +46,7 @@ const REQUIRED_HEADERS = [
   'TER*',
   '배당률',
   '일평균 거래대금(YTD,억원)',
+  'NAV',
   '1M(%)',
   '3M(%)',
   '6M(%)',
@@ -71,6 +73,7 @@ const HEADER_ALIASES: Record<CanonicalHeader, string[]> = {
   'TER*': ['TER*', 'TER'],
   '배당률': ['배당률'],
   '일평균 거래대금(YTD,억원)': ['일평균 거래대금(YTD,억원)', '일평균거래대금(YTD,억원)'],
+  'NAV': ['NAV'],
   '1M(%)': ['1M(%)', '1M'],
   '3M(%)': ['3M(%)', '3M'],
   '6M(%)': ['6M(%)', '6M'],
@@ -195,6 +198,7 @@ export function parseEtfExcel(file: ArrayBuffer): EtfParseResult {
       ter: cleanNumber(row[resolvedIndex['TER*']]),
       dividend_yield: cleanNumber(row[resolvedIndex['배당률']]),
       avg_trading_value_ytd_billion: cleanNumber(row[resolvedIndex['일평균 거래대금(YTD,억원)']]),
+      nav: cleanNumber(row[resolvedIndex['NAV']]),
       return_1m: cleanNumber(row[resolvedIndex['1M(%)']]),
       return_3m: cleanNumber(row[resolvedIndex['3M(%)']]),
       return_6m: cleanNumber(row[resolvedIndex['6M(%)']]),
