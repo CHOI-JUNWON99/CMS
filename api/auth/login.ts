@@ -29,11 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) throw error;
 
-    if (!data) {
+    const result = Array.isArray(data) ? data[0] : data;
+
+    if (!result) {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    const result = data as {
+    const typedResult = result as {
       type: string;
       id: string;
       name: string;
@@ -44,22 +46,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // show_policy_news 플래그 조회
     let showPolicyNews = false;
-    if (result.type === 'master') {
+    if (typedResult.type === 'master') {
       showPolicyNews = true;
-    } else if (result.type === 'shared') {
+    } else if (typedResult.type === 'shared') {
       // 공유 비밀번호의 show_policy_news 확인
       const { data: spRow } = await supabase
         .from('shared_passwords')
         .select('show_policy_news')
-        .eq('id', result.id)
+        .eq('id', typedResult.id)
         .single();
       showPolicyNews = spRow?.show_policy_news ?? false;
-    } else if (result.type === 'single') {
+    } else if (typedResult.type === 'single') {
       // 소속(client)의 show_policy_news 확인
       const { data: clientRow } = await supabase
         .from('clients')
         .select('show_policy_news')
-        .eq('id', result.id)
+        .eq('id', typedResult.id)
         .single();
       showPolicyNews = clientRow?.show_policy_news ?? false;
     }
@@ -67,12 +69,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Token payload
     const payload = {
       userType: 'user' as const,
-      accessType: result.type as 'single' | 'shared' | 'master',
-      clientId: result.id,
-      clientIds: result.client_ids || [],
-      clientName: result.name,
-      brandColor: result.brand_color || undefined,
-      logoUrl: result.logo_url || undefined,
+      accessType: typedResult.type as 'single' | 'shared' | 'master',
+      clientId: typedResult.id,
+      clientIds: typedResult.client_ids || [],
+      clientName: typedResult.name,
+      brandColor: typedResult.brand_color || undefined,
+      logoUrl: typedResult.logo_url || undefined,
       showPolicyNews,
     };
 
@@ -87,12 +89,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       token_hash: hashToken(refreshToken),
       family_id: familyId,
       user_type: 'user',
-      access_type: result.type,
-      client_id: result.id,
-      client_ids: result.client_ids || [],
-      client_name: result.name,
-      brand_color: result.brand_color || null,
-      logo_url: result.logo_url || null,
+      access_type: typedResult.type,
+      client_id: typedResult.id,
+      client_ids: typedResult.client_ids || [],
+      client_name: typedResult.name,
+      brand_color: typedResult.brand_color || null,
+      logo_url: typedResult.logo_url || null,
       expires_at: new Date(Date.now() + getRefreshExpiryMs('user')).toISOString(),
     });
 
@@ -102,14 +104,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 비민감 사용자 정보 반환 (UI용)
     return res.status(200).json({
-      accessType: result.type,
+      accessType: typedResult.type,
       clientInfo: {
-        id: result.id,
-        name: result.name,
-        logo: result.logo_url || undefined,
-        brandColor: result.brand_color || undefined,
+        id: typedResult.id,
+        name: typedResult.name,
+        logo: typedResult.logo_url || undefined,
+        brandColor: typedResult.brand_color || undefined,
       },
-      clientIds: result.client_ids || [],
+      clientIds: typedResult.client_ids || [],
       showPolicyNews,
     });
   } catch (err) {

@@ -107,31 +107,33 @@ const AccessGate: React.FC<AccessGateProps> = ({ onAuthenticated }) => {
 
         if (rpcError) throw rpcError;
 
-        if (data) {
+        const result = Array.isArray(data) ? data[0] : data;
+
+        if (result) {
           clearLoginAttempts();
-          const result = data as { type: string; id: string; name: string; logo_url?: string; brand_color?: string; client_ids?: string[] };
+          const typedResult = result as { type: string; id: string; name: string; logo_url?: string; brand_color?: string; client_ids?: string[] };
 
           // DEV: show_policy_news 플래그 조회
           let showPolicyNews = false;
-          if (result.type === 'master') {
+          if (typedResult.type === 'master') {
             showPolicyNews = true;
-          } else if (result.type === 'shared') {
-            const { data: spRow } = await supabase.from('shared_passwords').select('show_policy_news').eq('id', result.id).single();
+          } else if (typedResult.type === 'shared') {
+            const { data: spRow } = await supabase.from('shared_passwords').select('show_policy_news').eq('id', typedResult.id).single();
             showPolicyNews = spRow?.show_policy_news ?? false;
-          } else if (result.type === 'single') {
-            const { data: clientRow } = await supabase.from('clients').select('show_policy_news').eq('id', result.id).single();
+          } else if (typedResult.type === 'single') {
+            const { data: clientRow } = await supabase.from('clients').select('show_policy_news').eq('id', typedResult.id).single();
             showPolicyNews = clientRow?.show_policy_news ?? false;
           }
 
           login({
-            accessType: result.type as 'single' | 'shared' | 'master',
+            accessType: typedResult.type as 'single' | 'shared' | 'master',
             clientInfo: {
-              id: result.id,
-              name: result.name,
-              logo: result.logo_url || undefined,
-              brandColor: result.brand_color || undefined,
+              id: typedResult.id,
+              name: typedResult.name,
+              logo: typedResult.logo_url || undefined,
+              brandColor: typedResult.brand_color || undefined,
             },
-            clientIds: result.client_ids || [],
+            clientIds: typedResult.client_ids || [],
             codeVersion: '1',
             showPolicyNews,
           });
