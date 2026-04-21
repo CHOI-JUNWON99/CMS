@@ -124,6 +124,8 @@ export function parseEtfExcel(file: ArrayBuffer): EtfParseResult {
   const workbook = XLSX.read(file, { type: 'array' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
+  const HEADER_ROW_INDEX = 1;
+  const DATA_START_ROW_INDEX = 2;
 
   const parsedRows: EtfExcelRow[] = [];
   const errors: { row: number; reason: string }[] = [];
@@ -134,7 +136,15 @@ export function parseEtfExcel(file: ArrayBuffer): EtfParseResult {
     return { rows: parsedRows, errors: [{ row: 1, reason: '엑셀 시트가 비어 있습니다.' }], duplicates };
   }
 
-  const headerRow = rows[0] as unknown[];
+  if (rows.length <= HEADER_ROW_INDEX) {
+    return {
+      rows: parsedRows,
+      errors: [{ row: HEADER_ROW_INDEX + 1, reason: '헤더 행(2행)이 없습니다.' }],
+      duplicates,
+    };
+  }
+
+  const headerRow = rows[HEADER_ROW_INDEX] as unknown[];
   const headerMap = new Map<string, number>();
   headerRow.forEach((header, index) => {
     headerMap.set(normalizeHeader(header), index);
@@ -154,12 +164,12 @@ export function parseEtfExcel(file: ArrayBuffer): EtfParseResult {
   if (missingHeaders.length > 0) {
     return {
       rows: parsedRows,
-      errors: [{ row: 1, reason: `헤더가 올바르지 않습니다: ${missingHeaders.join(', ')}` }],
+      errors: [{ row: HEADER_ROW_INDEX + 1, reason: `헤더가 올바르지 않습니다: ${missingHeaders.join(', ')}` }],
       duplicates,
     };
   }
 
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = DATA_START_ROW_INDEX; i < rows.length; i++) {
     const row = rows[i] as unknown[];
     if (!row || row.every((cell) => cleanText(cell) === null)) continue;
 

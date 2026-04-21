@@ -48,7 +48,7 @@ const ETFExcelUploadModal: React.FC<ETFExcelUploadModalProps> = ({ isOpen, onClo
           <div className="rounded-xl border border-emerald-700/50 bg-emerald-900/20 p-4">
             <p className="mb-2 text-sm font-bold text-emerald-300">업로드 규칙</p>
             <p className="text-sm text-slate-300">
-              첫 번째 시트의 1행을 헤더로 읽고, 2행부터 ETF 데이터를 업서트합니다. 속성명의 순서는 중요하지 않으며, 속성명은 아래 엑셀 예시와 정확히 일치해야 합니다. 같은 코드가 이미 있으면 업데이트하고, 없으면 신규 생성합니다.
+              첫 번째 시트의 1행은 수정일 등 메타정보로 사용하고, 2행을 헤더로 읽습니다. 3행부터 ETF 데이터를 업서트합니다. 속성명의 순서는 중요하지 않으며, 속성명은 아래 엑셀 예시와 정확히 일치해야 합니다. 같은 코드가 이미 있으면 업데이트하고, 없으면 신규 생성합니다.
             </p>
           </div>
 
