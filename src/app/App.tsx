@@ -9,6 +9,7 @@ import { AccessGate } from '@/features/auth';
 import { StockList, StockDetail, SummaryCard } from '@/features/stocks';
 import { usePortfolios, usePortfolioStockIds, useRecordPortfolioView } from '@/features/portfolio';
 import { ETFList, ETFDetail, useEtfs } from '@/features/etf';
+import type { EtfSortDirection, EtfSortKey } from '@/features/etf/components/ETFList';
 import { useStocksWithRelations } from '@/features/stocks';
 import { NewsFeedContainer, usePolicyNews, useLatestPolicyNews } from '@/features/issues';
 import { useGlossary } from '@/features/glossary';
@@ -86,6 +87,8 @@ const App: React.FC = () => {
   const [selectedIBStock, setSelectedIBStock] = React.useState<{ ticker: string; stockName: string; sector: string; opinionId: string } | null>(null);
   const [ibSearchQuery, setIbSearchQuery] = React.useState('');
   const [etfSearchQuery, setEtfSearchQuery] = React.useState('');
+  const [etfSortKey, setEtfSortKey] = React.useState<EtfSortKey>('nameEn');
+  const [etfSortDirection, setEtfSortDirection] = React.useState<EtfSortDirection>('ASC');
 
   const isLoading = portfoliosLoading || portfolioStockIdsLoading || stocksLoading || etfsLoading;
 
@@ -147,13 +150,55 @@ const App: React.FC = () => {
 
   const filteredEtfs = useMemo(() => {
     const query = etfSearchQuery.trim().toLowerCase();
-    if (!query) return etfs;
-    return etfs.filter(etf =>
+    const filtered = !query ? etfs : etfs.filter(etf =>
       [etf.code, etf.nameEn, etf.sector, etf.categoryLarge, etf.categorySmall]
         .filter(Boolean)
         .some(value => String(value).toLowerCase().includes(query))
     );
-  }, [etfs, etfSearchQuery]);
+
+    return [...filtered].sort((a, b) => {
+      const direction = etfSortDirection === 'ASC' ? 1 : -1;
+
+      if (etfSortKey === 'sector') {
+        const valueA = (a.sector || '').toLowerCase();
+        const valueB = (b.sector || '').toLowerCase();
+        if (valueA < valueB) return -1 * direction;
+        if (valueA > valueB) return 1 * direction;
+        return 0;
+      }
+
+      if (etfSortKey === 'nameEn') {
+        const valueA = a.nameEn.toLowerCase();
+        const valueB = b.nameEn.toLowerCase();
+        if (valueA < valueB) return -1 * direction;
+        if (valueA > valueB) return 1 * direction;
+        return 0;
+      }
+
+      const valueA = a[etfSortKey] ?? Number.NEGATIVE_INFINITY;
+      const valueB = b[etfSortKey] ?? Number.NEGATIVE_INFINITY;
+      return ((Number(valueA) || 0) - (Number(valueB) || 0)) * direction;
+    });
+  }, [etfs, etfSearchQuery, etfSortDirection, etfSortKey]);
+
+  const handleEtfSort = React.useCallback((key: EtfSortKey) => {
+    if (etfSortKey === key) {
+      setEtfSortDirection((currentDirection) => currentDirection === 'ASC' ? 'DESC' : 'ASC');
+      return;
+    }
+
+    setEtfSortKey(key);
+    setEtfSortDirection(
+      key === 'aumKrwBillion' ||
+      key === 'avgTradingValueYtdBillion' ||
+      key === 'return1M' ||
+      key === 'return3M' ||
+      key === 'return6M' ||
+      key === 'return1Y'
+        ? 'DESC'
+        : 'ASC'
+    );
+  }, [etfSortKey]);
 
   const filteredIBDateGroups = useMemo(() => {
     const query = ibSearchQuery.trim();
@@ -454,6 +499,9 @@ const App: React.FC = () => {
                         etfs={filteredEtfs}
                         onSelect={(etf) => handleEtfSelect(etf.id)}
                         isDarkMode={isDarkMode}
+                        sortKey={etfSortKey}
+                        sortDirection={etfSortDirection}
+                        onSort={handleEtfSort}
                       />
                     </div>
                   </div>

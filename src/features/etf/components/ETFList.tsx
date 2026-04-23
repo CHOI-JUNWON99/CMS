@@ -1,10 +1,24 @@
 import React from "react";
 import { ETF } from "@/shared/types";
 
+export type EtfSortKey =
+  | "nameEn"
+  | "sector"
+  | "aumKrwBillion"
+  | "avgTradingValueYtdBillion"
+  | "return1M"
+  | "return3M"
+  | "return6M"
+  | "return1Y";
+export type EtfSortDirection = "ASC" | "DESC";
+
 interface ETFListProps {
   etfs: ETF[];
   onSelect: (etf: ETF) => void;
   isDarkMode: boolean;
+  sortKey: EtfSortKey;
+  sortDirection: EtfSortDirection;
+  onSort: (key: EtfSortKey) => void;
 }
 
 const DESKTOP_GRID_TEMPLATE =
@@ -14,12 +28,12 @@ const HEADER_CELL_CLASS = [
   "pl-5 text-left",
   "text-left",
   "text-left",
-  "text-center",
-  "text-center",
-  "text-center",
-  "text-center",
-  "text-center",
-  "-translate-x-[10px] text-center",
+  "translate-x-[25px] text-center",
+  "translate-x-[25px] text-center",
+  "translate-x-[25px] text-center",
+  "translate-x-[25px] text-center",
+  "translate-x-[25px] text-center",
+  "translate-x-[25px] text-center",
 ] as const;
 
 const HEADER_LABELS = [
@@ -53,21 +67,139 @@ const labelClass = (isDarkMode: boolean) =>
 const valueClass = (isDarkMode: boolean) =>
   `${isDarkMode ? "text-white" : "text-gray-900"} text-[17px] font-black leading-tight`;
 
-const ETFList: React.FC<ETFListProps> = ({ etfs, onSelect, isDarkMode }) => {
+const percentClass = (
+  value: number | null | undefined,
+  isDarkMode: boolean,
+) => {
+  if (value === null || value === undefined) {
+    return isDarkMode ? "text-white" : "text-gray-900";
+  }
+  return value >= 0
+    ? isDarkMode
+      ? "text-rose-400"
+      : "text-rose-600"
+    : isDarkMode
+      ? "text-blue-400"
+      : "text-blue-600";
+};
+
+const ETFList: React.FC<ETFListProps> = ({
+  etfs,
+  onSelect,
+  isDarkMode,
+  sortKey,
+  sortDirection: _sortDirection,
+  onSort,
+}) => {
+  const SortIndicator = ({ active: _active }: { active: boolean }) => (
+    <div className="ml-1.5 flex shrink-0 flex-col items-center justify-center opacity-100">
+      <svg
+        className={`mb-[-1px] h-2 w-2 transition-colors ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" />
+      </svg>
+      <svg
+        className={`mt-[-1px] h-2 w-2 transition-colors ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M5.293 7.293a1 1 0 01-1.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+      </svg>
+    </div>
+  );
+
+  const HeaderButton = ({
+    label,
+    targetKey,
+    className,
+  }: {
+    label: string;
+    targetKey: EtfSortKey;
+    className: string;
+  }) => {
+    const active = sortKey === targetKey;
+    return (
+      <button
+        onClick={() => onSort(targetKey)}
+        className={`${className} flex items-center py-1 outline-none transition-opacity hover:opacity-70`}
+      >
+        <span
+          className={`whitespace-pre-line text-[11px] font-bold tracking-widest transition-colors ${isDarkMode ? "text-slate-500" : "text-gray-500"}`}
+        >
+          {label}
+        </span>
+        <SortIndicator active={active} />
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div
         className={`hidden xl:grid items-center gap-3 px-5 py-2 text-[11px] font-bold tracking-widest ${isDarkMode ? "text-slate-500" : "text-gray-500"}`}
         style={{ gridTemplateColumns: DESKTOP_GRID_TEMPLATE }}
       >
-        {HEADER_LABELS.map((label, index) => (
-          <span
-            key={label}
-            className={`${HEADER_CELL_CLASS[index]} whitespace-pre-line`}
-          >
-            {label}
-          </span>
-        ))}
+        <span className={`${HEADER_CELL_CLASS[0]} whitespace-pre-line`}>
+          {HEADER_LABELS[0]}
+        </span>
+        <div className={HEADER_CELL_CLASS[1]}>
+          <HeaderButton
+            label={HEADER_LABELS[1]}
+            targetKey="nameEn"
+            className="justify-start"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[2]}>
+          <HeaderButton
+            label={HEADER_LABELS[2]}
+            targetKey="sector"
+            className="justify-start"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[3]}>
+          <HeaderButton
+            label={HEADER_LABELS[3]}
+            targetKey="aumKrwBillion"
+            className="justify-center"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[4]}>
+          <HeaderButton
+            label={HEADER_LABELS[4]}
+            targetKey="avgTradingValueYtdBillion"
+            className="justify-center"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[5]}>
+          <HeaderButton
+            label={HEADER_LABELS[5]}
+            targetKey="return1M"
+            className="justify-center"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[6]}>
+          <HeaderButton
+            label={HEADER_LABELS[6]}
+            targetKey="return3M"
+            className="justify-center"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[7]}>
+          <HeaderButton
+            label={HEADER_LABELS[7]}
+            targetKey="return6M"
+            className="justify-center"
+          />
+        </div>
+        <div className={HEADER_CELL_CLASS[8]}>
+          <HeaderButton
+            label={HEADER_LABELS[8]}
+            targetKey="return1Y"
+            className="justify-center"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -108,7 +240,7 @@ const ETFList: React.FC<ETFListProps> = ({ etfs, onSelect, isDarkMode }) => {
                     1Y
                   </div>
                   <div
-                    className={`mt-1 text-[24px] sm:text-[28px] font-black tracking-tight ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                    className={`mt-1 text-[24px] font-black tracking-tight sm:text-[28px] ${percentClass(etf.return1Y, isDarkMode)}`}
                   >
                     {percentOrDash(etf.return1Y)}%
                   </div>
@@ -152,7 +284,7 @@ const ETFList: React.FC<ETFListProps> = ({ etfs, onSelect, isDarkMode }) => {
                     1M
                   </div>
                   <div
-                    className={`${valueClass(isDarkMode)} mt-2 flex items-center justify-center text-center`}
+                    className={`${valueClass(isDarkMode)} ${percentClass(etf.return1M, isDarkMode)} mt-2 flex items-center justify-center text-center`}
                   >
                     {percentOrDash(etf.return1M)}%
                   </div>
@@ -164,7 +296,7 @@ const ETFList: React.FC<ETFListProps> = ({ etfs, onSelect, isDarkMode }) => {
                     3M
                   </div>
                   <div
-                    className={`${valueClass(isDarkMode)} mt-2 flex items-center justify-center text-center`}
+                    className={`${valueClass(isDarkMode)} ${percentClass(etf.return3M, isDarkMode)} mt-2 flex items-center justify-center text-center`}
                   >
                     {percentOrDash(etf.return3M)}%
                   </div>
@@ -176,7 +308,7 @@ const ETFList: React.FC<ETFListProps> = ({ etfs, onSelect, isDarkMode }) => {
                     6M
                   </div>
                   <div
-                    className={`${valueClass(isDarkMode)} mt-2 flex items-center justify-center text-center`}
+                    className={`${valueClass(isDarkMode)} ${percentClass(etf.return6M, isDarkMode)} mt-2 flex items-center justify-center text-center`}
                   >
                     {percentOrDash(etf.return6M)}%
                   </div>
@@ -239,22 +371,22 @@ const ETFList: React.FC<ETFListProps> = ({ etfs, onSelect, isDarkMode }) => {
                 {numberOrDash(etf.avgTradingValueYtdBillion, 1)}
               </span>
               <span
-                className={`flex min-w-0 items-center justify-center text-[14px] font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                className={`flex min-w-0 items-center justify-center text-[14px] font-bold ${percentClass(etf.return1M, isDarkMode)}`}
               >
                 {percentOrDash(etf.return1M)}%
               </span>
               <span
-                className={`flex min-w-0 items-center justify-center text-[14px] font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                className={`flex min-w-0 items-center justify-center text-[14px] font-bold ${percentClass(etf.return3M, isDarkMode)}`}
               >
                 {percentOrDash(etf.return3M)}%
               </span>
               <span
-                className={`flex min-w-0 items-center justify-center text-[14px] font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                className={`flex min-w-0 items-center justify-center text-[14px] font-bold ${percentClass(etf.return6M, isDarkMode)}`}
               >
                 {percentOrDash(etf.return6M)}%
               </span>
               <span
-                className={`flex min-w-0 items-center justify-center pr-5 text-[14px] font-black ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                className={`flex min-w-0 items-center justify-center pr-5 text-[14px] font-black ${percentClass(etf.return1Y, isDarkMode)}`}
               >
                 {percentOrDash(etf.return1Y)}%
               </span>

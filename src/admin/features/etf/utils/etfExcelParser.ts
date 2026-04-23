@@ -107,6 +107,21 @@ function cleanNumber(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
+function cleanPercentNumber(value: unknown, cellFormat?: string, cellText?: string): number | null {
+  if (value === null || value === undefined || value === '' || value === '-') return null;
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null;
+    return cellFormat?.includes('%') || cellText?.includes('%') ? value * 100 : value;
+  }
+
+  const normalized = String(value).replace(/,/g, '').replace(/%/g, '').trim();
+  if (!normalized) return null;
+
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
 function excelDateToISO(value: unknown): string | null {
   if (value === null || value === undefined || value === '' || value === '-') return null;
 
@@ -172,6 +187,8 @@ export function parseEtfExcel(file: ArrayBuffer): EtfParseResult {
   for (let i = DATA_START_ROW_INDEX; i < rows.length; i++) {
     const row = rows[i] as unknown[];
     if (!row || row.every((cell) => cleanText(cell) === null)) continue;
+    const terCellAddress = XLSX.utils.encode_cell({ r: i, c: resolvedIndex['TER*'] });
+    const terCell = sheet[terCellAddress] as { z?: string; w?: string } | undefined;
 
     const code = cleanText(row[resolvedIndex['코드']]);
     const nameEn = cleanText(row[resolvedIndex['명칭(영문)']]);
@@ -205,7 +222,7 @@ export function parseEtfExcel(file: ArrayBuffer): EtfParseResult {
       benchmark_name_en: cleanText(row[resolvedIndex['벤치마크 명칭(영문)']]),
       category_large: cleanText(row[resolvedIndex['대분류']]),
       category_small: cleanText(row[resolvedIndex['소분류']]),
-      ter: cleanNumber(row[resolvedIndex['TER*']]),
+      ter: cleanPercentNumber(row[resolvedIndex['TER*']], terCell?.z, terCell?.w),
       dividend_yield: cleanNumber(row[resolvedIndex['배당률']]),
       avg_trading_value_ytd_billion: cleanNumber(row[resolvedIndex['일평균 거래대금(YTD,억원)']]),
       nav: cleanNumber(row[resolvedIndex['NAV']]),

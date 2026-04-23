@@ -20,14 +20,25 @@ const formatPercent = (value: number | null | undefined) => {
   return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 };
 
+const percentClass = (value: number | null | undefined, isDarkMode: boolean) => {
+  if (value === null || value === undefined) {
+    return isDarkMode ? "text-white" : "text-gray-900";
+  }
+  return value >= 0
+    ? (isDarkMode ? "text-rose-400" : "text-rose-600")
+    : (isDarkMode ? "text-blue-400" : "text-blue-600");
+};
+
 const InfoRow = ({
   label,
   value,
   isDarkMode,
+  valueClassName,
 }: {
   label: string;
   value: string;
   isDarkMode: boolean;
+  valueClassName?: string;
 }) => (
   <div className="flex items-center justify-between gap-4 py-2">
     <span
@@ -36,7 +47,7 @@ const InfoRow = ({
       {label}
     </span>
     <span
-      className={`text-sm font-black text-right ${isDarkMode ? "text-white" : "text-gray-900"}`}
+      className={`text-sm font-black text-right ${valueClassName || (isDarkMode ? "text-white" : "text-gray-900")}`}
     >
       {value}
     </span>
@@ -87,12 +98,12 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
         </div>
 
         <h1
-          className={`text-4xl lg:text-5xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-gray-900"}`}
+          className={`text-2xl lg:text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-gray-900"}`}
         >
           {etf.nameEn}
         </h1>
         <p
-          className={`mt-4 text-2xl lg:text-3xl font-black leading-tight ${isDarkMode ? "text-slate-200" : "text-gray-900"}`}
+          className={`mt-2 text-lg lg:text-xl font-normal leading-tight ${isDarkMode ? "text-slate-300" : "text-gray-700"}`}
         >
           {etf.summary || "ETF 개요가 아직 등록되지 않았습니다."}
         </p>
@@ -215,21 +226,25 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
                 label="1M"
                 value={formatPercent(etf.return1M)}
                 isDarkMode={isDarkMode}
+                valueClassName={percentClass(etf.return1M, isDarkMode)}
               />
               <InfoRow
                 label="3M"
                 value={formatPercent(etf.return3M)}
                 isDarkMode={isDarkMode}
+                valueClassName={percentClass(etf.return3M, isDarkMode)}
               />
               <InfoRow
                 label="6M"
                 value={formatPercent(etf.return6M)}
                 isDarkMode={isDarkMode}
+                valueClassName={percentClass(etf.return6M, isDarkMode)}
               />
               <InfoRow
                 label="1Y"
                 value={formatPercent(etf.return1Y)}
                 isDarkMode={isDarkMode}
+                valueClassName={percentClass(etf.return1Y, isDarkMode)}
               />
             </div>
           </div>
