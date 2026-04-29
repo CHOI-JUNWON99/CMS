@@ -64,6 +64,7 @@ export interface Client {
   password?: string;
   logoUrl?: string;
   brandColor?: string;  // 브랜드 색상 (헤더, 포트폴리오 카드 등)
+  portfolioType?: string;
   isActive: boolean;
 }
 

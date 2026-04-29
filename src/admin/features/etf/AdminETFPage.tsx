@@ -496,7 +496,7 @@ const AdminETFPage: React.FC = () => {
                       <td className="px-4 py-4">{formatNumber(etf.aumKrwBillion, 1)}</td>
                       <td className="px-4 py-4">{etf.return1Y === null || etf.return1Y === undefined ? '-' : `${etf.return1Y.toFixed(2)}%`}</td>
                       <td className="px-4 py-4">
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${etf.isActive ? 'bg-emerald-900/40 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                        <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-black ${etf.isActive ? 'bg-emerald-900/40 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
                           {etf.isActive ? '노출 중' : '숨김'}
                         </span>
                       </td>

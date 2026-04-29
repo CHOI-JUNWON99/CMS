@@ -102,49 +102,56 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
         >
           {etf.nameEn}
         </h1>
-        <p
-          className={`mt-2 text-lg lg:text-xl font-normal leading-tight ${isDarkMode ? "text-slate-300" : "text-gray-700"}`}
-        >
-          {etf.summary || "ETF 개요가 아직 등록되지 않았습니다."}
-        </p>
       </section>
 
-      <section className="mt-10 grid grid-cols-1 lg:grid-cols-[180px_minmax(0,1fr)] gap-6">
+      <section className="mt-10 grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)] gap-6">
         <div
-          className={`rounded-[24px] border px-5 py-8 text-center flex flex-col justify-between ${isDarkMode ? "bg-[#112240] border-slate-700" : "bg-white border-gray-200 shadow-sm"}`}
+          className={`rounded-[24px] border p-5 sm:p-6 lg:min-h-[352px] ${isDarkMode ? "bg-[#112240] border-slate-700" : "bg-white border-gray-200 shadow-sm"}`}
         >
-          <div
-            className={`text-xl font-black ${isDarkMode ? "text-white" : "text-gray-900"}`}
-          >
-            종가
-          </div>
-          <div
-            className={`mt-3 text-2xl font-black tracking-tight whitespace-nowrap lg:-mt-[20px] ${isDarkMode ? "text-white" : "text-gray-900"}`}
-          >
-            {formatNumber(etf.closePriceCny, 4)}
-            <span
-              className={`ml-1 text-sm font-bold ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}
-            >
-              위안
-            </span>
-          </div>
-          <div
-            className={`my-5 h-px lg:my-0 ${isDarkMode ? "bg-slate-700" : "bg-gray-200"}`}
-          />
-          <div
-            className={`text-xl font-black ${isDarkMode ? "text-white" : "text-gray-900"}`}
-          >
-            거래량
-          </div>
-          <div
-            className={`mt-3 text-2xl font-black tracking-tight whitespace-nowrap lg:-mt-[20px] ${isDarkMode ? "text-white" : "text-gray-900"}`}
-          >
-            {formatNumber(etf.volume, 0)}
-            <span
-              className={`ml-1 text-sm font-bold ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}
-            >
-              주
-            </span>
+          <div className="grid h-full grid-rows-[1fr_auto_1fr] items-stretch">
+            <div className="flex flex-col items-center justify-center text-center py-4">
+              <div
+                className={`text-[22px] font-black tracking-tight ${isDarkMode ? "text-slate-200" : "text-gray-800"}`}
+              >
+                종가
+              </div>
+              <div
+                className={`mt-3 flex items-end justify-center gap-1 whitespace-nowrap ${isDarkMode ? "text-white" : "text-gray-900"}`}
+              >
+                <span className="text-[clamp(1.75rem,1.9vw,2.6rem)] font-black tracking-[-0.05em] tabular-nums">
+                  {formatNumber(etf.closePriceCny, 4)}
+                </span>
+                <span
+                  className={`mb-1 text-sm font-bold ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}
+                >
+                  위안
+                </span>
+              </div>
+            </div>
+
+            <div
+              className={`mx-4 h-px self-center ${isDarkMode ? "bg-slate-700" : "bg-gray-200"}`}
+            />
+
+            <div className="flex flex-col items-center justify-center text-center py-4">
+              <div
+                className={`text-[22px] font-black tracking-tight ${isDarkMode ? "text-slate-200" : "text-gray-800"}`}
+              >
+                거래량
+              </div>
+              <div
+                className={`mt-3 flex items-end justify-center gap-1 whitespace-nowrap ${isDarkMode ? "text-white" : "text-gray-900"}`}
+              >
+                <span className="text-[clamp(1.3rem,1.6vw,2.2rem)] font-black tracking-[-0.06em] tabular-nums">
+                  {formatNumber(etf.volume, 0)}
+                </span>
+                <span
+                  className={`mb-1 text-sm font-bold ${isDarkMode ? "text-slate-500" : "text-gray-400"}`}
+                >
+                  주
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

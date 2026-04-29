@@ -6,7 +6,6 @@ interface PortfolioSelectorProps {
   filteredPortfolios: Portfolio[];
   selectedPortfolioId: string | null;
   onSelectPortfolio: (id: string) => void;
-  onAddNew: () => void;
   // Client filter
   clients: Client[];
   selectedClientId: string;
@@ -19,7 +18,6 @@ const PortfolioSelector: React.FC<PortfolioSelectorProps> = ({
   filteredPortfolios,
   selectedPortfolioId,
   onSelectPortfolio,
-  onAddNew,
   clients,
   selectedClientId,
   onClientChange,
@@ -71,19 +69,13 @@ const PortfolioSelector: React.FC<PortfolioSelectorProps> = ({
             }`}
           >
             <span>{p.name}</span>
-            {getClientName(p.clientId) && (
+            {getClientName(p.clientId) && getClientName(p.clientId) !== p.name && (
               <span className="ml-1.5 text-[9px] text-slate-300 opacity-60">
                 ({getClientName(p.clientId)})
               </span>
             )}
           </button>
         ))}
-        <button
-          onClick={onAddNew}
-          className="px-3 py-1.5 rounded-lg bg-slate-800 border border-dashed border-slate-700 text-slate-300 text-xs font-bold hover:border-slate-600 hover:text-slate-200 transition-all"
-        >
-          + 새 포트폴리오
-        </button>
       </div>
     </>
   );

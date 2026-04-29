@@ -65,7 +65,7 @@ const SharedPasswordManagement: React.FC = () => {
       return;
     }
     if (!newIsMaster && newClientIds.length === 0) {
-      toast.warning('마스터가 아닌 경우 최소 1개의 소속을 선택해주세요.');
+      toast.warning('마스터가 아닌 경우 최소 1개의 포트폴리오를 선택해주세요.');
       return;
     }
 
@@ -80,9 +80,9 @@ const SharedPasswordManagement: React.FC = () => {
       });
       setShowAddModal(false);
       resetAddForm();
-      toast.success('공유 비밀번호가 추가되었습니다.');
+      toast.success('기관이 추가되었습니다.');
     } catch {
-      toast.error('공유 비밀번호 추가에 실패했습니다.');
+      toast.error('기관 추가에 실패했습니다.');
     }
   };
 
@@ -108,7 +108,7 @@ const SharedPasswordManagement: React.FC = () => {
       return;
     }
     if (!editIsMaster && editClientIds.length === 0) {
-      toast.warning('마스터가 아닌 경우 최소 1개의 소속을 선택해주세요.');
+      toast.warning('마스터가 아닌 경우 최소 1개의 포트폴리오를 선택해주세요.');
       return;
     }
 
@@ -124,9 +124,9 @@ const SharedPasswordManagement: React.FC = () => {
       });
       setShowEditModal(false);
       setEditing(null);
-      toast.success('공유 비밀번호가 수정되었습니다.');
+      toast.success('기관이 수정되었습니다.');
     } catch {
-      toast.error('공유 비밀번호 수정에 실패했습니다.');
+      toast.error('기관 수정에 실패했습니다.');
     }
   };
 
@@ -136,9 +136,9 @@ const SharedPasswordManagement: React.FC = () => {
 
     try {
       await deleteMutation.mutateAsync(shared.id);
-      toast.success('공유 비밀번호가 삭제되었습니다.');
+      toast.success('기관이 삭제되었습니다.');
     } catch {
-      toast.error('공유 비밀번호 삭제에 실패했습니다.');
+      toast.error('기관 삭제에 실패했습니다.');
     }
   };
 
@@ -187,7 +187,7 @@ const SharedPasswordManagement: React.FC = () => {
             </div>
             {!shared.isMaster && clientNames && (
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[11px] text-slate-400">소속:</span>
+                <span className="text-[11px] text-slate-400">포트폴리오:</span>
                 <span className="text-[11px] text-slate-300 truncate">{clientNames}</span>
               </div>
             )}
@@ -262,7 +262,7 @@ const SharedPasswordManagement: React.FC = () => {
         ))
       ) : (
         <p className="text-xs text-slate-400">
-          {isEdit ? '등록된 소속이 없습니다.' : '등록된 소속이 없습니다. 먼저 소속을 추가해주세요.'}
+          {isEdit ? '등록된 포트폴리오가 없습니다.' : '등록된 포트폴리오가 없습니다. 먼저 포트폴리오를 추가해주세요.'}
         </p>
       )}
     </div>
@@ -283,7 +283,7 @@ const SharedPasswordManagement: React.FC = () => {
       <section className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h3 className="text-sm font-black text-purple-400 tracking-wider">공유 비밀번호</h3>
+            <h3 className="text-sm font-black text-purple-400 tracking-wider">기관</h3>
             <span className="px-2 py-0.5 rounded bg-purple-900/30 text-purple-400 text-xs font-bold">
               {sharedPasswords.length}개
             </span>
@@ -295,7 +295,7 @@ const SharedPasswordManagement: React.FC = () => {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
             </svg>
-            공유 비밀번호 추가
+            기관 추가
           </button>
         </div>
 
@@ -304,13 +304,13 @@ const SharedPasswordManagement: React.FC = () => {
             sharedPasswords.map((shared) => <SharedPasswordCard key={shared.id} shared={shared} />)
           ) : (
             <div className="text-center py-8 text-slate-300 font-bold">
-              등록된 공유 비밀번호가 없습니다.
+              등록된 기관이 없습니다.
             </div>
           )}
         </div>
 
         <p className="mt-4 text-xs text-slate-300">
-          공유 비밀번호로 여러 소속의 포트폴리오를 한번에 볼 수 있습니다. 마스터 비밀번호는 모든 소속에 접근할 수 있습니다.
+          기관을 등록하면 여러 포트폴리오를 한번에 볼 수 있습니다. 마스터 기관은 모든 포트폴리오에 접근할 수 있습니다.
         </p>
       </section>
 
@@ -318,12 +318,12 @@ const SharedPasswordManagement: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-black text-white mb-2">공유 비밀번호 추가</h3>
-            <p className="text-xs text-slate-300 mb-6">여러 소속을 한번에 볼 수 있는 비밀번호를 추가합니다.</p>
+            <h3 className="text-lg font-black text-white mb-2">기관 추가</h3>
+            <p className="text-xs text-slate-300 mb-6">여러 포트폴리오를 한번에 볼 수 있는 기관 정보를 추가합니다.</p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">기관 이름 *</label>
                 <input
                   type="text"
                   value={newName}
@@ -359,9 +359,9 @@ const SharedPasswordManagement: React.FC = () => {
                     onChange={(e) => setNewIsMaster(e.target.checked)}
                     className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500"
                   />
-                  <span className="text-sm font-bold text-white">마스터 (모든 소속 접근)</span>
+                  <span className="text-sm font-bold text-white">마스터 (모든 포트폴리오 접근)</span>
                 </label>
-                <p className="text-[10px] text-slate-400 mt-1 ml-8">마스터 비밀번호는 모든 포트폴리오에 접근할 수 있습니다.</p>
+                <p className="text-[10px] text-slate-400 mt-1 ml-8">마스터 기관은 모든 포트폴리오에 접근할 수 있습니다.</p>
               </div>
 
               <div>
@@ -374,12 +374,12 @@ const SharedPasswordManagement: React.FC = () => {
                   />
                   <span className="text-sm font-bold text-white">정책 뉴스 표시</span>
                 </label>
-                <p className="text-[10px] text-slate-400 mt-1 ml-8">이 비밀번호로 접근 시 정책 뉴스를 볼 수 있습니다.</p>
+                <p className="text-[10px] text-slate-400 mt-1 ml-8">이 기관으로 접근 시 정책 뉴스를 볼 수 있습니다.</p>
               </div>
 
               {!newIsMaster && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-2">접근 가능한 소속 선택 *</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-2">접근 가능한 포트폴리오 선택 *</label>
                   <ClientCheckboxList
                     selectedIds={newClientIds}
                     onToggle={(id) => toggleClientSelection(id, false)}
@@ -415,12 +415,12 @@ const SharedPasswordManagement: React.FC = () => {
       {showEditModal && editing && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-black text-white mb-2">공유 비밀번호 수정</h3>
-            <p className="text-xs text-slate-300 mb-6">공유 비밀번호 정보를 수정합니다.</p>
+            <h3 className="text-lg font-black text-white mb-2">기관 수정</h3>
+            <p className="text-xs text-slate-300 mb-6">기관 정보를 수정합니다.</p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">이름 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">기관 이름 *</label>
                 <input
                   type="text"
                   value={editName}
@@ -454,7 +454,7 @@ const SharedPasswordManagement: React.FC = () => {
                     onChange={(e) => setEditIsMaster(e.target.checked)}
                     className="w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500"
                   />
-                  <span className="text-sm font-bold text-white">마스터 (모든 소속 접근)</span>
+                  <span className="text-sm font-bold text-white">마스터 (모든 포트폴리오 접근)</span>
                 </label>
               </div>
 
@@ -472,7 +472,7 @@ const SharedPasswordManagement: React.FC = () => {
 
               {!editIsMaster && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-2">접근 가능한 소속 선택 *</label>
+                  <label className="block text-xs font-bold text-slate-200 mb-2">접근 가능한 포트폴리오 선택 *</label>
                   <ClientCheckboxList
                     selectedIds={editClientIds}
                     onToggle={(id) => toggleClientSelection(id, true)}

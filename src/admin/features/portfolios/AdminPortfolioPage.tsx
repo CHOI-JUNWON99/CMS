@@ -4,7 +4,6 @@ import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
 import { DbPortfolioRow } from '@/shared/types';
 import { formatMarketCapShort } from '@/shared/utils';
 import {
-  PortfolioModal,
   PortfolioStockList,
   AvailableStockList,
   PortfolioSummaryCard,
@@ -12,7 +11,6 @@ import {
   Portfolio,
   StockItem,
   PortfolioStock,
-  NewPortfolioData,
   Client,
 } from './components';
 
@@ -54,18 +52,6 @@ const AdminPortfolioPage: React.FC = () => {
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
-
-  // 모달 상태
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
-  const [newPortfolio, setNewPortfolio] = useState<NewPortfolioData>({
-    name: '',
-    description: '',
-    clientId: '',
-    portfolioType: 'standard',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 클라이언트 목록 로딩 (RPC 경유)
   useEffect(() => {
@@ -213,131 +199,6 @@ const AdminPortfolioPage: React.FC = () => {
     );
   }, [allStocks, portfolioStockIds, searchQuery]);
 
-  // CRUD 핸들러
-  const handleAddPortfolio = async () => {
-    if (!newPortfolio.name.trim()) {
-      toast.warning('포트폴리오 이름을 입력해주세요.');
-      return;
-    }
-    if (clients.length > 0 && !newPortfolio.clientId) {
-      toast.warning('클라이언트를 선택해주세요.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { data, error } = await supabase
-        .from('portfolios')
-        .insert({
-          name: newPortfolio.name.trim(),
-          description: newPortfolio.description.trim(),
-          is_active: false,
-          client_id: newPortfolio.clientId || null,
-          portfolio_type: newPortfolio.portfolioType || 'standard',
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      const newP: Portfolio = {
-        id: data.id,
-        name: newPortfolio.name.trim(),
-        description: newPortfolio.description.trim(),
-        isActive: false,
-        createdAt: new Date().toISOString(),
-        clientId: newPortfolio.clientId || null,
-        portfolioType: newPortfolio.portfolioType || 'standard',
-      };
-
-      setPortfolios([newP, ...portfolios]);
-      setSelectedPortfolioId(data.id);
-      setShowAddModal(false);
-      setNewPortfolio({ name: '', description: '', clientId: '', portfolioType: 'standard' });
-      toast.success('포트폴리오가 추가되었습니다.');
-    } catch (err) {
-      console.error('포트폴리오 추가 실패:', err);
-      toast.error('추가에 실패했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdatePortfolio = async () => {
-    if (!editingPortfolio || !editingPortfolio.name.trim()) {
-      toast.warning('포트폴리오 이름을 입력해주세요.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from('portfolios')
-        .update({
-          name: editingPortfolio.name.trim(),
-          description: editingPortfolio.description.trim(),
-          client_id: editingPortfolio.clientId || null,
-          portfolio_type: editingPortfolio.portfolioType || 'standard',
-        })
-        .eq('id', editingPortfolio.id);
-
-      if (error) throw error;
-
-      setPortfolios(portfolios.map(p =>
-        p.id === editingPortfolio.id
-          ? { ...p, name: editingPortfolio.name.trim(), description: editingPortfolio.description.trim(), clientId: editingPortfolio.clientId, portfolioType: editingPortfolio.portfolioType }
-          : p
-      ));
-      setShowEditModal(false);
-      setEditingPortfolio(null);
-      toast.success('포트폴리오가 수정되었습니다.');
-    } catch (err) {
-      console.error('포트폴리오 수정 실패:', err);
-      toast.error('수정에 실패했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeletePortfolio = async (portfolioId: string) => {
-    const confirmed = await confirm.custom({
-      title: '포트폴리오 삭제',
-      message: '이 포트폴리오를 삭제하시겠습니까?\n포함된 종목 연결도 모두 삭제됩니다.',
-      confirmText: '삭제',
-      variant: 'danger',
-    });
-    if (!confirmed) return;
-
-    try {
-      if (import.meta.env.PROD) {
-        const res = await fetch('/api/admin/portfolio-action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ action: 'delete_portfolio', portfolioId }),
-        });
-        if (!res.ok) throw new Error('Failed');
-      } else {
-        const adminCode = getAdminCode();
-        const { error } = await supabase.rpc('delete_portfolio', {
-          admin_code: adminCode,
-          p_portfolio_id: portfolioId,
-        });
-        if (error) throw error;
-      }
-
-      const remaining = portfolios.filter(p => p.id !== portfolioId);
-      setPortfolios(remaining);
-      if (selectedPortfolioId === portfolioId) {
-        setSelectedPortfolioId(remaining.length > 0 ? remaining[0].id : null);
-      }
-      toast.success('포트폴리오가 삭제되었습니다.');
-    } catch (err) {
-      console.error('포트폴리오 삭제 실패:', err);
-      toast.error('삭제에 실패했습니다.');
-    }
-  };
-
   const handleSetActive = async (portfolioId: string) => {
     try {
       if (import.meta.env.PROD) {
@@ -478,7 +339,6 @@ const AdminPortfolioPage: React.FC = () => {
         filteredPortfolios={filteredPortfolios}
         selectedPortfolioId={selectedPortfolioId}
         onSelectPortfolio={setSelectedPortfolioId}
-        onAddNew={() => setShowAddModal(true)}
         clients={clients}
         selectedClientId={selectedClientId}
         onClientChange={handleClientChange}
@@ -487,10 +347,8 @@ const AdminPortfolioPage: React.FC = () => {
 
       {!selectedPortfolio ? (
         <div className="text-center py-20 rounded-xl bg-slate-900/30 border border-slate-800">
-          <p className="text-slate-300 font-bold mb-2">포트폴리오가 없습니다.</p>
-          <button onClick={() => setShowAddModal(true)} className="text-red-400 text-sm font-bold hover:underline">
-            첫 번째 포트폴리오 만들기
-          </button>
+          <p className="text-slate-300 font-bold mb-2">표시할 포트폴리오가 없습니다.</p>
+          <p className="text-sm text-slate-400">설정에서 포트폴리오를 추가하거나 필터를 변경해주세요.</p>
         </div>
       ) : (
         <>
@@ -498,8 +356,6 @@ const AdminPortfolioPage: React.FC = () => {
             portfolio={selectedPortfolio}
             stockCount={includedStocks.length}
             totalReturnRate={includedStocks.reduce((sum, s) => sum + (s.returnRate || 0), 0)}
-            onEdit={() => { setEditingPortfolio(selectedPortfolio); setShowEditModal(true); }}
-            onDelete={() => handleDeletePortfolio(selectedPortfolio.id)}
             onSetActive={() => handleSetActive(selectedPortfolio.id)}
             onDeactivate={() => handleDeactivate(selectedPortfolio.id)}
           />
@@ -527,28 +383,6 @@ const AdminPortfolioPage: React.FC = () => {
           />
         </>
       )}
-
-      <PortfolioModal
-        mode="add"
-        isOpen={showAddModal}
-        onClose={() => { setShowAddModal(false); setNewPortfolio({ name: '', description: '', clientId: '', portfolioType: 'standard' }); }}
-        onSubmit={handleAddPortfolio}
-        clients={clients}
-        isSubmitting={isSubmitting}
-        newPortfolio={newPortfolio}
-        onNewPortfolioChange={setNewPortfolio}
-      />
-
-      <PortfolioModal
-        mode="edit"
-        isOpen={showEditModal}
-        onClose={() => { setShowEditModal(false); setEditingPortfolio(null); }}
-        onSubmit={handleUpdatePortfolio}
-        clients={clients}
-        isSubmitting={isSubmitting}
-        editingPortfolio={editingPortfolio}
-        onEditingPortfolioChange={setEditingPortfolio}
-      />
     </div>
   );
 };

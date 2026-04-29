@@ -23,11 +23,11 @@ const AdminSettings: React.FC = () => {
     <div className="animate-in fade-in duration-500 space-y-8">
       <h2 className="text-lg font-black text-white">설정</h2>
 
-      {/* 소속 관리 */}
-      <ClientManagement />
-
-      {/* 공유 비밀번호 관리 */}
+      {/* 기관 관리 */}
       <SharedPasswordManagement />
+
+      {/* 포트폴리오 관리 */}
+      <ClientManagement />
 
       {/* 관리자 인증코드 관리 */}
       <AdminCodeManagement />

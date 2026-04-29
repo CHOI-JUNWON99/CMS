@@ -3,6 +3,9 @@ import { useClients, useAddClient, useUpdateClient, useDeleteClient } from '../h
 import { toast, confirm } from '@/shared/stores';
 import { Client } from '@/shared/types';
 
+const DEFAULT_BRAND_COLOR = '#1e3a8a';
+const DEFAULT_PORTFOLIO_TYPE = 'standard';
+
 const presetColors = [
   { name: '파랑', color: '#1e3a8a' },
   { name: '빨강', color: '#dc2626' },
@@ -24,18 +27,22 @@ const ClientManagement: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientPassword, setNewClientPassword] = useState('');
-  const [newClientBrandColor, setNewClientBrandColor] = useState('#1e3a8a');
+  const [newClientBrandColor, setNewClientBrandColor] = useState(DEFAULT_BRAND_COLOR);
+  const [newClientDescription, setNewClientDescription] = useState('');
+  const [newClientPortfolioType, setNewClientPortfolioType] = useState(DEFAULT_PORTFOLIO_TYPE);
 
   // 수정 모달 상태
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editClientName, setEditClientName] = useState('');
   const [editClientPassword, setEditClientPassword] = useState('');
-  const [editClientBrandColor, setEditClientBrandColor] = useState('#1e3a8a');
+  const [editClientBrandColor, setEditClientBrandColor] = useState(DEFAULT_BRAND_COLOR);
+  const [editClientDescription, setEditClientDescription] = useState('');
+  const [editClientPortfolioType, setEditClientPortfolioType] = useState(DEFAULT_PORTFOLIO_TYPE);
 
   const handleAddClient = async () => {
     if (!newClientName.trim()) {
-      toast.warning('소속 이름을 입력해주세요.');
+      toast.warning('포트폴리오 이름을 입력해주세요.');
       return;
     }
     if (!newClientPassword.trim()) {
@@ -48,14 +55,18 @@ const ClientManagement: React.FC = () => {
         name: newClientName,
         password: newClientPassword,
         brandColor: newClientBrandColor,
+        description: newClientDescription,
+        portfolioType: newClientPortfolioType,
       });
       setShowAddModal(false);
       setNewClientName('');
       setNewClientPassword('');
-      setNewClientBrandColor('#1e3a8a');
-      toast.success('소속이 추가되었습니다.');
+      setNewClientBrandColor(DEFAULT_BRAND_COLOR);
+      setNewClientDescription('');
+      setNewClientPortfolioType(DEFAULT_PORTFOLIO_TYPE);
+      toast.success('포트폴리오가 추가되었습니다.');
     } catch {
-      toast.error('소속 추가에 실패했습니다.');
+      toast.error('포트폴리오 추가에 실패했습니다.');
     }
   };
 
@@ -63,14 +74,16 @@ const ClientManagement: React.FC = () => {
     setEditingClient(client);
     setEditClientName(client.name);
     setEditClientPassword('');
-    setEditClientBrandColor(client.brandColor || '#1e3a8a');
+    setEditClientBrandColor(client.brandColor || DEFAULT_BRAND_COLOR);
+    setEditClientDescription(client.description || '');
+    setEditClientPortfolioType(client.portfolioType || DEFAULT_PORTFOLIO_TYPE);
     setShowEditModal(true);
   };
 
   const handleEditClient = async () => {
     if (!editingClient) return;
     if (!editClientName.trim()) {
-      toast.warning('소속 이름을 입력해주세요.');
+      toast.warning('포트폴리오 이름을 입력해주세요.');
       return;
     }
     if (!editClientPassword.trim()) {
@@ -84,19 +97,21 @@ const ClientManagement: React.FC = () => {
         name: editClientName,
         password: editClientPassword,
         brandColor: editClientBrandColor,
+        description: editClientDescription,
+        portfolioType: editClientPortfolioType,
       });
       setShowEditModal(false);
       setEditingClient(null);
-      toast.success('소속이 수정되었습니다.');
+      toast.success('포트폴리오가 수정되었습니다.');
     } catch {
-      toast.error('소속 수정에 실패했습니다.');
+      toast.error('포트폴리오 수정에 실패했습니다.');
     }
   };
 
   const handleDeleteClient = async (client: Client) => {
     const confirmed = await confirm.custom({
-      title: '소속 삭제',
-      message: `정말 "${client.name}" 소속을 삭제하시겠습니까?\n\n이 소속에 연결된 포트폴리오와 자료는 삭제되지 않지만, 연결이 해제됩니다.`,
+      title: '포트폴리오 삭제',
+      message: `정말 "${client.name}" 포트폴리오를 삭제하시겠습니까?\n\n종목 구성은 함께 삭제되고, 자료/정책 뉴스/ETF 연결은 해제됩니다.`,
       confirmText: '삭제',
       variant: 'danger',
     });
@@ -104,9 +119,9 @@ const ClientManagement: React.FC = () => {
 
     try {
       await deleteClientMutation.mutateAsync(client.id);
-      toast.success('소속이 삭제되었습니다.');
+      toast.success('포트폴리오가 삭제되었습니다.');
     } catch {
-      toast.error('소속 삭제에 실패했습니다.');
+      toast.error('포트폴리오 삭제에 실패했습니다.');
     }
   };
 
@@ -121,12 +136,18 @@ const ClientManagement: React.FC = () => {
         <div className="flex flex-col flex-1 min-w-0">
           <div className="flex items-center gap-3">
             <span className="font-bold text-white text-base truncate">{client.name}</span>
+            <span className="px-2 py-0.5 rounded bg-slate-700 text-slate-200 text-[10px] font-black">
+              {client.portfolioType === 'ib' ? 'IB' : '일반'}
+            </span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
               client.isActive ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-200'
             }`}>
               {client.isActive ? '활성' : '비활성'}
             </span>
           </div>
+          {client.description && (
+            <p className="mt-1 text-xs text-slate-300 truncate">{client.description}</p>
+          )}
           <div className="flex items-center gap-2 mt-1">
             <span className="text-[11px] text-slate-400">비밀번호:</span>
             <span className="font-mono text-sm text-blue-400">{client.password || '—'}</span>
@@ -192,7 +213,7 @@ const ClientManagement: React.FC = () => {
       <section className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h3 className="text-sm font-black text-blue-400 tracking-wider">소속 관리</h3>
+            <h3 className="text-sm font-black text-blue-400 tracking-wider">포트폴리오</h3>
             <span className="px-2 py-0.5 rounded bg-blue-900/30 text-blue-400 text-xs font-bold">
               {clients.length}개
             </span>
@@ -204,7 +225,7 @@ const ClientManagement: React.FC = () => {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
             </svg>
-            소속 추가
+            포트폴리오 추가
           </button>
         </div>
 
@@ -213,13 +234,13 @@ const ClientManagement: React.FC = () => {
             clients.map((client) => <ClientCard key={client.id} client={client} />)
           ) : (
             <div className="text-center py-8 text-slate-300 font-bold">
-              등록된 소속이 없습니다.
+              등록된 포트폴리오가 없습니다.
             </div>
           )}
         </div>
 
         <p className="mt-4 text-xs text-slate-300">
-          소속을 추가하면 해당 소속만의 비밀번호를 설정할 수 있습니다. 사용자는 비밀번호를 입력하여 해당 소속의 포트폴리오와 자료만 볼 수 있습니다.
+          여기서 만든 포트폴리오는 포트폴리오 페이지에 바로 노출됩니다. 포트폴리오 페이지에서는 종목 구성과 활성화만 관리합니다.
         </p>
       </section>
 
@@ -227,12 +248,12 @@ const ClientManagement: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-md p-6">
-            <h3 className="text-lg font-black text-white mb-2">소속 추가</h3>
-            <p className="text-xs text-slate-300 mb-6">새로운 소속과 비밀번호를 추가합니다.</p>
+            <h3 className="text-lg font-black text-white mb-2">포트폴리오 추가</h3>
+            <p className="text-xs text-slate-300 mb-6">새로운 포트폴리오와 비밀번호를 추가합니다.</p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">소속 이름 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">포트폴리오 이름 *</label>
                 <input
                   type="text"
                   value={newClientName}
@@ -253,7 +274,31 @@ const ClientManagement: React.FC = () => {
                   className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
                   placeholder="shinhan2025"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">이 비밀번호로 로그인하면 해당 소속의 포트폴리오만 볼 수 있습니다.</p>
+                <p className="text-[10px] text-slate-400 mt-1">이 비밀번호로 로그인하면 해당 포트폴리오만 볼 수 있습니다.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">포트폴리오 타입</label>
+                <select
+                  value={newClientPortfolioType}
+                  onChange={(e) => setNewClientPortfolioType(e.target.value)}
+                  className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                >
+                  <option value="standard">일반 포트폴리오</option>
+                  <option value="ib">IB 투자의견</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">IB 투자의견 타입은 종목 대신 IB 데이터를 표시합니다.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">설명</label>
+                <textarea
+                  value={newClientDescription}
+                  onChange={(e) => setNewClientDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm resize-none"
+                  placeholder="포트폴리오 설명 (선택)"
+                />
               </div>
 
               <div>
@@ -269,7 +314,9 @@ const ClientManagement: React.FC = () => {
                   setShowAddModal(false);
                   setNewClientName('');
                   setNewClientPassword('');
-                  setNewClientBrandColor('#1e3a8a');
+                  setNewClientBrandColor(DEFAULT_BRAND_COLOR);
+                  setNewClientDescription('');
+                  setNewClientPortfolioType(DEFAULT_PORTFOLIO_TYPE);
                 }}
                 className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
@@ -291,12 +338,12 @@ const ClientManagement: React.FC = () => {
       {showEditModal && editingClient && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-md p-6">
-            <h3 className="text-lg font-black text-white mb-2">소속 수정</h3>
-            <p className="text-xs text-slate-300 mb-6">소속 정보를 수정합니다.</p>
+            <h3 className="text-lg font-black text-white mb-2">포트폴리오 수정</h3>
+            <p className="text-xs text-slate-300 mb-6">포트폴리오 정보를 수정합니다.</p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">소속 이름 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">포트폴리오 이름 *</label>
                 <input
                   type="text"
                   value={editClientName}
@@ -314,6 +361,29 @@ const ClientManagement: React.FC = () => {
                   onChange={(e) => setEditClientPassword(e.target.value)}
                   maxLength={100}
                   className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">포트폴리오 타입</label>
+                <select
+                  value={editClientPortfolioType}
+                  onChange={(e) => setEditClientPortfolioType(e.target.value)}
+                  className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                >
+                  <option value="standard">일반 포트폴리오</option>
+                  <option value="ib">IB 투자의견</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">설명</label>
+                <textarea
+                  value={editClientDescription}
+                  onChange={(e) => setEditClientDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm resize-none"
+                  placeholder="포트폴리오 설명 (선택)"
                 />
               </div>
 

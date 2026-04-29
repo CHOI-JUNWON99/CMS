@@ -5,8 +5,6 @@ interface PortfolioSummaryCardProps {
   portfolio: Portfolio;
   stockCount: number;
   totalReturnRate: number;
-  onEdit: () => void;
-  onDelete: () => void;
   onSetActive: () => void;
   onDeactivate: () => void;
 }
@@ -15,8 +13,6 @@ const PortfolioSummaryCard: React.FC<PortfolioSummaryCardProps> = ({
   portfolio,
   stockCount,
   totalReturnRate,
-  onEdit,
-  onDelete,
   onSetActive,
   onDeactivate,
 }) => {
@@ -48,18 +44,6 @@ const PortfolioSummaryCard: React.FC<PortfolioSummaryCardProps> = ({
               비활성화 중
             </button>
           )}
-          <button
-            onClick={onEdit}
-            className="text-blue-400 hover:text-blue-300 text-xs"
-          >
-            수정
-          </button>
-          <button
-            onClick={onDelete}
-            className="text-red-400 hover:text-red-300 text-xs"
-          >
-            삭제
-          </button>
         </div>
       </div>
 
