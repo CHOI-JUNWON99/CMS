@@ -118,7 +118,7 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
               <div
                 className={`mt-3 flex items-end justify-center gap-1 whitespace-nowrap ${isDarkMode ? "text-white" : "text-gray-900"}`}
               >
-                <span className="text-[clamp(1.75rem,1.9vw,2.6rem)] font-black tracking-[-0.05em] tabular-nums">
+                <span className="text-[clamp(1.5rem,1.55vw,2.15rem)] font-medium tracking-[-0.04em] tabular-nums">
                   {formatNumber(etf.closePriceCny, 4)}
                 </span>
                 <span
@@ -142,7 +142,7 @@ const ETFDetail: React.FC<ETFDetailProps> = ({ etf, onBack, isDarkMode }) => {
               <div
                 className={`mt-3 flex items-end justify-center gap-1 whitespace-nowrap ${isDarkMode ? "text-white" : "text-gray-900"}`}
               >
-                <span className="text-[clamp(1.3rem,1.6vw,2.2rem)] font-black tracking-[-0.06em] tabular-nums">
+                <span className="text-[clamp(1.2rem,1.35vw,1.8rem)] font-medium tracking-[-0.04em] tabular-nums">
                   {formatNumber(etf.volume, 0)}
                 </span>
                 <span
