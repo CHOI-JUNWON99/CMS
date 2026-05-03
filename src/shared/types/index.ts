@@ -82,6 +82,7 @@ export interface SharedPassword {
 export interface ETF {
   id: string;
   clientId?: string | null;
+  clientName?: string | null;
   code: string;
   nameEn: string;
   closePriceCny: number | null;
@@ -252,6 +253,7 @@ export interface PolicyNews {
 export interface DbEtfRow {
   id: string;
   client_id: string | null;
+  clients?: { name: string | null } | { name: string | null }[] | null;
   code: string;
   name_en: string;
   close_price_cny: number | null;

@@ -215,7 +215,9 @@ const App: React.FC = () => {
   const { data: etfPortfolioName } = useQuery({
     queryKey: ['etf-portfolio-name', etfClientId],
     queryFn: async () => {
-      if (!etfClientId) return 'ETF';
+      const joinedClientName = etfs.find((etf) => etf.clientName)?.clientName;
+      if (joinedClientName) return joinedClientName;
+      if (!etfClientId) return latestHeaderName || clientInfo?.name || 'ETF';
 
       const { data, error } = await supabase
         .from('clients')
@@ -224,10 +226,10 @@ const App: React.FC = () => {
         .single();
 
       if (error) throw error;
-      return (data as { name?: string } | null)?.name ?? 'ETF';
+      return (data as { name?: string } | null)?.name ?? latestHeaderName ?? clientInfo?.name ?? 'ETF';
     },
     enabled: !!etfClientId,
-    initialData: 'ETF',
+    initialData: etfs.find((etf) => etf.clientName)?.clientName ?? latestHeaderName ?? clientInfo?.name ?? 'ETF',
   });
 
   const handleEtfSort = React.useCallback((key: EtfSortKey) => {

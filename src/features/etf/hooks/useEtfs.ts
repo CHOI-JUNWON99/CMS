@@ -9,9 +9,12 @@ export const etfKeys = {
 };
 
 function mapEtfRow(row: DbEtfRow): ETF {
+  const clientData = Array.isArray(row.clients) ? row.clients[0] : row.clients;
+
   return {
     id: row.id,
     clientId: row.client_id,
+    clientName: clientData?.name ?? null,
     code: row.code,
     nameEn: row.name_en,
     closePriceCny: row.close_price_cny,
@@ -50,7 +53,7 @@ export function useEtfs() {
     queryFn: async (): Promise<ETF[]> => {
       let query = supabase
         .from('etfs')
-        .select('*')
+        .select('*, clients(name)')
         .eq('is_active', true)
         .order('name_en', { ascending: true });
 
