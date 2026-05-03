@@ -39,6 +39,7 @@ const ClientManagement: React.FC = () => {
   const [editClientBrandColor, setEditClientBrandColor] = useState(DEFAULT_BRAND_COLOR);
   const [editClientDescription, setEditClientDescription] = useState('');
   const [editClientPortfolioType, setEditClientPortfolioType] = useState(DEFAULT_PORTFOLIO_TYPE);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const handleAddClient = async () => {
     if (!newClientName.trim()) {
@@ -77,6 +78,7 @@ const ClientManagement: React.FC = () => {
     setEditClientBrandColor(client.brandColor || DEFAULT_BRAND_COLOR);
     setEditClientDescription(client.description || '');
     setEditClientPortfolioType(client.portfolioType || DEFAULT_PORTFOLIO_TYPE);
+    setIsChangingPassword(false);
     setShowEditModal(true);
   };
 
@@ -86,7 +88,7 @@ const ClientManagement: React.FC = () => {
       toast.warning('포트폴리오 이름을 입력해주세요.');
       return;
     }
-    if (!editClientPassword.trim()) {
+    if (isChangingPassword && !editClientPassword.trim()) {
       toast.warning('비밀번호를 입력해주세요.');
       return;
     }
@@ -95,13 +97,15 @@ const ClientManagement: React.FC = () => {
       await updateClientMutation.mutateAsync({
         id: editingClient.id,
         name: editClientName,
-        password: editClientPassword,
+        password: isChangingPassword ? editClientPassword : '',
         brandColor: editClientBrandColor,
         description: editClientDescription,
         portfolioType: editClientPortfolioType,
       });
       setShowEditModal(false);
       setEditingClient(null);
+      setEditClientPassword('');
+      setIsChangingPassword(false);
       toast.success('포트폴리오가 수정되었습니다.');
     } catch {
       toast.error('포트폴리오 수정에 실패했습니다.');
@@ -354,14 +358,42 @@ const ClientManagement: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">비밀번호 *</label>
-                <input
-                  type="password"
-                  value={editClientPassword}
-                  onChange={(e) => setEditClientPassword(e.target.value)}
-                  maxLength={100}
-                  className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
-                />
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <label className="block text-xs font-bold text-slate-200">비밀번호</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsChangingPassword((prev) => {
+                        if (prev) setEditClientPassword('');
+                        return !prev;
+                      });
+                    }}
+                    className={`px-3 py-1 rounded-lg border text-xs font-bold transition-all ${
+                      isChangingPassword
+                        ? 'border-blue-500 bg-blue-900/30 text-blue-300'
+                        : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {isChangingPassword ? '변경 취소' : '비밀번호 변경'}
+                  </button>
+                </div>
+                {isChangingPassword ? (
+                  <>
+                    <input
+                      type="password"
+                      value={editClientPassword}
+                      onChange={(e) => setEditClientPassword(e.target.value)}
+                      maxLength={100}
+                      className="w-full px-3 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-mono"
+                      placeholder="새 비밀번호 입력"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">입력한 경우에만 비밀번호가 변경됩니다.</p>
+                  </>
+                ) : (
+                  <div className="w-full px-3 py-3 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-500 text-sm">
+                    기존 비밀번호 유지
+                  </div>
+                )}
               </div>
 
               <div>
@@ -398,6 +430,8 @@ const ClientManagement: React.FC = () => {
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingClient(null);
+                  setEditClientPassword('');
+                  setIsChangingPassword(false);
                 }}
                 className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
               >
