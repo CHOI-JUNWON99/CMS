@@ -6,16 +6,17 @@ interface HeaderProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
   onLogout?: () => void;
+  displayName?: string | null;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(({ onHomeClick, isDarkMode, toggleTheme, onLogout }) => {
+const Header: React.FC<HeaderProps> = React.memo(({ onHomeClick, isDarkMode, toggleTheme, onLogout, displayName }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 클라이언트 브랜딩 정보 (Zustand store 사용)
   const clientInfo = useAuthStore((state) => state.clientInfo);
-  const clientName = clientInfo?.name ?? null;
+  const clientName = displayName ?? clientInfo?.name ?? null;
   const clientLogo = clientInfo?.logo ?? null;
 
   useEffect(() => {

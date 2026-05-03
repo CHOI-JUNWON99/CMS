@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/shared/components';
 import { ToastContainer, ConfirmDialog, SearchInput } from '@/shared/components/ui';
 import { useAuthStore, useUIStore } from '@/shared/stores';
 import { useSlidingSession } from '@/shared/hooks/useSlidingSession';
+import { supabase } from '@/shared/lib/supabase';
 import { Stock, SortKey } from '@/shared/types';
 import { getSimplifiedSector } from '@/shared/utils';
 import { AccessGate } from '@/features/auth';
@@ -38,6 +40,8 @@ const App: React.FC = () => {
   const clientInfo = useAuthStore((state) => state.clientInfo);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const restoreSession = useAuthStore((state) => state.restoreSession);
+  const accessType = useAuthStore((state) => state.accessType);
+  const clientIds = useAuthStore((state) => state.clientIds);
 
   // Sliding Session: 활동 감지 시 자동 갱신
   useSlidingSession({ isAuthenticated, extendSession, logout });
@@ -181,6 +185,51 @@ const App: React.FC = () => {
     });
   }, [etfs, etfSearchQuery, etfSortDirection, etfSortKey]);
 
+  const { data: latestHeaderName } = useQuery({
+    queryKey: ['header-display-name', accessType, clientInfo?.id, clientInfo?.name],
+    queryFn: async () => {
+      if (!clientInfo?.id) return null;
+      if (accessType !== 'single') return clientInfo.name ?? null;
+
+      const { data, error } = await supabase
+        .from('clients')
+        .select('name')
+        .eq('id', clientInfo.id)
+        .single();
+
+      if (error) throw error;
+      return (data as { name?: string } | null)?.name ?? clientInfo.name ?? null;
+    },
+    enabled: !!clientInfo?.id,
+    initialData: clientInfo?.name ?? null,
+  });
+
+  const etfClientId = useMemo(() => {
+    const explicitClientId = etfs.find((etf) => !!etf.clientId)?.clientId ?? null;
+    if (explicitClientId) return explicitClientId;
+    if (accessType === 'single') return clientInfo?.id ?? null;
+    if (accessType === 'shared' && clientIds.length === 1) return clientIds[0];
+    return null;
+  }, [etfs, accessType, clientInfo?.id, clientIds]);
+
+  const { data: etfPortfolioName } = useQuery({
+    queryKey: ['etf-portfolio-name', etfClientId],
+    queryFn: async () => {
+      if (!etfClientId) return 'ETF';
+
+      const { data, error } = await supabase
+        .from('clients')
+        .select('name')
+        .eq('id', etfClientId)
+        .single();
+
+      if (error) throw error;
+      return (data as { name?: string } | null)?.name ?? 'ETF';
+    },
+    enabled: !!etfClientId,
+    initialData: 'ETF',
+  });
+
   const handleEtfSort = React.useCallback((key: EtfSortKey) => {
     if (etfSortKey === key) {
       setEtfSortDirection((currentDirection) => currentDirection === 'ASC' ? 'DESC' : 'ASC');
@@ -313,6 +362,7 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         toggleTheme={toggleDarkMode}
         onLogout={logout}
+        displayName={latestHeaderName}
       />
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
         {isLoading ? (
@@ -478,7 +528,7 @@ const App: React.FC = () => {
                       isDarkMode={isDarkMode}
                       isExpanded={expandedPortfolios.includes(ETF_PORTFOLIO_ID)}
                       onToggle={() => handleTogglePortfolio(ETF_PORTFOLIO_ID)}
-                      portfolioName="ETF"
+                      portfolioName={etfPortfolioName || 'ETF'}
                       brandColor={clientInfo?.brandColor}
                     />
                     <div className={`transition-all duration-700 ease-in-out origin-top ${
