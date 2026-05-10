@@ -232,7 +232,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh }) =>
   };
 
   const filteredStocks = useMemo(() => {
-    if (!stockSearch.trim()) return stocks.slice(0, 20);
+    if (!stockSearch.trim()) return [];
     const query = stockSearch.toLowerCase();
     return stocks.filter((stock) =>
       stock.nameKr.toLowerCase().includes(query) ||
@@ -688,7 +688,7 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh }) =>
                       />
                       {showStockDropdown && (
                         <div className="absolute z-20 w-full mt-1 max-h-56 overflow-y-auto rounded-lg bg-slate-800 border border-slate-700 shadow-xl">
-                          {filteredStocks.length > 0 ? (
+                          {stockSearch.trim() && filteredStocks.length > 0 ? (
                             filteredStocks.map((stock) => (
                               <button
                                 key={stock.id}
@@ -700,6 +700,8 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh }) =>
                                 <div className="text-[11px] text-slate-400">{stock.ticker}</div>
                               </button>
                             ))
+                          ) : !stockSearch.trim() ? (
+                            <div className="px-3 py-3 text-slate-400 text-sm">종목명 또는 티커를 입력하면 검색 결과가 표시됩니다.</div>
                           ) : (
                             <div className="px-3 py-2 text-slate-400 text-sm">검색 결과가 없습니다.</div>
                           )}
