@@ -68,6 +68,9 @@ export interface Client {
   isActive: boolean;
 }
 
+export type ResourceCategory = '기업' | '정책';
+export type ResourceFileType = 'PDF' | 'EXCEL' | 'WORD' | 'PPT';
+
 export interface SharedPassword {
   id: string;
   name: string;
@@ -112,15 +115,20 @@ export interface ETF {
 
 export interface Resource {
   id: string;
+  stockId?: string | null;
   title: string;
   description: string;
-  fileType: 'PDF' | 'EXCEL' | 'WORD' | 'PPT';
-  category: string;
+  keywords: string[];
+  fileType: ResourceFileType;
+  category: ResourceCategory;
   date: string;
   fileSize: string;
   fileUrl?: string;
   clientId?: string | null;
+  clientIds?: string[];
   originalFilename?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export type ViewMode = 'DASHBOARD' | 'DETAIL' | 'IB_DETAIL' | 'ETF_DETAIL';
@@ -304,15 +312,20 @@ export interface DbSharedPasswordRow {
 
 export interface DbResourceRow {
   id: string;
+  stock_id: string | null;
   title: string;
   description: string | null;
-  file_type: 'PDF' | 'EXCEL' | 'WORD' | 'PPT';
-  category: string | null;
+  keywords: string[] | null;
+  file_type: ResourceFileType;
+  category: ResourceCategory | null;
   date: string;
   file_size: string | null;
   file_url: string | null;
   client_id: string | null;
+  client_ids: string[] | null;
   original_filename: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface DbPortfolioRow {

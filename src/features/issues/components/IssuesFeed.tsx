@@ -121,6 +121,15 @@ const IssuesFeed: React.FC<IssuesFeedProps> = ({ stocks, onStockClick, isDarkMod
         </div>
       )}
 
+      {filteredItems.length === 0 && !searchQuery.trim() && (
+        <div className={`text-center py-16 ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>
+          <svg className="w-12 h-12 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-2v13M9 19c0 1.105-2.015 2-4.5 2S0 20.105 0 19s2.015-2 4.5-2S9 17.895 9 19zm12-2c0 1.105-2.015 2-4.5 2S12 18.105 12 17s2.015-2 4.5-2S21 15.895 21 17z" />
+          </svg>
+          <p className="text-sm font-bold">등록된 종목 뉴스가 없습니다</p>
+        </div>
+      )}
+
       {filteredItems.map((item, index) => {
         const stock = stocks.find(s => s.id === item.stockId);
         const isToday = item.date === todayStr;

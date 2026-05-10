@@ -562,7 +562,7 @@ const App: React.FC = () => {
             ) : activeTab === 'ISSUES' ? (
               <NewsFeedContainer stocks={stocks} policyNewsItems={policyNewsItems} onStockClick={handleStockSelect} isDarkMode={isDarkMode} glossary={glossary} />
             ) : (
-              <ResourcesView isDarkMode={isDarkMode} />
+              <ResourcesView stocks={stocks} onStockClick={handleStockSelect} isDarkMode={isDarkMode} />
             )}
           </div>
         ) : viewMode === 'IB_DETAIL' ? (

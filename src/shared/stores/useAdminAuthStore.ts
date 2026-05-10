@@ -16,6 +16,21 @@ interface AdminAuthState {
 }
 
 const ADMIN_SESSION_DURATION_MS = 30 * 60 * 1000; // 30분 (Sliding Session)
+const DEV_ADMIN_CODE_STORAGE_KEY = 'cms-dev-admin-code';
+
+function saveDevAdminCode(adminCode: string | null) {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return;
+  if (!adminCode) {
+    sessionStorage.removeItem(DEV_ADMIN_CODE_STORAGE_KEY);
+    return;
+  }
+  sessionStorage.setItem(DEV_ADMIN_CODE_STORAGE_KEY, adminCode);
+}
+
+function getSavedDevAdminCode() {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+  return sessionStorage.getItem(DEV_ADMIN_CODE_STORAGE_KEY);
+}
 
 export const useAdminAuthStore = create<AdminAuthState>()(
   (set, get) => ({
@@ -31,6 +46,7 @@ export const useAdminAuthStore = create<AdminAuthState>()(
     },
 
     login: (adminCode: string) => {
+      saveDevAdminCode(adminCode);
       set({
         isAuthenticated: true,
         isLoading: false,
@@ -41,6 +57,7 @@ export const useAdminAuthStore = create<AdminAuthState>()(
 
     logout: () => {
       fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+      saveDevAdminCode(null);
       set({
         isAuthenticated: false,
         isLoading: false,
@@ -59,7 +76,17 @@ export const useAdminAuthStore = create<AdminAuthState>()(
 
     restoreSession: async () => {
       if (import.meta.env.DEV) {
-        set({ isLoading: false });
+        const savedAdminCode = getSavedDevAdminCode();
+        if (savedAdminCode) {
+          set({
+            isAuthenticated: true,
+            isLoading: false,
+            expiresAt: Date.now() + ADMIN_SESSION_DURATION_MS,
+            adminCode: savedAdminCode,
+          });
+        } else {
+          set({ isLoading: false });
+        }
         return;
       }
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Stock, PolicyNews } from '@/shared/types';
 import { useUIStore } from '@/shared/stores';
 import IssuesFeed from './IssuesFeed';
@@ -21,15 +21,23 @@ const NewsFeedContainer: React.FC<NewsFeedContainerProps> = ({
 }) => {
   const newsSubTab = useUIStore((state) => state.newsSubTab);
   const setNewsSubTab = useUIStore((state) => state.setNewsSubTab);
+  const hasAutoSelectedRef = useRef(false);
 
+  const hasIndividualNews = stocks.some((stock) => (stock.issues?.length ?? 0) > 0);
   const hasPolicyNews = policyNewsItems.length > 0;
 
-  // 정책 뉴스가 없는데 정책 탭이 선택된 경우 종목 뉴스로 전환
+  // 정책 뉴스만 있을 때 최초 1회 기본 탭만 정책 뉴스로 전환
   useEffect(() => {
+    if (!hasIndividualNews && hasPolicyNews && newsSubTab === 'individual' && !hasAutoSelectedRef.current) {
+      hasAutoSelectedRef.current = true;
+      setNewsSubTab('policy');
+      return;
+    }
+
     if (!hasPolicyNews && newsSubTab === 'policy') {
       setNewsSubTab('individual');
     }
-  }, [hasPolicyNews, newsSubTab, setNewsSubTab]);
+  }, [hasIndividualNews, hasPolicyNews, newsSubTab, setNewsSubTab]);
 
   // 정책 뉴스 없으면 탭 없이 종목 뉴스만 표시
   if (!hasPolicyNews) {

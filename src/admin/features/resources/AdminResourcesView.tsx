@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Resource, Client, DbResourceRow } from '@/shared/types';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Client, DbResourceRow, Resource, ResourceCategory, ResourceFileType, Stock } from '@/shared/types';
 import { supabase } from '@/shared/lib/supabase';
 import { adminAction } from '@/shared/lib/adminApi';
 import { toast, confirm, useAdminAuthStore } from '@/shared/stores';
@@ -8,42 +8,137 @@ interface AdminResourcesViewProps {
   onRefresh: () => void;
 }
 
-const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onRefresh }) => {
-  // Admin 인증 (store 사용)
-  const getAdminCode = useAdminAuthStore((state) => state.getAdminCode);
+interface ResourceFormState {
+  stockId: string;
+  title: string;
+  description: string;
+  keywords: string;
+  fileType: ResourceFileType | '';
+  category: ResourceCategory;
+  file: File | null;
+  clientIds: string[];
+  removeExistingFile: boolean;
+}
 
-  const [resources, setResources] = useState<(Resource & { fileUrl?: string })[]>([]);
+const EMPTY_FORM: ResourceFormState = {
+  stockId: '',
+  title: '',
+  description: '',
+  keywords: '',
+  fileType: '',
+  category: '기업',
+  file: null,
+  clientIds: [],
+  removeExistingFile: false,
+};
+
+const CATEGORY_OPTIONS: ResourceCategory[] = ['기업', '정책'];
+const FILE_TYPE_OPTIONS: ResourceFileType[] = ['PDF', 'EXCEL', 'WORD', 'PPT'];
+const STORAGE_PUBLIC_PREFIX = '/storage/v1/object/public/resources/';
+
+const toResource = (row: DbResourceRow): Resource => ({
+  id: row.id,
+  stockId: row.stock_id,
+  title: row.title,
+  description: row.description ?? '',
+  keywords: row.keywords ?? [],
+  fileType: row.file_type,
+  category: row.category ?? '정책',
+  date: row.date,
+  fileSize: row.file_size ?? '',
+  fileUrl: row.file_url ?? undefined,
+  clientId: row.client_id ?? undefined,
+  clientIds: row.client_ids ?? (row.client_id ? [row.client_id] : []),
+  originalFilename: row.original_filename ?? undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+const getTodayDate = () => {
+  const today = new Date();
+  return `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+};
+
+const sanitizeFileName = (fileName: string) => fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+
+const getFileTypeFromName = (fileName: string): ResourceFileType | null => {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return 'PDF';
+  if (ext === 'xlsx' || ext === 'xls') return 'EXCEL';
+  if (ext === 'docx' || ext === 'doc') return 'WORD';
+  if (ext === 'pptx' || ext === 'ppt') return 'PPT';
+  return null;
+};
+
+const getFileSizeLabel = (file: File) => (
+  file.size < 1024 * 1024
+    ? `${(file.size / 1024).toFixed(1)} KB`
+    : `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+);
+
+const parseKeywords = (keywords: string) => keywords
+  .split(',')
+  .map((keyword) => keyword.trim())
+  .filter(Boolean);
+
+const extractStoragePath = (fileUrl?: string) => {
+  if (!fileUrl) return null;
+  const markerIndex = fileUrl.indexOf(STORAGE_PUBLIC_PREFIX);
+  if (markerIndex < 0) return null;
+  return decodeURIComponent(fileUrl.slice(markerIndex + STORAGE_PUBLIC_PREFIX.length));
+};
+
+const selectClassName = 'w-full appearance-none px-3 py-2 pr-10 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600';
+
+const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh }) => {
+  const getAdminCode = useAdminAuthStore((state) => state.getAdminCode);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
-  const [newResource, setNewResource] = useState({
-    title: '',
-    description: '',
-    fileType: 'PDF' as 'PDF' | 'EXCEL' | 'WORD' | 'PPT',
-    category: '',
-    file: null as File | null,
-    clientId: '' as string,
-  });
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [formState, setFormState] = useState<ResourceFormState>(EMPTY_FORM);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [stockSearch, setStockSearch] = useState('');
+  const [showStockDropdown, setShowStockDropdown] = useState(false);
 
-  // 클라이언트 로딩 (RLS 우회를 위해 RPC 사용)
+  const loadResources = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.from('resources').select('*').order('date', { ascending: false });
+      if (error) throw error;
+      setResources(((data ?? []) as DbResourceRow[]).map(toResource));
+    } catch (err) {
+      console.error('자료실 로딩 실패:', err);
+      toast.error('자료실을 불러오지 못했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchClients = async () => {
       try {
         const { data, error } = await supabase.rpc('get_active_clients');
         if (error) throw error;
 
-        if (data) {
-          setClients((data as { id: string; name: string; code: string; description?: string; logo_url?: string; is_active: boolean }[]).map((row) => ({
-            id: row.id,
-            name: row.name,
-            code: row.code,
-            description: row.description ?? undefined,
-            logoUrl: row.logo_url ?? undefined,
-            isActive: row.is_active,
-          })));
-        }
+        setClients(((data ?? []) as {
+          id: string;
+          name: string;
+          code: string;
+          description?: string;
+          logo_url?: string;
+          is_active: boolean;
+        }[]).map((row) => ({
+          id: row.id,
+          name: row.name,
+          code: row.code,
+          description: row.description ?? undefined,
+          logoUrl: row.logo_url ?? undefined,
+          isActive: row.is_active,
+        })));
       } catch (err) {
         console.error('클라이언트 로딩 실패:', err);
       }
@@ -52,158 +147,274 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
     fetchClients();
   }, []);
 
-  // 데이터 로딩
   useEffect(() => {
-    const fetchResources = async () => {
-      setIsLoading(true);
+    const fetchStocks = async () => {
       try {
-        const { data } = await supabase.from('resources').select('*').order('date', { ascending: false });
-        if (data) {
-          setResources((data as DbResourceRow[]).map((r) => ({
-            id: r.id,
-            title: r.title,
-            description: r.description ?? '',
-            fileType: r.file_type,
-            category: r.category ?? '',
-            date: r.date,
-            fileSize: r.file_size ?? '',
-            fileUrl: r.file_url ?? undefined,
-            clientId: r.client_id ?? undefined,
-            originalFilename: r.original_filename ?? undefined,
-          })));
-        }
+        const { data, error } = await supabase
+          .from('stocks')
+          .select('id, ticker, name, name_kr, sector, keywords')
+          .order('name_kr');
+        if (error) throw error;
+        setStocks(((data ?? []) as {
+          id: string;
+          ticker: string;
+          name: string;
+          name_kr: string;
+          sector: string;
+          keywords: string[] | null;
+        }[]).map((row) => ({
+          id: row.id,
+          ticker: row.ticker,
+          name: row.name,
+          nameKr: row.name_kr,
+          sector: row.sector,
+          keywords: row.keywords ?? [],
+          investmentPoints: [],
+          marketCap: '',
+          marketCapValue: 0,
+          price: 0,
+          change: 0,
+          description: '',
+          issues: [],
+        })));
       } catch (err) {
-        console.error('자료실 로딩 실패:', err);
-      } finally {
-        setIsLoading(false);
+        console.error('종목 로딩 실패:', err);
       }
     };
-    fetchResources();
+
+    fetchStocks();
   }, []);
 
-  // 파일 선택 처리
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNewResource({ ...newResource, file });
+  useEffect(() => {
+    loadResources();
+  }, [loadResources]);
 
-      // 파일 타입 자동 감지
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'pdf') setNewResource(prev => ({ ...prev, file, fileType: 'PDF' }));
-      else if (ext === 'xlsx' || ext === 'xls') setNewResource(prev => ({ ...prev, file, fileType: 'EXCEL' }));
-      else if (ext === 'docx' || ext === 'doc') setNewResource(prev => ({ ...prev, file, fileType: 'WORD' }));
-      else if (ext === 'pptx' || ext === 'ppt') setNewResource(prev => ({ ...prev, file, fileType: 'PPT' }));
-    }
+  const sortedResources = useMemo(
+    () => [...resources].sort((a, b) => (b.updatedAt || b.createdAt || b.date).localeCompare(a.updatedAt || a.createdAt || a.date)),
+    [resources],
+  );
+
+  const resetForm = useCallback(() => {
+    setFormState(EMPTY_FORM);
+    setEditingResource(null);
+    setFileInputKey((prev) => prev + 1);
+    setStockSearch('');
+    setShowStockDropdown(false);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+    resetForm();
+  }, [resetForm]);
+
+  const openAddModal = () => {
+    resetForm();
+    setShowModal(true);
   };
 
-  // 자료 추가
-  const handleAddResource = async () => {
-    if (!newResource.title || !newResource.file) {
-      toast.warning('제목과 파일은 필수입니다.');
+  const openEditModal = (resource: Resource) => {
+    setEditingResource(resource);
+    setFormState({
+      stockId: resource.stockId ?? '',
+      title: resource.title,
+      description: resource.description,
+      keywords: resource.keywords.join(', '),
+      fileType: resource.fileType,
+      category: resource.category,
+      file: null,
+      clientIds: resource.clientIds ?? (resource.clientId ? [resource.clientId] : []),
+      removeExistingFile: false,
+    });
+    const stock = stocks.find((item) => item.id === resource.stockId);
+    setStockSearch(stock ? `${stock.nameKr} (${stock.ticker})` : '');
+    setFileInputKey((prev) => prev + 1);
+    setShowModal(true);
+  };
+
+  const filteredStocks = useMemo(() => {
+    if (!stockSearch.trim()) return stocks.slice(0, 20);
+    const query = stockSearch.toLowerCase();
+    return stocks.filter((stock) =>
+      stock.nameKr.toLowerCase().includes(query) ||
+      stock.name.toLowerCase().includes(query) ||
+      stock.ticker.toLowerCase().includes(query)
+    ).slice(0, 20);
+  }, [stockSearch, stocks]);
+
+  const selectedStock = useMemo(
+    () => stocks.find((stock) => stock.id === formState.stockId) || null,
+    [formState.stockId, stocks],
+  );
+
+  const selectStock = (stock: Stock) => {
+    setFormState((prev) => ({ ...prev, stockId: stock.id }));
+    setStockSearch(`${stock.nameKr} (${stock.ticker})`);
+    setShowStockDropdown(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = e.target.files?.[0] ?? null;
+    setFormState((prev) => {
+      if (!nextFile) return { ...prev, file: null };
+      return {
+        ...prev,
+        file: nextFile,
+        fileType: getFileTypeFromName(nextFile.name) ?? prev.fileType,
+        removeExistingFile: false,
+      };
+    });
+  };
+
+  const removeExistingStorageFile = useCallback(async (fileUrl?: string) => {
+    const storagePath = extractStoragePath(fileUrl);
+    if (!storagePath) return;
+    await supabase.storage.from('resources').remove([storagePath]);
+  }, []);
+
+  const uploadResourceFile = useCallback(async (resourceId: string, file: File) => {
+    const filePath = `${resourceId}/${Date.now()}-${sanitizeFileName(file.name)}`;
+    const { error } = await supabase.storage.from('resources').upload(filePath, file);
+    if (error) throw error;
+
+    const { data } = supabase.storage.from('resources').getPublicUrl(filePath);
+    return {
+      fileUrl: data.publicUrl,
+      fileSize: getFileSizeLabel(file),
+      originalFilename: file.name,
+      fileType: getFileTypeFromName(file.name),
+    };
+  }, []);
+
+  const persistResource = useCallback(async () => {
+    if (!formState.title.trim() || !formState.description.trim()) {
+      toast.warning('제목과 설명은 필수입니다.');
+      return;
+    }
+    if (formState.category === '기업' && !formState.stockId) {
+      toast.warning('기업 코멘트는 종목 선택이 필요합니다.');
       return;
     }
 
     setIsUploading(true);
 
+    const resourceId = editingResource?.id ?? `res-${Date.now()}`;
+    const previousFileUrl = editingResource?.fileUrl;
+    let nextFileUrl = editingResource?.fileUrl ?? null;
+    let nextFileSize = editingResource?.fileSize ?? '';
+    let nextOriginalFilename = editingResource?.originalFilename ?? null;
+    let nextFileType: ResourceFileType = formState.fileType || editingResource?.fileType || 'PDF';
+    let uploadedFileUrl: string | null = null;
+
     try {
-      const file = newResource.file;
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      if (formState.file) {
+        const uploaded = await uploadResourceFile(resourceId, formState.file);
+        uploadedFileUrl = uploaded.fileUrl;
+        nextFileUrl = uploaded.fileUrl;
+        nextFileSize = uploaded.fileSize;
+        nextOriginalFilename = uploaded.originalFilename;
+        nextFileType = uploaded.fileType || formState.fileType || 'PDF';
+      } else if (formState.removeExistingFile) {
+        nextFileUrl = null;
+        nextFileSize = '';
+        nextOriginalFilename = null;
+      }
 
-      // Storage 업로드 (관리자 클라이언트 사용)
-      const { error: uploadError } = await supabase.storage
-        .from('resources')
-        .upload(fileName, file);
+      const payload = {
+        id: resourceId,
+        stockId: formState.category === '기업' ? formState.stockId : null,
+        title: formState.title.trim(),
+        description: formState.description.trim(),
+        keywords: parseKeywords(formState.keywords),
+        fileType: nextFileType,
+        category: formState.category,
+        date: editingResource?.date ?? getTodayDate(),
+        fileSize: nextFileSize,
+        fileUrl: nextFileUrl,
+        clientId: formState.clientIds.length === 1 ? formState.clientIds[0] : null,
+        clientIds: formState.clientIds,
+        originalFilename: nextOriginalFilename,
+      };
 
-      if (uploadError) throw uploadError;
-
-      // Public URL 가져오기
-      const { data: urlData } = supabase.storage.from('resources').getPublicUrl(fileName);
-
-      // 파일 사이즈 계산
-      const fileSize = file.size < 1024 * 1024
-        ? `${(file.size / 1024).toFixed(1)} KB`
-        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-
-      // 오늘 날짜
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
-
-      // DB 저장
-      if (import.meta.env.PROD) {
-        await adminAction('add_resource', {
-          id: `res-${Date.now()}`,
-          title: newResource.title,
-          description: newResource.description || '',
-          fileType: newResource.fileType,
-          category: newResource.category || '기타',
-          date: dateStr,
-          fileSize,
-          fileUrl: urlData.publicUrl,
-          clientId: newResource.clientId ? newResource.clientId : null,
-          originalFilename: file.name,
-        });
+      if (editingResource) {
+        if (import.meta.env.PROD) {
+          await adminAction('update_resource', { resourceId: editingResource.id, ...payload });
+        } else {
+          const adminCode = getAdminCode();
+          const { error } = await supabase.rpc('update_resource', {
+            admin_code: adminCode,
+            p_id: editingResource.id,
+            p_stock_id: payload.stockId,
+            p_title: payload.title,
+            p_description: payload.description,
+            p_keywords: payload.keywords,
+            p_file_type: payload.fileType,
+            p_category: payload.category,
+            p_file_size: payload.fileSize,
+            p_file_url: payload.fileUrl,
+            p_client_id: payload.clientId,
+            p_client_ids: payload.clientIds,
+            p_original_filename: payload.originalFilename,
+          });
+          if (error) throw error;
+        }
       } else {
-        const adminCode = getAdminCode();
-        const { error: dbError } = await supabase.rpc('add_resource', {
-          admin_code: adminCode,
-          p_id: `res-${Date.now()}`,
-          p_title: newResource.title,
-          p_description: newResource.description || '',
-          p_file_type: newResource.fileType,
-          p_category: newResource.category || '기타',
-          p_date: dateStr,
-          p_file_size: fileSize,
-          p_file_url: urlData.publicUrl,
-          p_client_id: newResource.clientId ? newResource.clientId : null,
-          p_original_filename: file.name,
-        });
-        if (dbError) throw dbError;
+        if (import.meta.env.PROD) {
+          await adminAction('add_resource', payload);
+        } else {
+          const adminCode = getAdminCode();
+          const { error } = await supabase.rpc('add_resource', {
+            admin_code: adminCode,
+            p_id: payload.id,
+            p_stock_id: payload.stockId,
+            p_title: payload.title,
+            p_description: payload.description,
+            p_keywords: payload.keywords,
+            p_file_type: payload.fileType,
+            p_category: payload.category,
+            p_date: payload.date,
+            p_file_size: payload.fileSize,
+            p_file_url: payload.fileUrl,
+            p_client_id: payload.clientId,
+            p_client_ids: payload.clientIds,
+            p_original_filename: payload.originalFilename,
+          });
+          if (error) throw error;
+        }
       }
 
-      // 리셋
-      setShowAddModal(false);
-      setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null, clientId: '' });
-      if (fileInputRef.current) fileInputRef.current.value = '';
-
-      // 새로고침
-      const { data } = await supabase.from('resources').select('*').order('date', { ascending: false });
-      if (data) {
-        setResources((data as DbResourceRow[]).map((r) => ({
-          id: r.id,
-          title: r.title,
-          description: r.description ?? '',
-          fileType: r.file_type,
-          category: r.category ?? '',
-          date: r.date,
-          fileSize: r.file_size ?? '',
-          fileUrl: r.file_url ?? undefined,
-          originalFilename: r.original_filename ?? undefined,
-        })));
+      if (editingResource && (formState.file || formState.removeExistingFile) && previousFileUrl) {
+        await removeExistingStorageFile(previousFileUrl);
       }
-      toast.success('자료가 추가되었습니다.');
+
+      toast.success(editingResource ? '자료가 수정되었습니다.' : '자료가 추가되었습니다.');
+      closeModal();
+      await loadResources();
+      onRefresh();
     } catch (err) {
-      console.error('업로드 실패:', err);
-      toast.error('업로드에 실패했습니다.');
+      if (uploadedFileUrl) {
+        await removeExistingStorageFile(uploadedFileUrl).catch(() => undefined);
+      }
+      console.error('자료 저장 실패:', err);
+      toast.error(editingResource ? '수정에 실패했습니다.' : '추가에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [
+    closeModal,
+    editingResource,
+    formState,
+    loadResources,
+    onRefresh,
+    removeExistingStorageFile,
+    getAdminCode,
+    uploadResourceFile,
+  ]);
 
-  // 자료 삭제
-  const handleDeleteResource = async (resource: Resource & { fileUrl?: string }) => {
+  const handleDeleteResource = async (resource: Resource) => {
     const confirmed = await confirm.delete();
     if (!confirmed) return;
 
     try {
-      // Storage에서 파일 삭제 시도 (파일명 추출)
-      if (resource.fileUrl) {
-        const fileName = resource.fileUrl.split('/').pop();
-        if (fileName) {
-          await supabase.storage.from('resources').remove([fileName]);
-        }
-      }
-
-      // DB에서 삭제
       if (import.meta.env.PROD) {
         await adminAction('delete_resource', { resourceId: resource.id });
       } else {
@@ -215,8 +426,10 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
         if (error) throw error;
       }
 
-      setResources(resources.filter(r => r.id !== resource.id));
+      await removeExistingStorageFile(resource.fileUrl);
+      setResources((prev) => prev.filter((item) => item.id !== resource.id));
       toast.success('자료가 삭제되었습니다.');
+      onRefresh();
     } catch (err) {
       console.error('삭제 실패:', err);
       toast.error('삭제에 실패했습니다.');
@@ -233,70 +446,116 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
     }
   };
 
-  const getClientName = (clientId?: string | null) => {
-    if (!clientId) return '모두 공개';
-    const client = clients.find(c => c.id === clientId);
-    return client?.name || '알 수 없음';
+  const toggleClientSelection = (clientId: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      clientIds: prev.clientIds.includes(clientId)
+        ? prev.clientIds.filter((id) => id !== clientId)
+        : [...prev.clientIds, clientId],
+    }));
   };
+
+  const getClientNames = (resource: Resource) => {
+    const selectedIds = resource.clientIds ?? (resource.clientId ? [resource.clientId] : []);
+    if (selectedIds.length === 0) return ['모두 공개'];
+    return selectedIds.map((clientId) => clients.find((item) => item.id === clientId)?.name || '알 수 없음');
+  };
+
+  const existingFileLabel = editingResource?.originalFilename || editingResource?.fileUrl;
+  const showExistingFile = Boolean(editingResource?.fileUrl && !formState.removeExistingFile && !formState.file);
 
   return (
     <div className="animate-in fade-in duration-500">
-      {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-black text-white">자료실 관리 ({resources.length}개)</h2>
+        <h2 className="text-lg font-black text-white">자료실 코멘트 관리 ({resources.length}개)</h2>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={openAddModal}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/30 border border-slate-700 text-red-400 text-xs font-black hover:bg-red-900/50 transition-all"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
           </svg>
-          자료 추가
+          코멘트 추가
         </button>
       </div>
 
-      {/* 리스트 */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="space-y-3">
-          {resources.map((res) => (
+          {sortedResources.map((resource) => (
             <div
-              key={res.id}
-              className="flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all"
+              key={resource.id}
+              className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all"
             >
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className={`px-3 py-1.5 rounded-lg border text-xs font-black ${getFileTypeStyle(res.fileType)}`}>
-                  {res.fileType}
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <div className={`px-3 py-1.5 rounded-lg border text-xs font-black ${getFileTypeStyle(resource.fileType)}`}>
+                  {resource.fileType}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white text-sm truncate">{res.title}</div>
-                  <div className="text-xs text-slate-300 truncate">{res.description}</div>
-                  <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-600">
-                    <span>{res.category}</span>
-                    <span>{res.date}</span>
-                    <span>{res.fileSize}</span>
-                    <span className={`px-1.5 py-0.5 rounded ${res.clientId ? 'bg-blue-900/30 text-blue-400' : 'bg-emerald-900/30 text-emerald-400'}`}>
-                      {getClientName(res.clientId)}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded bg-slate-800 text-slate-200">
+                      {resource.category}
                     </span>
+                    {resource.stockId && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-900/20 text-blue-300 border border-blue-800/60">
+                        {stocks.find((item) => item.id === resource.stockId)?.nameKr || resource.stockId}
+                      </span>
+                    )}
+                    {getClientNames(resource).map((clientName) => (
+                      <span
+                        key={`${resource.id}-${clientName}`}
+                        className={`px-1.5 py-0.5 rounded text-[10px] ${clientName === '모두 공개' ? 'bg-emerald-900/30 text-emerald-400' : 'bg-blue-900/30 text-blue-400'}`}
+                      >
+                        {clientName}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="font-bold text-white text-sm truncate">{resource.title}</div>
+                  <div className="text-xs text-slate-300 whitespace-pre-wrap mt-1">{resource.description}</div>
+                  {resource.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {resource.keywords.map((keyword) => (
+                        <span
+                          key={`${resource.id}-${keyword}`}
+                          className="text-[10px] font-black px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700"
+                        >
+                          #{keyword}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mt-3 text-[10px] text-slate-500 flex-wrap">
+                    <span>{resource.date}</span>
+                    {resource.fileUrl ? <span>{resource.fileSize || '첨부파일 있음'}</span> : <span>첨부파일 없음</span>}
+                    {resource.updatedAt && <span>수정됨</span>}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 ml-4">
-                {res.fileUrl && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => openEditModal(resource)}
+                  className="text-blue-400 hover:text-blue-300 text-xs"
+                >
+                  수정
+                </button>
+                {resource.fileUrl && (
                   <a
-                    href={res.fileUrl}
+                    href={resource.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 text-xs"
+                    className="text-slate-300 hover:text-white text-xs"
                   >
                     다운로드
                   </a>
                 )}
-                <button onClick={() => handleDeleteResource(res)} className="text-red-400 hover:text-red-300 text-xs">
+                <button
+                  onClick={() => handleDeleteResource(resource)}
+                  className="text-red-400 hover:text-red-300 text-xs"
+                >
                   삭제
                 </button>
               </div>
@@ -311,107 +570,255 @@ const AdminResourcesView: React.FC<AdminResourcesViewProps> = ({ onRefresh: _onR
         </div>
       )}
 
-      {/* 자료 추가 모달 */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-lg p-6">
-            <h3 className="text-lg font-black text-white mb-6">새 자료 추가</h3>
+      {showModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#112240] rounded-2xl border border-slate-700 w-full max-w-2xl p-6 my-4 sm:my-8 max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain">
+            <h3 className="text-lg font-black text-white mb-6">
+              {editingResource ? '코멘트 수정' : '새 코멘트 추가'}
+            </h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">공개 범위 *</label>
-                <select
-                  value={newResource.clientId}
-                  onChange={(e) => setNewResource({ ...newResource, clientId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-slate-600"
-                >
-                  <option value="">모두 공개</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>{client.name} 전용</option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-slate-400 mt-1">'모두 공개'를 선택하면 모든 클라이언트가 이 자료를 볼 수 있습니다.</p>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+                  <label className="flex items-center gap-3 text-sm text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={formState.clientIds.length === 0}
+                      onChange={() => setFormState((prev) => ({ ...prev, clientIds: [] }))}
+                      className="rounded border-slate-600 bg-slate-800 text-red-500 focus:ring-red-500"
+                    />
+                    <span className="font-bold">모두 공개</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {clients.map((client) => (
+                      <label
+                        key={client.id}
+                        className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          formState.clientIds.includes(client.id)
+                            ? 'border-blue-500/60 bg-blue-900/20 text-white'
+                            : 'border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formState.clientIds.includes(client.id)}
+                          onChange={() => toggleClientSelection(client.id)}
+                          className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="font-medium">{client.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">선택하지 않으면 모두 공개됩니다. 여러 소속을 동시에 선택할 수 있습니다.</p>
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">카테고리 *</label>
+                <div className="relative">
+                  <select
+                    value={formState.category}
+                    onChange={(e) => {
+                      const nextCategory = e.target.value as ResourceCategory;
+                      setFormState((prev) => ({
+                        ...prev,
+                        category: nextCategory,
+                        stockId: nextCategory === '기업' ? prev.stockId : '',
+                      }));
+                      if (nextCategory !== '기업') {
+                        setStockSearch('');
+                        setShowStockDropdown(false);
+                      }
+                    }}
+                    className={selectClassName}
+                  >
+                    {CATEGORY_OPTIONS.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="pointer-events-none absolute right-3 top-1/2 w-4 h-4 -translate-y-1/2 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              {formState.category === '기업' && (
+                <div className="relative">
+                  <label className="block text-xs font-bold text-slate-200 mb-1">기업 선택 *</label>
+                  {selectedStock ? (
+                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
+                      <div className="min-w-0">
+                        <div className="text-white text-sm font-bold truncate">{selectedStock.nameKr}</div>
+                        <div className="text-[11px] text-slate-400">{selectedStock.ticker}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormState((prev) => ({ ...prev, stockId: '' }));
+                          setStockSearch('');
+                          setShowStockDropdown(true);
+                        }}
+                        className="text-slate-300 hover:text-white"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={stockSearch}
+                        onChange={(e) => {
+                          setStockSearch(e.target.value);
+                          setShowStockDropdown(true);
+                        }}
+                        onFocus={() => setShowStockDropdown(true)}
+                        className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                        placeholder="종목명 또는 티커 검색"
+                      />
+                      {showStockDropdown && (
+                        <div className="absolute z-20 w-full mt-1 max-h-56 overflow-y-auto rounded-lg bg-slate-800 border border-slate-700 shadow-xl">
+                          {filteredStocks.length > 0 ? (
+                            filteredStocks.map((stock) => (
+                              <button
+                                key={stock.id}
+                                type="button"
+                                onClick={() => selectStock(stock)}
+                                className="w-full px-3 py-2 text-left hover:bg-slate-700 transition-colors"
+                              >
+                                <div className="text-white text-sm font-bold">{stock.nameKr}</div>
+                                <div className="text-[11px] text-slate-400">{stock.ticker}</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-slate-400 text-sm">검색 결과가 없습니다.</div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-200 mb-1">제목 *</label>
                 <input
                   type="text"
-                  value={newResource.title}
-                  onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
+                  value={formState.title}
+                  onChange={(e) => setFormState((prev) => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
                   placeholder="자료 제목"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">설명</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">설명 *</label>
                 <textarea
-                  value={newResource.description}
-                  onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
-                  rows={2}
+                  value={formState.description}
+                  onChange={(e) => setFormState((prev) => ({ ...prev, description: e.target.value }))}
+                  rows={6}
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm resize-none"
-                  placeholder="자료 설명"
+                  placeholder="코멘트를 입력하세요"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1">카테고리</label>
-                  <input
-                    type="text"
-                    value={newResource.category}
-                    onChange={(e) => setNewResource({ ...newResource, category: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
-                    placeholder="전략 보고서"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1">파일 형식</label>
-                  <select
-                    value={newResource.fileType}
-                    onChange={(e) => setNewResource({ ...newResource, fileType: e.target.value as 'PDF' | 'EXCEL' | 'WORD' | 'PPT' })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
-                  >
-                    <option value="PDF">PDF</option>
-                    <option value="EXCEL">EXCEL</option>
-                    <option value="WORD">WORD</option>
-                    <option value="PPT">PPT</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">키워드</label>
+                <input
+                  type="text"
+                  value={formState.keywords}
+                  onChange={(e) => setFormState((prev) => ({ ...prev, keywords: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                  placeholder="반도체, 중국소비, 실적"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">파일 업로드 *</label>
+                <label className="block text-xs font-bold text-slate-200 mb-1">파일 형식</label>
+                <div className="relative">
+                  <select
+                    value={formState.fileType}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, fileType: e.target.value as ResourceFileType | '' }))}
+                    className={selectClassName}
+                  >
+                    <option value="">첨부파일 없음</option>
+                    {FILE_TYPE_OPTIONS.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="pointer-events-none absolute right-3 top-1/2 w-4 h-4 -translate-y-1/2 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">파일을 올리면 형식이 자동으로 맞춰집니다.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-200 mb-1">파일 업로드</label>
+                {showExistingFile && (
+                  <div className="flex items-center justify-between gap-3 mb-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700">
+                    <span className="text-xs text-slate-200 truncate">{existingFileLabel}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormState((prev) => ({ ...prev, removeExistingFile: true, file: null }))}
+                      className="text-[11px] text-red-400 hover:text-red-300 shrink-0"
+                    >
+                      파일 제거
+                    </button>
+                  </div>
+                )}
+                {editingResource?.fileUrl && formState.removeExistingFile && !formState.file && (
+                  <div className="mb-2 px-3 py-2 rounded-lg bg-amber-900/20 border border-amber-800 text-[11px] text-amber-300">
+                    기존 첨부파일이 제거됩니다.
+                  </div>
+                )}
                 <input
-                  ref={fileInputRef}
+                  key={fileInputKey}
                   type="file"
                   onChange={handleFileChange}
                   accept=".pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt"
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-red-600 file:text-white file:text-xs file:font-bold"
                 />
-                {newResource.file && (
-                  <p className="text-xs text-slate-300 mt-1">선택됨: {newResource.file.name}</p>
+                {formState.file && (
+                  <p className="text-xs text-slate-300 mt-1">선택됨: {formState.file.name}</p>
                 )}
+                <p className="text-[10px] text-slate-400 mt-1">첨부파일은 선택사항입니다. 올리지 않으면 코멘트만 등록됩니다.</p>
               </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setNewResource({ title: '', description: '', fileType: 'PDF', category: '', file: null, clientId: '' });
-                }}
-                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all"
+                onClick={closeModal}
+                disabled={isUploading}
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
               >
                 취소
               </button>
               <button
-                onClick={handleAddResource}
+                onClick={persistResource}
                 disabled={isUploading}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-all disabled:opacity-50"
+                className={`px-4 py-2 rounded-lg text-white text-sm font-bold transition-all disabled:opacity-50 ${
+                  editingResource ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
+                }`}
               >
-                {isUploading ? '업로드 중...' : '추가'}
+                {isUploading ? (editingResource ? '저장 중...' : '업로드 중...') : editingResource ? '저장' : '추가'}
               </button>
             </div>
           </div>

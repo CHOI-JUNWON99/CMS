@@ -211,22 +211,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // ===== 자료실 관리 =====
       case 'add_resource': {
-        const { id, title, description, fileType, category, date, fileSize, fileUrl, clientId, originalFilename } = params;
-        if (!title) return res.status(400).json({ error: 'title required' });
+        const {
+          id,
+          stockId,
+          title,
+          description,
+          keywords,
+          fileType,
+          category,
+          date,
+          fileSize,
+          fileUrl,
+          clientId,
+          clientIds,
+          originalFilename,
+        } = params;
+        if (!title || !description || !category || !fileType) {
+          return res.status(400).json({ error: 'title, description, category, fileType required' });
+        }
 
         const { error } = await supabase.from('resources').insert({
           id: id || undefined,
+          stock_id: stockId || null,
           title,
-          description: description || '',
+          description,
+          keywords: Array.isArray(keywords) ? keywords : [],
           file_type: fileType,
-          category: category || '기타',
+          category,
           date: date || new Date().toISOString().slice(0, 10),
           file_size: fileSize || '',
           file_url: fileUrl || null,
           client_id: clientId || null,
+          client_ids: Array.isArray(clientIds) ? clientIds : [],
           original_filename: originalFilename || null,
         });
 
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      case 'update_resource': {
+        const {
+          resourceId,
+          stockId,
+          title,
+          description,
+          keywords,
+          fileType,
+          category,
+          fileSize,
+          fileUrl,
+          clientId,
+          clientIds,
+          originalFilename,
+        } = params;
+        if (!resourceId || !title || !description || !category || !fileType) {
+          return res.status(400).json({ error: 'resourceId, title, description, category, fileType required' });
+        }
+
+        const { error } = await supabase
+          .from('resources')
+          .update({
+            stock_id: stockId || null,
+            title,
+            description,
+            keywords: Array.isArray(keywords) ? keywords : [],
+            file_type: fileType,
+            category,
+            file_size: fileSize || '',
+            file_url: fileUrl || null,
+            client_id: clientId || null,
+            client_ids: Array.isArray(clientIds) ? clientIds : [],
+            original_filename: originalFilename || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', resourceId);
         if (error) throw error;
         return res.status(200).json({ success: true });
       }
