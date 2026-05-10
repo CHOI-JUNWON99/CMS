@@ -23,7 +23,9 @@ const AdminApp: React.FC = () => {
   const extendSession = useAdminAuthStore((state) => state.extendSession);
   const isLoading = useAdminAuthStore((state) => state.isLoading);
   const restoreSession = useAdminAuthStore((state) => state.restoreSession);
-  const isAuthenticated = storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
+  const isAuthenticated = import.meta.env.PROD
+    ? storeIsAuthenticated
+    : storeIsAuthenticated && expiresAt !== null && Date.now() < expiresAt;
 
   // Sliding Session: 활동 감지 시 자동 갱신
   useSlidingSession({ isAuthenticated, extendSession, logout, skipServerRefresh: true });
@@ -35,6 +37,7 @@ const AdminApp: React.FC = () => {
 
   // 세션 만료 체크 (1분마다)
   useEffect(() => {
+    if (import.meta.env.PROD) return;
     if (!isAuthenticated) return;
 
     const checkSession = () => {

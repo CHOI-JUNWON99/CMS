@@ -32,6 +32,17 @@ function getSavedDevAdminCode() {
   return sessionStorage.getItem(DEV_ADMIN_CODE_STORAGE_KEY);
 }
 
+async function fetchAdminSession() {
+  return fetch('/api/auth/session', { credentials: 'include' });
+}
+
+async function refreshAdminSession() {
+  return fetch('/api/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+  });
+}
+
 export const useAdminAuthStore = create<AdminAuthState>()(
   (set, get) => ({
     isAuthenticated: false,
@@ -41,7 +52,9 @@ export const useAdminAuthStore = create<AdminAuthState>()(
 
     isSessionValid: () => {
       const { isAuthenticated, expiresAt } = get();
-      if (!isAuthenticated || !expiresAt) return false;
+      if (!isAuthenticated) return false;
+      if (import.meta.env.PROD) return true;
+      if (!expiresAt) return false;
       return Date.now() < expiresAt;
     },
 
@@ -91,9 +104,21 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       }
 
       try {
-        const res = await fetch('/api/auth/session', { credentials: 'include' });
+        let res = await fetchAdminSession();
         if (!res.ok) {
-          set({ isLoading: false });
+          const refreshRes = await refreshAdminSession();
+          if (refreshRes.ok) {
+            res = await fetchAdminSession();
+          }
+        }
+
+        if (!res.ok) {
+          set({
+            isAuthenticated: false,
+            isLoading: false,
+            expiresAt: null,
+            adminCode: null,
+          });
           return;
         }
 
@@ -108,10 +133,20 @@ export const useAdminAuthStore = create<AdminAuthState>()(
             adminCode: null,
           });
         } else {
-          set({ isLoading: false });
+          set({
+            isAuthenticated: false,
+            isLoading: false,
+            expiresAt: null,
+            adminCode: null,
+          });
         }
       } catch {
-        set({ isLoading: false });
+        set({
+          isAuthenticated: false,
+          isLoading: false,
+          expiresAt: null,
+          adminCode: null,
+        });
       }
     },
 
